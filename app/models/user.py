@@ -1,6 +1,10 @@
 from sqlmodel import Field, SQLModel, Relationship
-from typing import Optional
+from typing import Optional , TYPE_CHECKING
 from enum import Enum
+
+
+if TYPE_CHECKING:
+    from app.models.teacher import Teacher
 
 class UserRole(str, Enum):
     STUDENT = "student"
@@ -19,7 +23,7 @@ class User(UserBase, table=True):
     hashed_password: str
     
     teacher: Optional["Teacher"] = Relationship(back_populates="user")
-    student: Optional["Student"] = Relationship(back_populates="user")
+    
 
 class UserCreate(UserBase):
     password: str
