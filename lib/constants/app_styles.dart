@@ -4,83 +4,90 @@ import 'app_colors.dart';
 
 class AppStyles {
   AppStyles._();
-  
+
+  static const TextStyle logo = TextStyle(
+    fontFamily: AppFonts.primary,
+    fontSize: AppFonts.fontSizeXXL,
+    fontWeight: AppFonts.bold,
+    color: AppColors.textBlack,
+    height: 1.2,
+  );
+
   static const TextStyle h1 = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 32,
+    fontSize: AppFonts.fontSizeXL,
     fontWeight: AppFonts.bold,
     color: AppColors.textBlack,
   );
-  
+
   static const TextStyle h2 = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 24,
+    fontSize: AppFonts.fontSizeL,
     fontWeight: AppFonts.bold,
     color: AppColors.textBlack,
   );
-  
+
   static const TextStyle h3 = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 18,
+    fontSize: AppFonts.fontSizeML,
     fontWeight: AppFonts.semiBold,
     color: AppColors.textBlack,
   );
-  
+
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 16,
+    fontSize: AppFonts.fontSizeM,
     fontWeight: AppFonts.regular,
     color: AppColors.textBlack,
   );
-  
+
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 14,
+    fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.regular,
     color: AppColors.textBlack,
   );
-  
+
   static const TextStyle bodySmall = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 12,
+    fontSize: AppFonts.fontSizeXS,
     fontWeight: AppFonts.regular,
     color: AppColors.textBlue,
   );
-  
+
   // Button text
   static const TextStyle button = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 16,
+    fontSize: AppFonts.fontSizeM,
     fontWeight: AppFonts.semiBold,
     color: AppColors.white,
     letterSpacing: 0.5,
   );
-  
+
   // Label text (for form fields)
   static const TextStyle label = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 14,
+    fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.medium,
     color: AppColors.textBlack,
   );
-  
+
   // Caption/Hint text
   static const TextStyle caption = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 12,
+    fontSize: AppFonts.fontSizeXS,
     fontWeight: AppFonts.regular,
     color: AppColors.textLight,
   );
-  
+
   // Link text
   static const TextStyle link = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: 14,
+    fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.medium,
     color: AppColors.darkBlue,
     decoration: TextDecoration.none,
   );
-  
 
   static final inputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
@@ -89,7 +96,7 @@ class AppStyles {
       width: 1,
     ),
   );
-  
+
   /// Focused input field border
   static final inputBorderFocused = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
@@ -98,14 +105,14 @@ class AppStyles {
       width: 2,
     ),
   );
-  
+
   /// Card border
   static final cardBorder = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(20),
   );
-  
+
   // ========== SHADOWS ==========
-  
+
   /// Soft card shadow
   static final cardShadow = [
     BoxShadow(
@@ -114,7 +121,7 @@ class AppStyles {
       offset: const Offset(0, 4),
     ),
   ];
-  
+
   /// Button shadow
   static final buttonShadow = [
     BoxShadow(
@@ -123,24 +130,24 @@ class AppStyles {
       offset: const Offset(0, 4),
     ),
   ];
-  
+
   // ========== SPACING ==========
-  
+
   static const double spacingXS = 4.0;
   static const double spacingS = 8.0;
   static const double spacingM = 16.0;
   static const double spacingL = 24.0;
   static const double spacingXL = 32.0;
   static const double spacingXXL = 48.0;
-  
+
   // ========== BORDER RADIUS ==========
-  
+
   static const double radiusS = 8.0;
   static const double radiusM = 12.0;
   static const double radiusL = 16.0;
   static const double radiusXL = 20.0;
   static const double radiusPill = 100.0;
-  
+
   // ========== INPUT DECORATION ==========
 
   static InputDecoration inputDecoration({
@@ -165,9 +172,9 @@ class AppStyles {
       ),
     );
   }
-  
+
   // ========== BUTTON STYLES ==========
-  
+
   /// Primary button style
   static final primaryButton = ElevatedButton.styleFrom(
     backgroundColor: AppColors.lightBlue,
@@ -182,7 +189,7 @@ class AppStyles {
     elevation: 0,
     shadowColor: Colors.transparent,
   );
-  
+
   /// darkBlue button style
   static final darkBlueButton = ElevatedButton.styleFrom(
     backgroundColor: AppColors.darkBlue,
@@ -196,7 +203,7 @@ class AppStyles {
     ),
     elevation: 0,
   );
-  
+
   /// Outlined button style
   static final outlinedButton = OutlinedButton.styleFrom(
     foregroundColor: AppColors.lightBlue,
