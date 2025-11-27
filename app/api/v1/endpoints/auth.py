@@ -11,6 +11,12 @@ from app.models.user import User,UserBase
 
 router = APIRouter()
 
+class LoginRequest(BaseModel):
+    """JSON body for login"""
+    email: str
+    password: str
+
+
 class Token(BaseModel):
     """Token response model"""
     access_token: str
@@ -20,13 +26,13 @@ class Token(BaseModel):
 
 @router.post("/login", response_model=Token)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    payload: LoginRequest,
     session: Session = Depends(get_session)
 ):
 
     # Step 1: Find user by email
     user = session.exec(
-        select(User).where(User.email == form_data.username)
+        select(User).where(User.email == payload.email)
     ).first()
     
     # Step 2: Verify credentials
@@ -37,7 +43,7 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not verify_password(form_data.password, user.hashed_password):
+    if not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
