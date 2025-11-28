@@ -1,6 +1,9 @@
 from fastapi import FastAPI
-from app.core.init_db import create_db_and_tables
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+import os
+
+from app.core.init_db import create_db_and_tables
 from app.core.config import settings
 from app.api.v1.router import api_router
 
@@ -22,6 +25,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create uploads directory if it doesn't exist
+os.makedirs("uploads/teachers", exist_ok=True)
+
+# Mount static files to serve uploaded files
+# This allows accessing files at: http://localhost:8000/uploads/teachers/123/photo.jpg
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(api_router, prefix="/api/v1")
 
