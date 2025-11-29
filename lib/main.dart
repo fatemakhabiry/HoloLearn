@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,14 +8,11 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('')),
-        body: const Center(child: Text('Hello, World!')),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginPage(),
     );
   }
 }

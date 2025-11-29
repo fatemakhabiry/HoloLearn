@@ -64,8 +64,8 @@ class AppStyles {
     letterSpacing: 0.5,
   );
 
-  // Label text (for form fields)
-  static const TextStyle label = TextStyle(
+  // labelStyle text (for form fields)
+  static const TextStyle labelStyle = TextStyle(
     fontFamily: AppFonts.primary,
     fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.medium,
@@ -91,19 +91,13 @@ class AppStyles {
 
   static final inputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: BorderSide(
-      color: AppColors.gray.withOpacity(0.3),
-      width: 1,
-    ),
+    borderSide: BorderSide(color: AppColors.gray.withOpacity(0.3), width: 1),
   );
 
   /// Focused input field border
   static final inputBorderFocused = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(
-      color: AppColors.lightBlue,
-      width: 2,
-    ),
+    borderSide: const BorderSide(color: AppColors.lightBlue, width: 2),
   );
 
   /// Card border
@@ -151,7 +145,7 @@ class AppStyles {
   // ========== INPUT DECORATION ==========
 
   static InputDecoration inputDecoration({
-    required String label,
+    String? label,
     String? hint,
     Widget? prefixIcon,
     Widget? suffixIcon,
@@ -183,9 +177,7 @@ class AppStyles {
       horizontal: spacingL,
       vertical: spacingM,
     ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusM),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
     elevation: 0,
     shadowColor: Colors.transparent,
   );
@@ -198,9 +190,7 @@ class AppStyles {
       horizontal: spacingL,
       vertical: spacingM,
     ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusM),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
     elevation: 0,
   );
 
@@ -212,8 +202,6 @@ class AppStyles {
       horizontal: spacingL,
       vertical: spacingM,
     ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(radiusM),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
   );
 }
