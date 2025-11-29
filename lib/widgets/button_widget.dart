@@ -4,9 +4,9 @@ import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 
 enum ButtonType {
-  primary, //like blue button
-  secondary, //like dark blue button
-  outlined, //
+  primary, // blue button
+  secondary, //white button
+  outlined, 
 }
 
 class CustomButton extends StatelessWidget {
@@ -39,8 +39,11 @@ class CustomButton extends StatelessWidget {
       case ButtonType.secondary:
         button = ElevatedButton(
           onPressed: onPressed,
-          style: AppStyles.darkBlueButton,
-          child: Text(text, style: AppStyles.button),
+          style: AppStyles.secondaryButton,
+          child: Text(
+            text,
+            style: AppStyles.button.copyWith(color: AppColors.lightBlue),
+          ),
         );
         break;
 

@@ -61,7 +61,7 @@ class AppStyles {
     fontSize: AppFonts.fontSizeM,
     fontWeight: AppFonts.semiBold,
     color: AppColors.white,
-    letterSpacing: 0.5,
+    letterSpacing: 0.1,
   );
 
   // labelStyle text (for form fields)
@@ -183,9 +183,9 @@ class AppStyles {
   );
 
   /// darkBlue button style
-  static final darkBlueButton = ElevatedButton.styleFrom(
-    backgroundColor: AppColors.darkBlue,
-    foregroundColor: AppColors.white,
+  static final secondaryButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.white,
+    foregroundColor: AppColors.lightBlue,
     padding: const EdgeInsets.symmetric(
       horizontal: spacingL,
       vertical: spacingM,
@@ -205,3 +205,4 @@ class AppStyles {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
   );
 }
+
