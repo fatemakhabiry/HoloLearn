@@ -4,10 +4,12 @@ import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 
 class MessageDisplay extends StatelessWidget {
+  final String massegeBannerSuccess;
+  final String massegeBannerFail;
   final String message;
   final VoidCallback? onDismiss;
 
-  const MessageDisplay({super.key, required this.message, this.onDismiss});
+  const MessageDisplay({super.key,required this.massegeBannerSuccess,required this.massegeBannerFail, required this.message, this.onDismiss});
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,7 @@ class MessageDisplay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isSuccess ? "Success" : "Login Failed",
+                  isSuccess ? massegeBannerSuccess : massegeBannerFail,
                   style: AppStyles.bodySmall.copyWith(
                     color: messageColor,
                     fontWeight: AppFonts.bold,

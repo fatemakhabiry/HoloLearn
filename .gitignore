@@ -7,6 +7,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.dart_tool/
 build/
 develop-eggs/
 dist/

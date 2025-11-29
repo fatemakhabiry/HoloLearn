@@ -154,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 setState(() {
-                                  message = "Login Success!";
+                                  message = "You've logged in Success!";
                                   //call API to login
                                 });
                               } else {
@@ -167,6 +167,8 @@ class _LoginPageState extends State<LoginPage> {
                           if (message.isNotEmpty) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
+                              massegeBannerSuccess:"Login Succesful" ,
+                              massegeBannerFail: "Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),
