@@ -8,15 +8,33 @@ class MessageDisplay extends StatelessWidget {
   final String massegeBannerFail;
   final String message;
   final VoidCallback? onDismiss;
+  final bool isInfo; // NEW: Add this parameter
+  final bool showIcon; // NEW: Add this parameter
 
-  const MessageDisplay({super.key,required this.massegeBannerSuccess,required this.massegeBannerFail, required this.message, this.onDismiss});
+  const MessageDisplay({
+    super.key,
+    required this.massegeBannerSuccess,
+    required this.massegeBannerFail,
+    required this.message,
+    this.onDismiss,
+    this.isInfo = false, // NEW: Default to false
+    this.showIcon = true, // NEW: Default to true
+  });
 
   @override
   Widget build(BuildContext context) {
     if (message.isEmpty) return const SizedBox.shrink();
 
-    final isSuccess = message.contains("Success");
-    final messageColor = isSuccess ? AppColors.success : AppColors.error;
+    // MODIFIED: Add info message type support
+    final bool isSuccess = message.contains("Success");
+    final Color messageColor;
+
+    if (isInfo) {
+      messageColor = Colors.blue; // Info color
+    } else {
+      messageColor = isSuccess ? AppColors.success : AppColors.error;
+    }
+
     final backgroundColor = messageColor.withOpacity(0.1);
 
     return Container(
@@ -30,33 +48,40 @@ class MessageDisplay extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: messageColor,
-              shape: BoxShape.circle,
+          // Icon - MODIFIED: Only show if showIcon is true
+          if (showIcon)
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: messageColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isInfo ? Icons.info : (isSuccess ? Icons.check : Icons.close),
+                color: Colors.white,
+                size: 16,
+              ),
             ),
-            child: Icon(
-              isSuccess ? Icons.check : Icons.close,
-              color: Colors.white,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
+          if (showIcon) const SizedBox(width: 12),
           // Text Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isSuccess ? massegeBannerSuccess : massegeBannerFail,
-                  style: AppStyles.bodySmall.copyWith(
-                    color: messageColor,
-                    fontWeight: AppFonts.bold,
+                // MODIFIED: Only show banner title if it's not empty
+                if ((isSuccess && massegeBannerSuccess.isNotEmpty) ||
+                    (!isSuccess &&
+                        !isInfo &&
+                        massegeBannerFail.isNotEmpty)) ...[
+                  Text(
+                    isSuccess ? massegeBannerSuccess : massegeBannerFail,
+                    style: AppStyles.bodySmall.copyWith(
+                      color: messageColor,
+                      fontWeight: AppFonts.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+                ],
                 Text(
                   message,
                   style: AppStyles.bodySmall.copyWith(
@@ -79,11 +104,38 @@ class MessageDisplay extends StatelessWidget {
   }
 }
 
-// Usage in your LoginPage:
-// if (message.isNotEmpty) ...[
-//   const SizedBox(height: AppStyles.spacingL),
-//   MessageDisplay(
-//     message: message,
-//     onDismiss: () => setState(() => message = ''),
-//   ),
-// ],
+// ===== USAGE EXAMPLES =====
+
+// 1. Info message (like Figma design - no icon, no title)
+// MessageDisplay(
+//   massegeBannerSuccess: '',
+//   massegeBannerFail: '',
+//   message: 'To reset your password, please fill out the form below. We will send you a password to your email address within a few minutes.',
+//   isInfo: true,
+//   showIcon: false,
+// )
+
+// 2. Success message with title and icon (original behavior)
+// MessageDisplay(
+//   massegeBannerSuccess: 'Success',
+//   massegeBannerFail: 'Error',
+//   message: 'Success: Your password has been reset!',
+//   onDismiss: () => setState(() => message = ''),
+// )
+
+// 3. Error message with title and icon (original behavior)
+// MessageDisplay(
+//   massegeBannerSuccess: 'Success',
+//   massegeBannerFail: 'Error',
+//   message: 'Failed to reset password.',
+//   onDismiss: () => setState(() => message = ''),
+// )
+
+// 4. Info message with icon
+// MessageDisplay(
+//   massegeBannerSuccess: '',
+//   massegeBannerFail: '',
+//   message: 'Please check your email for verification.',
+//   isInfo: true,
+//   showIcon: true,
+// )

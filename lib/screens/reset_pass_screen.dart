@@ -5,20 +5,21 @@ import 'package:hololearn/screens/login_screen.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
+import 'package:hololearn/widgets/app_bar_widget.dart';
 
-class ForgetPasswordPage extends StatefulWidget {
-  const ForgetPasswordPage({super.key});
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({super.key});
 
   @override
-  State<ForgetPasswordPage> createState() => _ForgetPasswordPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? password1;
   String? password2;
-  String? email;
   String message = ""; //not required
+  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
@@ -33,17 +34,15 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  MessageDisplay(
-                    massegeBannerSuccess: '',
-                    massegeBannerFail: '',
-                    message:
-                        'To reset your password, please fill out the form below. We will send you a password to your email address within a few minutes.',
-                    isInfo: true,
-                    showIcon: false,
+                  CustomAppBar(
+                    title: 'Reset Password',
+                    showBackButton: false,
+                    onBackPressed: () {
+                      Navigator.pop(context);
+                    },
                   ),
-                  const SizedBox(
-                    height: AppStyles.spacingM,
-                  ), // for space between logo and title
+                  const SizedBox(height: AppStyles.spacingM),
+
                   // Login Form Card
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -57,24 +56,50 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // New Password textfield
                           CustomTextFormField(
-                            hintText: '',
-                            label: "Email Address",
+                            hintText: ' ',
+                            label: "new Password",
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
-                              //more validation will be added
-                              if (value == null || value.isEmpty) {
-                                // call api to check email format
-                                return 'this email is not registered in our system';
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  value.length < 8) {
+                                return 'Password must be at least 8 characters';
                               }
                               return null;
                             },
-                            onSaved: (value) => email = value,
+                            onSaved: (value) => password1 = value,
                           ),
                           const SizedBox(height: AppStyles.spacingL),
-                          // Submit Button
+                          // Confirm password textfield
+                          CustomTextFormField(
+                            suffixIcon: IconsButton(
+                              size: 24,
+                              iconColor: Colors.grey,
+                              backgroundColor: Colors.transparent,
+                              icon: _obscureText
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              onPressed: () {
+                                setState(() => _obscureText = !_obscureText);
+                              },
+                            ),
+                            hintText: ' ',
+                            label: "Confirm Password",
+                            obscureText: _obscureText,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => password2 = value,
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
+                          // Reset Button
                           CustomButton(
-                            text: 'SUBMIT',
+                            text: 'Reset Password',
                             fullWidth: true,
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
@@ -83,7 +108,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                                   message =
                                       "Reset Success!"; //remove this message will not appear
                                   //call reset password api
-                                  // then navigate to Forget success page
+                                  // then navigate to Reset success page
                                 });
                               } else {
                                 setState(() {
