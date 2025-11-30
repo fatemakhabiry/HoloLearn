@@ -17,10 +17,16 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  String? password1;
+  // String? password1;
+  final _newPasswordController = TextEditingController();
   String? password2;
   String message = ""; //not required
   bool _obscureText = true;
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +65,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         children: [
                           // New Password textfield
                           CustomTextFormField(
+                            controller: _newPasswordController,
                             hintText: ' ',
                             label: "new Password",
                             keyboardType: TextInputType.emailAddress,
+                            obscureText: _obscureText,
                             validator: (value) {
                               if (value == null ||
                                   value.isEmpty ||
@@ -70,7 +78,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               }
                               return null;
                             },
-                            onSaved: (value) => password1 = value,
                           ),
                           const SizedBox(height: AppStyles.spacingL),
                           // Confirm password textfield
@@ -91,6 +98,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             obscureText: _obscureText,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                              }
+                              if (value != _newPasswordController.text) {
                                 return 'Passwords do not match';
                               }
                               return null;
