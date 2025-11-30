@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/screens/login_screen.dart';
+import 'package:hololearn/screens/reset_pass_status_screen.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
@@ -79,12 +80,15 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                setState(() {
-                                  message =
-                                      "Reset Success!"; //remove this message will not appear
-                                  //call reset password api
-                                  // then navigate to Forget success page
-                                });
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ResetPassStatusPage(
+                                      email: email!,
+                                      linkSentTime: DateTime.now(),
+                                    ),
+                                  ),
+                                );
                               } else {
                                 setState(() {
                                   message = "Please fill all fields correctly!";
