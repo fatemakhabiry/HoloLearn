@@ -17,7 +17,7 @@ class MessageDisplay extends StatelessWidget {
 
     final isSuccess = message.contains("Success");
     final messageColor = isSuccess ? AppColors.success : AppColors.error;
-    final backgroundColor = messageColor.withOpacity(0.1);
+    final backgroundColor = messageColor;
 
     return Container(
       width: double.infinity,
@@ -60,7 +60,7 @@ class MessageDisplay extends StatelessWidget {
                 Text(
                   message,
                   style: AppStyles.bodySmall.copyWith(
-                    color: messageColor.withOpacity(0.8),
+                    color: messageColor,
                     fontWeight: AppFonts.medium,
                   ),
                 ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/widgets/button_widget.dart';
+import 'button_widget.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -22,6 +23,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.lightBlue,
       elevation: 0,
+      automaticallyImplyLeading: false,
       leading: showBackButton
           ? IconsButton(
               onPressed: onBackPressed!,
