@@ -25,18 +25,18 @@ class MessageDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     if (message.isEmpty) return const SizedBox.shrink();
 
-
     // MODIFIED: Add info message type support
     final bool isSuccess = message.contains("Success");
     final Color messageColor;
-
+    
     if (isInfo) {
       messageColor = Colors.blue; // Info color
     } else {
       messageColor = isSuccess ? AppColors.success : AppColors.error;
     }
+    
+    final backgroundColor = messageColor.withOpacity(0.1);
 
-    final backgroundColor = messageColor;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppStyles.spacingM),
@@ -57,7 +57,9 @@ class MessageDisplay extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isInfo ? Icons.info : (isSuccess ? Icons.check : Icons.close),
+                isInfo 
+                    ? Icons.info 
+                    : (isSuccess ? Icons.check : Icons.close),
                 color: Colors.white,
                 size: 16,
               ),
@@ -69,10 +71,8 @@ class MessageDisplay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // MODIFIED: Only show banner title if it's not empty
-                if ((isSuccess && massegeBannerSuccess.isNotEmpty) ||
-                    (!isSuccess &&
-                        !isInfo &&
-                        massegeBannerFail.isNotEmpty)) ...[
+                if ((isSuccess && massegeBannerSuccess.isNotEmpty) || 
+                    (!isSuccess && !isInfo && massegeBannerFail.isNotEmpty)) ...[
                   Text(
                     isSuccess ? massegeBannerSuccess : massegeBannerFail,
                     style: AppStyles.bodySmall.copyWith(
@@ -85,7 +85,7 @@ class MessageDisplay extends StatelessWidget {
                 Text(
                   message,
                   style: AppStyles.bodySmall.copyWith(
-                    color: messageColor,
+                    color: messageColor.withOpacity(0.8),
                     fontWeight: AppFonts.medium,
                   ),
                 ),

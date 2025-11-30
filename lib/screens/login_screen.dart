@@ -70,7 +70,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: AppStyles.spacingXL),
-
+                                            if (message.isNotEmpty) ...[
+                            const SizedBox(height: AppStyles.spacingL),
+                            MessageDisplay(
+                              massegeBannerSuccess: "Login Succesful",
+                              massegeBannerFail: "Login Failed",
+                              message: message,
+                              onDismiss: () => setState(() => message = ''),
+                            ),
+                          ],
                   // Login Form Card
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -172,15 +180,6 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                           ),
-                          if (message.isNotEmpty) ...[
-                            const SizedBox(height: AppStyles.spacingL),
-                            MessageDisplay(
-                              massegeBannerSuccess: "Login Succesful",
-                              massegeBannerFail: "Login Failed",
-                              message: message,
-                              onDismiss: () => setState(() => message = ''),
-                            ),
-                          ],
                         ],
                       ),
                     ),

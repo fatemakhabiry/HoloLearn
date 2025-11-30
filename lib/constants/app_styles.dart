@@ -91,7 +91,7 @@ class AppStyles {
 
   static final inputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: BorderSide(color: AppColors.gray, width: 1),
+    borderSide: BorderSide(color: AppColors.gray.withOpacity(0.3), width: 1),
   );
 
   /// Focused input field border
@@ -110,7 +110,7 @@ class AppStyles {
   /// Soft card shadow
   static final cardShadow = [
     BoxShadow(
-      color: AppColors.lightBlue,
+      color: AppColors.lightBlue.withOpacity(0.1),
       blurRadius: 20,
       offset: const Offset(0, 4),
     ),
@@ -119,7 +119,7 @@ class AppStyles {
   /// Button shadow
   static final buttonShadow = [
     BoxShadow(
-      color: AppColors.lightBlue,
+      color: AppColors.lightBlue.withOpacity(0.3),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
