@@ -5,7 +5,6 @@ import 'login_screen.dart';
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
-
 import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
@@ -116,7 +115,7 @@ class _ResetPassStatusPageState extends State<ResetPassStatusPage> {
     ResetPasswordState.emailSent: StateConfig(
       bannerTitle: "Check Your Email",
       bannerMessage:
-          "Success! We've sent a password reset link to your email address.",
+          "We've sent a password reset link to your email address.",
       imagePath: 'images/email_sent_icon.png',
       imageBackgroundColor: Color(0xFFCDF1CD),
       title: 'Email Sent!',
@@ -124,7 +123,7 @@ class _ResetPassStatusPageState extends State<ResetPassStatusPage> {
       emailPrefix: widget.email,
       description:
           "The link will expire in 1 hour. Didn't receive the email? Check your spam folder or ",
-      buttonText: "BACK TO LOGIN",
+      buttonText: "Back To Login",
       buttonType: ButtonType.outlined,
       buttonFunction: _backToLogin,
       showResendLink: true,
@@ -140,7 +139,7 @@ class _ResetPassStatusPageState extends State<ResetPassStatusPage> {
       emailPrefix: null,
       description:
           "For security reasons, password reset links expire after 1 hour. Please request a new link to continue.",
-      buttonText: "REQUEST NEW LINK",
+      buttonText: "Request New link",
       buttonType: ButtonType.primary,
       buttonFunction: _resendEmail,
       showResendLink: false,
@@ -167,8 +166,8 @@ class _ResetPassStatusPageState extends State<ResetPassStatusPage> {
 
                   // Show state banner (Check Your Email / Reset Link Expired)
                     MessageDisplay(
-                      massegeBannerSuccess: config.bannerTitle,
-                      massegeBannerFail: config.bannerTitle,
+                      isSuccess:currentState==ResetPasswordState.emailSent ,
+                      massegeBanner: config.bannerTitle,
                       message: config.bannerMessage,
                     ),
                     const SizedBox(height: AppStyles.spacingM),
@@ -270,7 +269,7 @@ class _ResetPassStatusPageState extends State<ResetPassStatusPage> {
                                 ResetPasswordState.linkExpired) ...[
                               const SizedBox(height: AppStyles.spacingS),
                               CustomButton(
-                                text: "BACK TO LOGIN",
+                                text: "Back To Login",
                                 onPressed: _backToLogin,
                                 buttonType: ButtonType.secondary,
                                 fullWidth: true,

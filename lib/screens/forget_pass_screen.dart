@@ -4,6 +4,7 @@ import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/screens/login_screen.dart';
 import 'package:hololearn/screens/reset_pass_status_screen.dart';
 import 'package:hololearn/widgets/button_widget.dart';
+import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
 
@@ -20,10 +21,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   String? password2;
   String? email;
   String message = ""; //not required
+  bool status=false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar:CustomAppBar(title: "Forget Password",showBackButton: false,) ,
       backgroundColor: AppColors.lightBackground,
       body: Center(
         child: SingleChildScrollView(
@@ -35,8 +38,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MessageDisplay(
-                    massegeBannerSuccess: '',
-                    massegeBannerFail: '',
+                    massegeBanner: '',
                     message:
                         'To reset your password, please fill out the form below. We will send you a password to your email address within a few minutes.',
                     isInfo: true,
@@ -62,11 +64,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             hintText: '',
                             label: "Email Address",
                             keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              //more validation will be added
+                            validator:  (value) {
                               if (value == null || value.isEmpty) {
-                                // call api to check email format
-                                return 'this email is not registered in our system';
+                                return 'Email is required';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Enter a valid email';
                               }
                               return null;
                             },
@@ -75,11 +78,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           const SizedBox(height: AppStyles.spacingL),
                           // Submit Button
                           CustomButton(
-                            text: 'SUBMIT',
+                            text: 'Submit',
                             fullWidth: true,
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
+                                status=true;
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -91,45 +95,35 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                                 );
                               } else {
                                 setState(() {
+                                  status=false;
                                   message = "Please fill all fields correctly!";
                                   // here we are not go to any page just show the error message
                                 });
                               }
                             },
                           ),
-                          const SizedBox(height: AppStyles.spacingM),
                           // Back to login Link
-                          Align(
-                            alignment: Alignment.center,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                'Back to login?',
-                                style: AppStyles.link.copyWith(
-                                  color: AppColors.lightBlue,
+                           const SizedBox(height: AppStyles.spacingS),
+                          CustomButton(
+                            text: "Back To Login",
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
+                            buttonType: ButtonType.secondary,
+                            fullWidth: true,
                           ),
                           const SizedBox(height: AppStyles.spacingM),
                           // Display message
                           if (message.isNotEmpty) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              massegeBannerSuccess: "Login Success",
-                              massegeBannerFail: "Login Failed",
+                              isSuccess:status ,
+                              massegeBanner:status? "Login Success":"Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

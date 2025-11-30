@@ -21,7 +21,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _newPasswordController = TextEditingController();
   String? password2;
   String message = ""; //not required
-  bool _obscureText = true;
+  bool _obscureText1 = true;
+  bool _obscureText2 = true;
+  bool status = false;
   @override
   void dispose() {
     _newPasswordController.dispose();
@@ -31,6 +33,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
       backgroundColor: AppColors.lightBackground,
       body: Center(
         child: SingleChildScrollView(
@@ -41,16 +44,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CustomAppBar(
-                    title: 'Reset Password',
-                    showBackButton: false,
-                    onBackPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(height: AppStyles.spacingM),
-
-                  // Login Form Card
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
@@ -66,10 +59,21 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           // New Password textfield
                           CustomTextFormField(
                             controller: _newPasswordController,
+                            suffixIcon: IconsButton(
+                              size: 24,
+                              iconColor: Colors.grey,
+                              backgroundColor: Colors.transparent,
+                              icon: _obscureText1
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              onPressed: () {
+                                setState(() => _obscureText1 = !_obscureText1);
+                              },
+                            ),
                             hintText: ' ',
-                            label: "new Password",
+                            label: "New Password",
                             keyboardType: TextInputType.emailAddress,
-                            obscureText: _obscureText,
+                            obscureText: _obscureText1,
                             validator: (value) {
                               if (value == null ||
                                   value.isEmpty ||
@@ -86,16 +90,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               size: 24,
                               iconColor: Colors.grey,
                               backgroundColor: Colors.transparent,
-                              icon: _obscureText
+                              icon: _obscureText2
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                               onPressed: () {
-                                setState(() => _obscureText = !_obscureText);
+                                setState(() => _obscureText2 = !_obscureText2);
                               },
                             ),
                             hintText: ' ',
                             label: "Confirm Password",
-                            obscureText: _obscureText,
+                            obscureText: _obscureText2,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please confirm your password';
@@ -115,6 +119,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
+                                status = true;
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -124,45 +129,37 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 );
                               } else {
                                 setState(() {
+                                  status = false;
                                   message = "Please fill all fields correctly!";
                                   // here we are not go to any page just show the error message
                                 });
                               }
                             },
                           ),
-                          const SizedBox(height: AppStyles.spacingM),
                           // Back to login Link
-                          Align(
-                            alignment: Alignment.center,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                'Back to login?',
-                                style: AppStyles.link.copyWith(
-                                  color: AppColors.lightBlue,
+                          const SizedBox(height: AppStyles.spacingS),
+                          CustomButton(
+                            text: "Back To Login",
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
+                            buttonType: ButtonType.secondary,
+                            fullWidth: true,
                           ),
-                          const SizedBox(height: AppStyles.spacingM),
+                          const SizedBox(height: AppStyles.spacingS),
                           // Display message
                           if (message.isNotEmpty) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              massegeBannerSuccess: "Login Success",
-                              massegeBannerFail: "Login Failed",
+                              isSuccess: status,
+                              massegeBanner: status
+                                  ? "L"
+                                  : "Failed To set Password",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

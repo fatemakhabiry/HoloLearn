@@ -6,6 +6,7 @@ import 'package:hololearn/screens/forget_pass_screen.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
+import 'package:hololearn/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,10 +17,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  Map<String, dynamic>? data;
   String? email;
   String? password;
   String message = ""; //not required
   bool _obscureText = true;
+  bool _loginSucess=false;
+  bool _showbanner=false;
 
   @override
   Widget build(BuildContext context) {
@@ -157,25 +161,38 @@ class _LoginPageState extends State<LoginPage> {
                           CustomButton(
                             text: 'LOG IN',
                             fullWidth: true,
-                            onPressed: () {
+                            onPressed: () async{
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                setState(() {
-                                  message = "You've logged in Success!";
                                   //call API to login
-                                });
+                                  _showbanner=true;
+                                  try{
+                                    data= await AuthService.login(email:email!,password: password!);
+                                    message = "You've logged in Success! +${data}";
+                                   setState(() {
+                                    _showbanner=true;
+                                     _loginSucess=true;});
+                                  }catch(e){
+                                    setState(() {
+                                      _showbanner=true;
+                                       _loginSucess=false;
+                                       message = "Exception as thrown";});
+                                  }
+
                               } else {
                                 setState(() {
+                                  _showbanner=true;
+                                  _loginSucess=false;
                                   message = "Please fill all fields correctly!";
                                 });
                               }
                             },
                           ),
-                          if (message.isNotEmpty) ...[
+                          if (_showbanner) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              massegeBannerSuccess: "Login Succesful",
-                              massegeBannerFail: "Login Failed",
+                              isSuccess:_loginSucess,
+                              massegeBanner:_loginSucess? "Login Succesful": "Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

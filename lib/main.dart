@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hololearn/screens/login_screen.dart';
+import 'package:hololearn/screens/reset_pass_screen.dart';
 import 'package:http/http.dart';
 
 void main() {
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: ResetPasswordPage(),
     );
   }
 }

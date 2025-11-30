@@ -3,7 +3,6 @@ import 'login_screen.dart';
 
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
-
 import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
@@ -34,8 +33,8 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                   if (message.isNotEmpty) ...[
                     const SizedBox(height: AppStyles.spacingL),
                     MessageDisplay(
-                      massegeBannerSuccess: "Password Reset Successful!",
-                      massegeBannerFail: ' ',
+                      isSuccess:true ,
+                      massegeBanner: "Password Reset Successful!",
                       message: message,
                       onDismiss: () => setState(() => message = ''),
                     ),
