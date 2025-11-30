@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
+import 'package:hololearn/screens/forget_pass_screen.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
@@ -130,6 +131,13 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () {
                                 // Handle forgot password
                                 // *****go to forgot password page ********
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgetPasswordPage(),
+                                  ),
+                                );
                               },
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
@@ -167,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                           if (message.isNotEmpty) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              massegeBannerSuccess:"Login Succesful" ,
+                              massegeBannerSuccess: "Login Succesful",
                               massegeBannerFail: "Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
