@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 import 'package:hololearn/screens/otp_expired_screen.dart';
-import 'package:hololearn/utils.dart/app_state.dart';
+import 'package:hololearn/utils/app_state.dart';
 import 'dart:async';
 import 'login_screen.dart';
 import 'package:hololearn/constants/app_colors.dart';
