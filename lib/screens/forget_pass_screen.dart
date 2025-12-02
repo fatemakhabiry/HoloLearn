@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/screens/login_screen.dart';
-import 'package:hololearn/screens/reset_pass_status_screen.dart';
+import 'package:hololearn/screens/otp_verification_screen.dart';
+import 'package:hololearn/utils.dart/app_state.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
@@ -19,14 +20,13 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? password1;
   String? password2;
-  String? email;
   String message = ""; //not required
-  bool status=false;
+  bool status = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:CustomAppBar(title: "Forget Password",showBackButton: false,) ,
+      appBar: CustomAppBar(title: "Forget Password", showBackButton: false),
       backgroundColor: AppColors.lightBackground,
       body: Center(
         child: SingleChildScrollView(
@@ -64,7 +64,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             hintText: '',
                             label: "Email Address",
                             keyboardType: TextInputType.emailAddress,
-                            validator:  (value) {
+                            validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Email is required';
                               }
@@ -73,7 +73,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                               }
                               return null;
                             },
-                            onSaved: (value) => email = value,
+                            onSaved: (value) => AppState.email = value!,
                           ),
                           const SizedBox(height: AppStyles.spacingL),
                           // Submit Button
@@ -83,19 +83,19 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                status=true;
+                                status = true;
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ResetPassStatusPage(
-                                      email: email!,
+                                    builder: (context) => OtpVerficationScreen(
+                                      email: AppState.email!,
                                       linkSentTime: DateTime.now(),
                                     ),
                                   ),
                                 );
                               } else {
                                 setState(() {
-                                  status=false;
+                                  status = false;
                                   message = "Please fill all fields correctly!";
                                   // here we are not go to any page just show the error message
                                 });
@@ -103,7 +103,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             },
                           ),
                           // Back to login Link
-                           const SizedBox(height: AppStyles.spacingS),
+                          const SizedBox(height: AppStyles.spacingS),
                           CustomButton(
                             text: "Back To Login",
                             onPressed: () {
@@ -122,8 +122,10 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           if (message.isNotEmpty) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              isSuccess:status ,
-                              massegeBanner:status? "Login Success":"Login Failed",
+                              isSuccess: status,
+                              massegeBanner: status
+                                  ? "Login Success"
+                                  : "Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

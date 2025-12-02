@@ -22,8 +22,8 @@ class _LoginPageState extends State<LoginPage> {
   String? password;
   String message = ""; //not required
   bool _obscureText = true;
-  bool _loginSucess=false;
-  bool _showbanner=false;
+  bool _loginSucess = false;
+  bool _showbanner = false;
 
   @override
   Widget build(BuildContext context) {
@@ -161,28 +161,33 @@ class _LoginPageState extends State<LoginPage> {
                           CustomButton(
                             text: 'LOG IN',
                             fullWidth: true,
-                            onPressed: () async{
+                            onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                  //call API to login
-                                  _showbanner=true;
-                                  try{
-                                    data= await AuthService.login(email:email!,password: password!);
-                                    message = "You've logged in Success! +${data}";
-                                   setState(() {
-                                    _showbanner=true;
-                                     _loginSucess=true;});
-                                  }catch(e){
-                                    setState(() {
-                                      _showbanner=true;
-                                       _loginSucess=false;
-                                       message = "Exception as thrown";});
-                                  }
-
+                                //call API to login
+                                _showbanner = true;
+                                try {
+                                  data = await AuthService.login(
+                                    email: email!,
+                                    password: password!,
+                                  );
+                                  message =
+                                      "You've logged in Success! +${data}";
+                                  setState(() {
+                                    _showbanner = true;
+                                    _loginSucess = true;
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    _showbanner = true;
+                                    _loginSucess = false;
+                                    message = "Exception as thrown";
+                                  });
+                                }
                               } else {
                                 setState(() {
-                                  _showbanner=true;
-                                  _loginSucess=false;
+                                  _showbanner = true;
+                                  _loginSucess = false;
                                   message = "Please fill all fields correctly!";
                                 });
                               }
@@ -191,8 +196,10 @@ class _LoginPageState extends State<LoginPage> {
                           if (_showbanner) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              isSuccess:_loginSucess,
-                              massegeBanner:_loginSucess? "Login Succesful": "Login Failed",
+                              isSuccess: _loginSucess,
+                              massegeBanner: _loginSucess
+                                  ? "Login Succesful"
+                                  : "Login Failed",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),
