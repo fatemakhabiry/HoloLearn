@@ -41,9 +41,9 @@ class ApiConfig {
   // Build full URL
   static String getUrl(String endpoint) => baseUrl + endpoint;
 
-  // Get full OTP URLs
-  static String get forgotPasswordUrl => getUrl(forgotPasswordEndpoint);
-  static String get verifyOtpUrl => getUrl(verifyOtpEndpoint);
-  static String get resetPasswordUrl => getUrl(resetPasswordEndpoint);
-  static String get resendOtpUrl => getUrl(resendOtpEndpoint);
+  // // Get full OTP URLs
+  // static String get forgotPasswordUrl => getUrl(forgotPasswordEndpoint);
+  // static String get verifyOtpUrl => getUrl(verifyOtpEndpoint);
+  // static String get resetPasswordUrl => getUrl(resetPasswordEndpoint);
+  // static String get resendOtpUrl => getUrl(resendOtpEndpoint);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 import 'package:hololearn/screens/otp_expired_screen.dart';
+import 'package:hololearn/screens/reset_pass_screen.dart';
 import 'package:hololearn/utils/app_state.dart';
 import 'dart:async';
 import 'login_screen.dart';
@@ -10,6 +11,7 @@ import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/otp_widget.dart';
+import 'package:hololearn/services/password_reset_service.dart';
 
 class OtpVerficationScreen extends StatefulWidget {
   final String email;
@@ -28,7 +30,7 @@ class OtpVerficationScreen extends StatefulWidget {
 class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   Timer? _timer;
   DateTime? currentLinkTime;
-
+  String? otp;
   final String bannerTitle = "Check Your Email";
   final String bannerMessage =
       "We've sent a Verification code to your email address.";
@@ -38,6 +40,65 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   final String subtitle = "We've sent a reset link to:";
   final String description =
       "The code will expire in 10 minutes. Didn't receive the email? Check your spam folder or ";
+  void _backToLogin() {
+    // Back to login
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
+  void _verifyCode() async {
+    // TODO: Implement resend email logic
+    print(AppState.otp);
+    try {
+      var data = await PasswordResetService.verifyOTP(
+        AppState.email,
+        AppState.otp,
+      );
+      setState(() {
+        print("request success");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+        ); // Added closing parenthesis and semicolon
+      });
+    } catch (e) {
+      setState(() {
+        print("request success");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+        ); // Added closing parenthesis and semicolon
+      });
+    }
+  }
+
+  void _resendEmail() async {
+    try {
+      var data = await PasswordResetService.resendOTP(AppState.email);
+      setState(() {
+        print("request success");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpVerficationScreen(
+              email: AppState.email,
+              linkSentTime: DateTime.now(),
+            ),
+          ),
+        ); // Added closing parenthesis and semicolon
+      });
+    } catch (e) {
+      setState(() {
+        print(e);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+        );
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -58,7 +119,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     final difference = now.difference(widget.linkSentTime);
 
     // Link expires after 10 mins (using 1 minute for testing)
-    if (difference.inMinutes >= 1) {
+    if (difference.inMinutes >= 10) {
       setState(() {
         // TODO: Implement resend email logic
         Navigator.pushReplacement(
@@ -74,24 +135,6 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     _timer = Timer.periodic(Duration(minutes: 1), (timer) {
       _checkLinkExpiration();
     });
-  }
-
-  void _backToLogin() {
-    // Back to login
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
-  }
-
-  void _verifyCode() {
-    // TODO: Implement resend email logic
-    setState(() {});
-  }
-
-  void _resendEmail() {
-    // TODO: Implement resend email logic
-    setState(() {});
   }
 
   @override
@@ -185,7 +228,8 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             // OTP Input Fields
                             const SizedBox(height: AppStyles.spacingL),
                             OtpInputWidget(
-                              onCompleted: (otp) {
+                              onCompleted: (value) {
+                                AppState.otp = value;
                                 print("OTP entered: $otp");
                                 // You can store it or instantly verify
                               },
@@ -196,7 +240,38 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             // Action Button
                             CustomButton(
                               text: 'Verify Code',
-                              onPressed: _verifyCode,
+                              onPressed: () async {
+                                // TODO: Implement resend email logic
+                                print(AppState.otp);
+                                try {
+                                  var data =
+                                      await PasswordResetService.verifyOTP(
+                                        AppState.email,
+                                        AppState.otp,
+                                      );
+                                  setState(() {
+                                    print("request success");
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResetPasswordPage(),
+                                      ),
+                                    ); // Added closing parenthesis and semicolon
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    print("request success");
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            OtpExpiredScreen(),
+                                      ),
+                                    ); // Added closing parenthesis and semicolon
+                                  });
+                                }
+                              },
                               buttonType: ButtonType.primary,
                               fullWidth: true,
                             ),

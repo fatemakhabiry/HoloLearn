@@ -6,7 +6,8 @@ import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/screens/otp_verification_screen.dart';
-import 'package:hololearn/utils.dart/app_state.dart';
+import 'package:hololearn/utils/app_state.dart';
+import 'package:hololearn/services/password_reset_service.dart';
 
 class OtpExpiredScreen extends StatelessWidget {
   const OtpExpiredScreen({super.key});
@@ -30,17 +31,26 @@ class OtpExpiredScreen extends StatelessWidget {
       );
     }
 
-    void _resendEmail() {
-      // TODO: Implement resend email logic
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpVerficationScreen(
-            email: AppState.email,
-            linkSentTime: DateTime.now(),
+    void _resendEmail() async {
+      try {
+        var data = await PasswordResetService.resendOTP(AppState.email);
+        print("request success");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpVerficationScreen(
+              email: AppState.email,
+              linkSentTime: DateTime.now(),
+            ),
           ),
-        ),
-      );
+        ); // Added closing parenthesis and semicolon
+      } catch (e) {
+        print(e);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+        );
+      }
     }
 
     return Scaffold(

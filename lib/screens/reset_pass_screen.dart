@@ -7,6 +7,8 @@ import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
 import 'package:hololearn/widgets/app_bar_widget.dart';
+import 'package:hololearn/services/password_reset_service.dart';
+import 'package:hololearn/utils/app_state.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -116,17 +118,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           CustomButton(
                             text: 'Reset Password',
                             fullWidth: true,
-                            onPressed: () {
+                            onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 status = true;
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ResetPassSuccessPage(),
-                                  ),
-                                );
+                                try {
+                                  var data =
+                                      await PasswordResetService.resetPassword(email:AppState.email,otpCode: AppState.otp,newPassword:password2!);
+                                  setState(() {
+                                    print("Password set successfully");
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResetPassSuccessPage(),
+                                      ),
+                                    ); // Added closing parenthesis and semicolon
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    status=false;
+                                    message='Failed to set new password $e'; // Added closing parenthesis and semicolon
+                                  });
+                                }
                               } else {
                                 setState(() {
                                   status = false;
@@ -159,7 +173,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               isSuccess: status,
                               massegeBanner: status
                                   ? "L"
-                                  : "Failed To set Password",
+                                  : "Error",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

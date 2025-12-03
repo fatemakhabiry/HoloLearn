@@ -3,7 +3,8 @@ import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/screens/login_screen.dart';
 import 'package:hololearn/screens/otp_verification_screen.dart';
-import 'package:hololearn/utils.dart/app_state.dart';
+import 'package:hololearn/services/password_reset_service.dart';
+import 'package:hololearn/utils/app_state.dart';
 import 'package:hololearn/widgets/button_widget.dart';
 import 'package:hololearn/widgets/app_bar_widget.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
@@ -22,6 +23,32 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   String? password2;
   String message = ""; //not required
   bool status = false;
+
+  void _requestotp() async {
+  try {
+    var data = await PasswordResetService.requestOTP(AppState.email);
+   setState(() {
+    print("request success");
+     Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtpVerficationScreen(
+          email: AppState.email,
+          linkSentTime: DateTime.now(),
+        ),
+      ),
+    ); // Added closing parenthesis and semicolon
+   });
+  } catch(e) {
+    setState(() {
+      print(e);
+      message='Email does not Exist';
+      status = false;
+    });
+
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -84,15 +111,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 status = true;
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => OtpVerficationScreen(
-                                      email: AppState.email!,
-                                      linkSentTime: DateTime.now(),
-                                    ),
-                                  ),
-                                );
+                                _requestotp();
                               } else {
                                 setState(() {
                                   status = false;
@@ -124,8 +143,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             MessageDisplay(
                               isSuccess: status,
                               massegeBanner: status
-                                  ? "Login Success"
-                                  : "Login Failed",
+                                  ? "Sent Successfuly"
+                                  : "Failed to Send!",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

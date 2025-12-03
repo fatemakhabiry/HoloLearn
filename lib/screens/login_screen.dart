@@ -3,6 +3,7 @@ import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 import 'package:hololearn/screens/forget_pass_screen.dart';
+import 'package:hololearn/utils./app_state.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
 import 'package:hololearn/widgets/button_widget.dart';
@@ -174,6 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                                   message =
                                       "You've logged in Success! +${data}";
                                   setState(() {
+                                    AppState.email=email!;
                                     _showbanner = true;
                                     _loginSucess = true;
                                   });

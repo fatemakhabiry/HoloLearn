@@ -4,30 +4,35 @@ import '../config/api_config.dart';
 
 class PasswordResetService {
   /// Request OTP code - sends to user's email
-  Future<String> requestOTP(String email) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse(ApiConfig.getUrl(ApiConfig.forgotPasswordEndpoint)),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode({'email': email}),
-          )
-          .timeout(ApiConfig.connectionTimeout);
+  static Future<String> requestOTP(String email) async {
+    print(email);
+    final uri = Uri.parse(ApiConfig.getUrl(ApiConfig.forgotPasswordEndpoint));
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['message'];
-      } else {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to send OTP');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json', // Changed to JSON
+      },
+      body: json.encode({
+        // Encode as JSON
+        'email': email,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['message'];
+    } else if (response.statusCode == 404) {
+      final error = json.decode(response.body);
+      throw Exception(error['detail'] ?? 'Email not found in system');
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['detail'] ?? 'Failed to send OTP');
     }
   }
 
   /// Verify OTP code
-  Future<Map<String, dynamic>> verifyOTP(String email, String otpCode) async {
+  static Future<Map<String, dynamic>> verifyOTP(String email, String otpCode) async {
     try {
       final response = await http
           .post(
@@ -49,7 +54,7 @@ class PasswordResetService {
   }
 
   /// Reset password with OTP
-  Future<String> resetPassword({
+  static Future <String> resetPassword({
     required String email,
     required String otpCode,
     required String newPassword,
@@ -81,7 +86,7 @@ class PasswordResetService {
   }
 
   /// Resend OTP code
-  Future<String> resendOTP(String email) async {
+  static Future<String> resendOTP(String email) async {
     try {
       final response = await http
           .post(
