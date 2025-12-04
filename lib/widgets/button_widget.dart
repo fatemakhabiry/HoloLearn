@@ -6,7 +6,7 @@ import 'package:hololearn/constants/app_styles.dart';
 enum ButtonType {
   primary, // blue button
   secondary, //white button
-  outlined, 
+  outlined,
 }
 
 class CustomButton extends StatelessWidget {
@@ -14,13 +14,14 @@ class CustomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final ButtonType buttonType;
   final bool fullWidth;
-
+  final bool isLoading;
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.buttonType = ButtonType.primary,
     this.fullWidth = false,
+    this.isLoading = false,
   });
 
   @override
@@ -32,7 +33,7 @@ class CustomButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: onPressed,
           style: AppStyles.primaryButton,
-          child: Text(text, style: AppStyles.button),
+          child: Text(isLoading ? "Loading..." : text, style: AppStyles.button),
         );
         break;
 
@@ -41,7 +42,7 @@ class CustomButton extends StatelessWidget {
           onPressed: onPressed,
           style: AppStyles.secondaryButton,
           child: Text(
-            text,
+            isLoading ? "Loading..." : text,
             style: AppStyles.button.copyWith(color: AppColors.lightBlue),
           ),
         );
@@ -52,7 +53,7 @@ class CustomButton extends StatelessWidget {
           onPressed: onPressed,
           style: AppStyles.outlinedButton,
           child: Text(
-            text,
+            isLoading ? "Loading..." : text,
             style: AppStyles.button.copyWith(color: AppColors.lightBlue),
           ),
         );

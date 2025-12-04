@@ -25,6 +25,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   String message = ""; //not required
   bool _obscureText1 = true;
   bool _obscureText2 = true;
+  bool is_loading = false;
   bool status = false;
   @override
   void dispose() {
@@ -118,34 +119,56 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           CustomButton(
                             text: 'Reset Password',
                             fullWidth: true,
+                            isLoading: is_loading,
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 status = true;
+
+                                // 1️⃣ Start loading
+                                setState(() {
+                                  is_loading = true;
+                                });
+
                                 try {
+                                  // 2️⃣ Do async work OUTSIDE setState
                                   var data =
-                                      await PasswordResetService.resetPassword(email:AppState.email,otpCode: AppState.otp,newPassword:password2!);
-                                  setState(() {
-                                    print("Password set successfully");
+                                      await PasswordResetService.resetPassword(
+                                        email: AppState.email,
+                                        otpCode: AppState.otp,
+                                        newPassword: password2!,
+                                      );
+
+                                  print("Password set successfully");
+
+                                  // 3️⃣ Navigate (no setState needed)
+                                  if (mounted) {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             ResetPassSuccessPage(),
                                       ),
-                                    ); // Added closing parenthesis and semicolon
-                                  });
+                                    );
+                                  }
                                 } catch (e) {
+                                  // 4️⃣ Update UI for error
                                   setState(() {
-                                    status=false;
-                                    message='Failed to set new password $e'; // Added closing parenthesis and semicolon
+                                    status = false;
+                                    message = 'Failed to set new password $e';
                                   });
+                                } finally {
+                                  // 5️⃣ Stop loading
+                                  if (mounted) {
+                                    setState(() {
+                                      is_loading = false;
+                                    });
+                                  }
                                 }
                               } else {
                                 setState(() {
                                   status = false;
                                   message = "Please fill all fields correctly!";
-                                  // here we are not go to any page just show the error message
                                 });
                               }
                             },
@@ -171,9 +194,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
                               isSuccess: status,
-                              massegeBanner: status
-                                  ? "L"
-                                  : "Error",
+                              massegeBanner: status ? "L" : "Error",
                               message: message,
                               onDismiss: () => setState(() => message = ''),
                             ),

@@ -31,6 +31,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   Timer? _timer;
   DateTime? currentLinkTime;
   String? otp;
+  bool is_loading = false;
   final String bannerTitle = "Check Your Email";
   final String bannerMessage =
       "We've sent a Verification code to your email address.";
@@ -49,36 +50,58 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   }
 
   void _verifyCode() async {
-    // TODO: Implement resend email logic
-    print(AppState.otp);
+    // 1️⃣ Start loading
+    setState(() {
+      is_loading = true;
+    });
+
     try {
+      // 2️⃣ Do async work OUTSIDE setState
       var data = await PasswordResetService.verifyOTP(
         AppState.email,
         AppState.otp,
       );
-      setState(() {
-        print("request success");
+
+      print("request success");
+
+      // 3️⃣ Navigate (no setState needed)
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => ResetPasswordPage()),
-        ); // Added closing parenthesis and semicolon
-      });
+        );
+      }
     } catch (e) {
-      setState(() {
-        print("request success");
+      print("request error");
+
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
-        ); // Added closing parenthesis and semicolon
-      });
+        );
+      }
+    } finally {
+      // 4️⃣ Stop loading
+      if (mounted) {
+        setState(() {
+          is_loading = false;
+        });
+      }
     }
   }
 
   void _resendEmail() async {
+    // 1️⃣ Start loading
+    setState(() {
+      is_loading = true;
+    });
     try {
+      // 2️⃣ Async work outside setState
       var data = await PasswordResetService.resendOTP(AppState.email);
-      setState(() {
-        print("request success");
+      print("request success");
+
+      // 3️⃣ Navigate
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -87,16 +110,24 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
               linkSentTime: DateTime.now(),
             ),
           ),
-        ); // Added closing parenthesis and semicolon
-      });
+        );
+      }
     } catch (e) {
-      setState(() {
-        print(e);
+      print(e);
+
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
         );
-      });
+      }
+    } finally {
+      // 4️⃣ Stop loading
+      if (mounted) {
+        setState(() {
+          is_loading = false;
+        });
+      }
     }
   }
 
@@ -207,6 +238,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                                   style: AppStyles.labelStyle,
                                   textAlign: TextAlign.center,
                                 ),
+                                // resend link
                                 TextButton(
                                   onPressed: _resendEmail,
                                   style: TextButton.styleFrom(
@@ -230,7 +262,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             OtpInputWidget(
                               onCompleted: (value) {
                                 AppState.otp = value;
-                                print("OTP entered: $otp");
+                                print("OTP entered: ${AppState.otp} ");
                                 // You can store it or instantly verify
                               },
                             ),
@@ -240,40 +272,10 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             // Action Button
                             CustomButton(
                               text: 'Verify Code',
-                              onPressed: () async {
-                                // TODO: Implement resend email logic
-                                print(AppState.otp);
-                                try {
-                                  var data =
-                                      await PasswordResetService.verifyOTP(
-                                        AppState.email,
-                                        AppState.otp,
-                                      );
-                                  setState(() {
-                                    print("request success");
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ResetPasswordPage(),
-                                      ),
-                                    ); // Added closing parenthesis and semicolon
-                                  });
-                                } catch (e) {
-                                  setState(() {
-                                    print("request success");
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            OtpExpiredScreen(),
-                                      ),
-                                    ); // Added closing parenthesis and semicolon
-                                  });
-                                }
-                              },
+                              onPressed: _verifyCode,
                               buttonType: ButtonType.primary,
                               fullWidth: true,
+                              isLoading: is_loading,
                             ),
                             // Back to login link (for expired state)
                             const SizedBox(height: AppStyles.spacingS),

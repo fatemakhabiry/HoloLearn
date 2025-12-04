@@ -32,7 +32,11 @@ class PasswordResetService {
   }
 
   /// Verify OTP code
-  static Future<Map<String, dynamic>> verifyOTP(String email, String otpCode) async {
+  static Future<Map<String, dynamic>> verifyOTP(
+    String email,
+    String otpCode,
+  ) async {
+    print("Verifying OTP for $email with code $otpCode");
     try {
       final response = await http
           .post(
@@ -54,7 +58,7 @@ class PasswordResetService {
   }
 
   /// Reset password with OTP
-  static Future <String> resetPassword({
+  static Future<String> resetPassword({
     required String email,
     required String otpCode,
     required String newPassword,

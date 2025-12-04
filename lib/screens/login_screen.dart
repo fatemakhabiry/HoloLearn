@@ -3,6 +3,7 @@ import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 import 'package:hololearn/screens/forget_pass_screen.dart';
+import 'package:hololearn/screens/otp_verification_screen.dart';
 import 'package:hololearn/utils./app_state.dart';
 import 'package:hololearn/widgets/message_handler_widget.dart';
 import 'package:hololearn/widgets/text_form_widget.dart';
@@ -25,6 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
   bool _loginSucess = false;
   bool _showbanner = false;
+  bool is_loading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -162,31 +164,48 @@ class _LoginPageState extends State<LoginPage> {
                           CustomButton(
                             text: 'LOG IN',
                             fullWidth: true,
+                            isLoading: is_loading,
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                //call API to login
-                                _showbanner = true;
+
+                                // 1️⃣ Start loading
+                                setState(() {
+                                  is_loading = true;
+                                });
+
                                 try {
+                                  // 2️⃣ Async work OUTSIDE setState
                                   data = await AuthService.login(
                                     email: email!,
                                     password: password!,
                                   );
-                                  message =
-                                      "You've logged in Success! +${data}";
+
+                                  // 3️⃣ Update UI after success
                                   setState(() {
-                                    AppState.email=email!;
+                                    message =
+                                        "You've logged in Success! +$data";
+                                    AppState.email = email!;
                                     _showbanner = true;
                                     _loginSucess = true;
                                   });
                                 } catch (e) {
+                                  // 4️⃣ Update UI after error
                                   setState(() {
                                     _showbanner = true;
                                     _loginSucess = false;
-                                    message = "Exception as thrown";
+                                    message = "Exception was thrown";
                                   });
+                                } finally {
+                                  // 5️⃣ Stop loading
+                                  if (mounted) {
+                                    setState(() {
+                                      is_loading = false;
+                                    });
+                                  }
                                 }
                               } else {
+                                // Form is not valid
                                 setState(() {
                                   _showbanner = true;
                                   _loginSucess = false;

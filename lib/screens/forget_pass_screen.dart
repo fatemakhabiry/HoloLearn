@@ -23,32 +23,37 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   String? password2;
   String message = ""; //not required
   bool status = false;
+  bool is_loading = false;
 
   void _requestotp() async {
-  try {
-    var data = await PasswordResetService.requestOTP(AppState.email);
-   setState(() {
-    print("request success");
-     Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OtpVerficationScreen(
-          email: AppState.email,
-          linkSentTime: DateTime.now(),
-        ),
-      ),
-    ); // Added closing parenthesis and semicolon
-   });
-  } catch(e) {
     setState(() {
-      print(e);
-      message='Email does not Exist';
-      status = false;
+      is_loading = true;
     });
-
+    try {
+      var data = await PasswordResetService.requestOTP(AppState.email);
+      print("request success");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtpVerficationScreen(
+            email: AppState.email,
+            linkSentTime: DateTime.now(),
+          ),
+        ),
+      ); // Added closing parenthesis and semicolon
+    } catch (e) {
+      print(e);
+      message = 'Email does not Exist';
+      status = false;
+    } finally {
+      // Step 5: stop loading
+      if (mounted) {
+        setState(() {
+          is_loading = false;
+        });
+      }
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +112,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           CustomButton(
                             text: 'Submit',
                             fullWidth: true,
+                            isLoading: is_loading,
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
