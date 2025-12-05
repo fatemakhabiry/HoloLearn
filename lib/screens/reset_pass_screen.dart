@@ -124,6 +124,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 status = true;
+                                message="";
 
                                 // 1️⃣ Start loading
                                 setState(() {

@@ -31,12 +31,10 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (message.isNotEmpty) ...[
-                    const SizedBox(height: AppStyles.spacingL),
                     MessageDisplay(
                       isSuccess:true ,
                       massegeBanner: "Password Reset Successful!",
                       message: message,
-                      onDismiss: () => setState(() => message = ''),
                     ),
                     SizedBox(height: AppStyles.spacingM),
                   ],

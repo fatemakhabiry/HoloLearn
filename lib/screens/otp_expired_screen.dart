@@ -19,7 +19,7 @@ class OtpExpiredScreen extends StatelessWidget {
   final Color imageBackgroundColor = const Color(0xFFFFCDD2);
   final String title = 'OTP Expired';
   final String description =
-      "For security reasons, password reset links expire after 10 minutes. Please request a new link to continue.";
+      "For security reasons, password reset links expire after 10 minutes or you've entered incorrect OTP. Please request a new link to continue.";
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class OtpExpiredScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: AppStyles.spacingL),
+                  // const SizedBox(height: AppStyles.spacingL),
                   // Show state banner (Reset Link Expired)
                   MessageDisplay(
                     isSuccess: false,

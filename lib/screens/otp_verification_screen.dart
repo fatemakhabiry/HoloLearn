@@ -182,7 +182,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: AppStyles.spacingL),
+                  // const SizedBox(height: AppStyles.spacingM),
 
                   // Show state banner (Check Your Email / Reset Link Expired)
                   MessageDisplay(
