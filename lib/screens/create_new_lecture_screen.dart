@@ -30,10 +30,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
-      appBar: CustomAppBar(
-        title: "Create Lecture",
-        showBackButton: true,
-      ),
+      appBar: CustomAppBar(title: "Create Lecture", showBackButton: true),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -101,8 +98,8 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                                 if (course_code != null) {
-                                  LectureState.lectureTitle = lecture_title!;
-                                  LectureState.courseCode = course_code!;
+                                  // LectureState.lectureTitle = lecture_title!;
+                                  // LectureState.courseCode = course_code!;
                                 }
                               }
                             },

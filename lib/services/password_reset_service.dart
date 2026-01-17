@@ -36,7 +36,6 @@ class PasswordResetService {
     String email,
     String otpCode,
   ) async {
-    print("Verifying OTP for $email with code $otpCode");
     try {
       final response = await http
           .post(
