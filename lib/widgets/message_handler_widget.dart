@@ -4,7 +4,7 @@ import 'package:hololearn/constants/app_styles.dart';
 import 'package:hololearn/constants/app_fonts.dart';
 
 class MessageDisplay extends StatelessWidget {
-  final String massegeBanner;
+  final String? massegeBanner;
   final String message;
   final VoidCallback? onDismiss;
   final bool isSuccess; 
@@ -13,7 +13,7 @@ class MessageDisplay extends StatelessWidget {
 
   const MessageDisplay({
     super.key,
-    required this.massegeBanner,
+    this.massegeBanner,
     required this.message,
     this.onDismiss,
     this.isInfo = false, 
@@ -70,9 +70,9 @@ class MessageDisplay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // MODIFIED: Only show banner title if it's not empty
-                if ((massegeBanner.isNotEmpty)) ...[
+                if ((massegeBanner != null && massegeBanner!.isNotEmpty)) ...[
                   Text(
-                    massegeBanner,
+                    massegeBanner!,
                     style: AppStyles.bodySmall.copyWith(
                       color: messageColor,
                       fontWeight: AppFonts.bold,

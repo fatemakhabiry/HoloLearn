@@ -100,8 +100,10 @@ class IconsButton extends StatelessWidget {
 
 class CustomDropdown extends StatelessWidget {
   final String label;
+  final bool isFieldRequired;
   final List<String> items;
   final String? selectedValue;
+  final String? Function(String?)? validator;
   final Function(String?) onChanged;
 
   const CustomDropdown({
@@ -109,14 +111,34 @@ class CustomDropdown extends StatelessWidget {
     required this.label,
     required this.items,
     required this.onChanged,
+    this.validator,
+    this.isFieldRequired=true,
     this.selectedValue,
   });
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      decoration: AppStyles.inputDecoration(label: label),
+    return  Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: AppStyles.labelStyle,
+            children: isFieldRequired
+                ? [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ]
+                : null,
+          ),
+        ),
+        SizedBox(height: AppStyles.spacingM),
+    DropdownButtonFormField<String>(
+      validator: validator,
+      decoration: AppStyles.inputDecoration(hint: 'Select $label'),
       items: items.map((String item) {
         return DropdownMenuItem<String>(
           value: item,
@@ -124,7 +146,8 @@ class CustomDropdown extends StatelessWidget {
         );
       }).toList(),
       onChanged: onChanged,
-      style: AppStyles.bodyMedium,
+    ),
+      ],
     );
   }
 }

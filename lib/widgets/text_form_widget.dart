@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/constants/app_styles.dart';
+import '../constants/app_styles.dart';
 
 class CustomTextFormField extends StatelessWidget {
   final String? label;
@@ -11,6 +11,8 @@ class CustomTextFormField extends StatelessWidget {
   final TextEditingController? controller;
   final Widget? suffixIcon;
   final bool isFieldRequired;
+  final VoidCallback? onTap;     // ✅ added
+  final bool readOnly;           // ✅ added
 
   const CustomTextFormField({
     super.key,
@@ -23,6 +25,8 @@ class CustomTextFormField extends StatelessWidget {
     this.controller,
     this.suffixIcon,
     this.isFieldRequired = true,
+    this.onTap,                  // ✅ added
+    this.readOnly = false,        // ✅ added
   });
 
   @override
@@ -30,25 +34,29 @@ class CustomTextFormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RichText(
-          text: TextSpan(
-            text: label,
-            style: AppStyles.labelStyle,
-            children: isFieldRequired
-                ? [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ]
-                : null,
+        if (label != null)
+          RichText(
+            text: TextSpan(
+              text: label,
+              style: AppStyles.labelStyle,
+              children: isFieldRequired
+                  ? const [
+                      TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
-        ),
         SizedBox(height: AppStyles.spacingM),
         TextFormField(
           validator: validator,
           onSaved: onSaved,
           controller: controller,
+          onTap: onTap,              // ✅ here
+          readOnly: readOnly,        // ✅ here
+          keyboardType: keyboardType,
           decoration: AppStyles.inputDecoration(
             hint: hintText,
             suffixIcon: suffixIcon,
