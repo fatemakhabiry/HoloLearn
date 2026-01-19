@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Email Configuration (for OTP Password Reset) ← ADD THESE 4 LINES
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SENDER_EMAIL: str
+    SENDER_PASSWORD: str
+
     # THIS IS THE NEW 2025 WAY (replace the old class Config)
     model_config = {
         "env_file": ".env",

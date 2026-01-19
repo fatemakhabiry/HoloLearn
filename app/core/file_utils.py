@@ -103,8 +103,9 @@ async def save_teacher_file(
             detail=f"Failed to save file: {str(e)}"
         )
     
-    # Return relative path
-    relative_path = str(file_path.relative_to(Path.cwd()))
+    # Return relative path (normalize to forward slashes for cross-platform compatibility)
+    # file_path is already relative (uploads/teachers/12/photo_xxx.jpg)
+    relative_path = str(file_path).replace("\\", "/")
     return relative_path
 
 

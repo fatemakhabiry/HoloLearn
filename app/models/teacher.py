@@ -25,3 +25,8 @@ class TeacherPublic(TeacherBase):
 class TeacherUpdate(SQLModel):
     photo: Optional[str] = None
     voice_sample: Optional[str] = None
+
+class TeacherProfileStatus(SQLModel):
+    needs_profile_setup: bool
+    has_photo: bool
+    has_voice_sample: bool
