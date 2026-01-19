@@ -1,16 +1,19 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_fonts.dart';
-import '../screens/forget_pass_screen.dart';
-import '../utils/app_state.dart';
 import '../widgets/message_handler_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/button_widget.dart';
-import '../services/auth_service.dart';
-
 import '../widgets/error_handler_widget.dart';
+import '../services/auth_service.dart';
+import '../utils/app_state.dart';
+import 'forget_pass_screen.dart';
 import 'teacher_dashboard_screen.dart';
+import 'student_dashboard_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,45 +32,54 @@ class _LoginPageState extends State<LoginPage> {
   bool _loginSucess = false;
   bool _showbanner = false;
   bool is_loading = false;
+  String? error_message = null;
 
   Future<void> _handleLogin() async {
     setState(() {
       is_loading = true;
     });
     try {
-      final result = await AuthService.login(
-        email: email!,
-        password: password!,
-      );
+      await AuthService.login(email: email!, password: password!);
 
-
-      // setState(() {
-      //   message = "You've logged in Success!";
-      //   _showbanner = true;
-      //   _loginSucess = true;
-      // });
-      if (AppState.userRole == 'teacher') {
-        Navigator.push(
+      // Show success message
+      if (mounted) {
+        CustomErrorHandler.show(
           context,
-          MaterialPageRoute(
-            builder: (context) => const TeacherDashboardScreen(),
-          ),
+          message: 'Login successful',
+          type: ErrorType.success,
         );
+        // Wait 3 seconds
+        await Future.delayed(const Duration(seconds: 3));
+
+        if (AppState.userRole == 'teacher') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TeacherDashboardScreen(),
+            ),
+          );
+        }
+        // else{
+        //     Navigator.pushReplacement(
+        //     context,
+        //     MaterialPageRoute(
+        //       builder: (context) => const StudentDashboardScreen(),
+        //     ),
+        //   );
+        // }
       }
-      // else {
-      // // Navigator.push(
-      // //   context,
-      // //   MaterialPageRoute(builder: (context) => const S()),
-      // // )
-      // }
+    } on ClientException{
+      error_message = 'Cannot connect to server. Check internet or URL.';
+    } on SocketException {
+      error_message = 'No internet connection.';
+    } on TimeoutException {
+      error_message = 'Request timed out.';
     } catch (e) {
-      CustomErrorHandler.show(
-        context,
-        message: 'Login failed: ${e.toString()}',
-        type: ErrorType.fail,
-      );
+      error_message = e.toString().replaceFirst('Exception: ',  '');
     } finally {
-      // 5️⃣ Stop loading
+      if (error_message != null) {
+        CustomErrorHandler.show(context, message: error_message!, type: ErrorType.fail);
+        error_message = null;}
       if (mounted) {
         setState(() {
           is_loading = false;
@@ -183,7 +195,6 @@ class _LoginPageState extends State<LoginPage> {
                             alignment: Alignment.center,
                             child: TextButton(
                               onPressed: () {
-                                // Handle forgot password
                                 // *****go to forgot password page ********
                                 Navigator.push(
                                   context,
@@ -216,50 +227,8 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-
-                                // 1️⃣ Start loading
-                                // setState(() {
-                                //   is_loading = true;
-                                // });
+                                _showbanner = false;
                                 await _handleLogin();
-                                //   // 2️⃣ Async work OUTSIDE setState
-                                //   data = await AuthService.login(
-                                //     email: email!,
-                                //     password: password!,
-                                //   );
-
-                                //   // 3️⃣ Update UI after success
-                                //   setState(() {
-                                //     message =
-                                //         // "You've logged in Success! +$data";
-                                //         AppState.email = email!;
-                                //     _showbanner = false;
-                                //     _loginSucess = true;
-                                //     Navigator.push(
-                                //       context,
-                                //       MaterialPageRoute(
-                                //         builder: (context) =>
-                                //             const CreateNewLectureScreen(),
-                                //       ),
-                                //     );
-                                // });
-                                // } catch (e) {
-                                //   // 4️⃣ Update UI after error
-                                //   setState(() {
-                                //     CustomErrorHandler.show(
-                                //       context,
-                                //       message: 'Error: while logging In!',
-                                //       type: ErrorType.fail,
-                                //     );
-                                //   });
-                                // } finally {
-                                //   // 5️⃣ Stop loading
-                                //   if (mounted) {
-                                //     setState(() {
-                                //       is_loading = false;
-                                //     });
-                                //   }
-                                // }
                               } else {
                                 // Form is not valid
                                 setState(() {
@@ -270,21 +239,19 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                           ),
-                          if (_showbanner) ...[
-                            const SizedBox(height: AppStyles.spacingL),
-                            MessageDisplay(
-                              isSuccess: _loginSucess,
-                              massegeBanner: _loginSucess
-                                  ? "Login Succesful"
-                                  : "Login Failed",
-                              message: message,
-                              onDismiss: () => setState(() => message = ''),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                   ),
+                  if (_showbanner) ...[
+                    const SizedBox(height: AppStyles.spacingL),
+                    MessageDisplay(
+                      isSuccess: _loginSucess,
+                      massegeBanner:_loginSucess? "": "Error",
+                      message: message,
+                      onDismiss: () => setState(() => message = ''),
+                    ),
+                  ],
                 ],
               ),
             ),

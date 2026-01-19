@@ -1,35 +1,35 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'teacher_dashboard_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
-import '../screens/login_screen.dart';
-import '../screens/reset_pass_success_screen.dart';
 import '../widgets/button_widget.dart';
-import '../widgets/error_handler_widget.dart';
 import '../widgets/message_handler_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/app_bar_widget.dart';
+import '../widgets/error_handler_widget.dart';
 import '../services/password_reset_service.dart';
 import '../utils/app_state.dart';
 
-class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
 
   @override
-  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ResetPasswordPageState extends State<ResetPasswordPage> {
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   // String? password1;
   final _newPasswordController = TextEditingController();
-  String? password2;
+  String? newPassword;
+  String? oldPassword;
   String message = ""; //not required
   bool _obscureText1 = true;
   bool _obscureText2 = true;
+  bool _obscureText3 = true;
   bool is_loading = false;
   bool status = false;
   String? error_message = null;
@@ -39,34 +39,32 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     super.dispose();
   }
 
-  void _backToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-  }
-
-  Future<void> _handleResetPassword() async {
-    status = true;
-    message = "";
+  Future<void> _handleChangePassword() async {
     // 1️⃣ Start loading
     setState(() {
       is_loading = true;
-      message = '';
     });
+
     try {
-      // 2️⃣ Do async work OUTSIDE setState
-      await PasswordResetService.resetPassword(
-        email: AppState.email,
-        otpCode: AppState.otp,
-        newPassword: password2!,
+      await PasswordResetService.changePassword(
+        oldPassword: oldPassword!,
+        newPassword: newPassword!,
       );
 
-      // 3️⃣ Navigate (no setState needed)
+      // Show success message
       if (mounted) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Password changed successfully',
+          type: ErrorType.success,
+        );
+
+        // Wait 3 seconds
+        await Future.delayed(const Duration(seconds: 3));
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ResetPassSuccessPage()),
+          MaterialPageRoute(builder: (context) => TeacherDashboardScreen()),
         );
       }
     } on ClientException {
@@ -76,8 +74,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     } on TimeoutException {
       error_message = 'Request timed out.';
     } catch (e) {
-      e.toString().replaceFirst('Exception: ', '');
-      status = false;
+      error_message = e.toString().replaceAll('Exception: ', '');
     } finally {
       if (error_message != null) {
         CustomErrorHandler.show(
@@ -98,7 +95,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
+      appBar: CustomAppBar(title: "Change Password", showBackButton: true),
       backgroundColor: AppColors.lightBackground,
       body: Center(
         child: SingleChildScrollView(
@@ -122,6 +119,33 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // New Password textfield
+                          CustomTextFormField(
+                            suffixIcon: IconsButton(
+                              size: 24,
+                              iconColor: Colors.grey,
+                              backgroundColor: Colors.transparent,
+                              icon: _obscureText3
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              onPressed: () {
+                                setState(() => _obscureText3 = !_obscureText3);
+                              },
+                            ),
+                            hintText: ' ',
+                            label: "Old Password",
+                            keyboardType: TextInputType.emailAddress,
+                            obscureText: _obscureText3,
+                            validator: (value) {
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => oldPassword = value,
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
                           CustomTextFormField(
                             controller: _newPasswordController,
                             suffixIcon: IconsButton(
@@ -174,18 +198,19 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               }
                               return null;
                             },
-                            onSaved: (value) => password2 = value,
+                            onSaved: (value) => newPassword = value,
                           ),
                           const SizedBox(height: AppStyles.spacingL),
                           // Reset Button
                           CustomButton(
-                            text: 'Reset Password',
+                            text: 'Change Password',
                             fullWidth: true,
                             isLoading: is_loading,
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                await _handleResetPassword();
+
+                                await _handleChangePassword();
                               } else {
                                 setState(() {
                                   status = false;
@@ -193,14 +218,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 });
                               }
                             },
-                          ),
-                          // Back to login Link
-                          const SizedBox(height: AppStyles.spacingS),
-                          CustomButton(
-                            text: "Back To Login",
-                            onPressed: _backToLogin,
-                            buttonType: ButtonType.secondary,
-                            fullWidth: true,
                           ),
                         ],
                       ),

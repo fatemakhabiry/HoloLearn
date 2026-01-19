@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../utils/app_state.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/text_form_widget.dart';
+import 'package:hololearn/constants/app_colors.dart';
+import 'package:hololearn/constants/app_styles.dart';
+import 'package:hololearn/utils/app_state.dart';
+import 'package:hololearn/widgets/button_widget.dart';
+import 'package:hololearn/widgets/text_form_widget.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:record/record.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_bar_widget.dart';
+import '../widgets/confirmation_widget.dart';
 import '../widgets/error_handler_widget.dart';
+import 'change_pass_screen.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -33,34 +35,23 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     super.dispose();
   }
 
-  void _changePassword() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Change Password',
-          style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+void _changePassword() {
+  CustomConfirmationDialog.show(
+    context,
+    title: 'Change Password',
+    message: 'Are you sure you want to change your password?',
+    confirmButtonText: 'Change Password',
+    onConfirm: () {
+      Navigator.pop(context); // Close dialog
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChangePasswordScreen(),
         ),
-        content: Text(
-          'Are you sure you want to change your password ?',
-          style: AppStyles.h3,
-        ),
-        actions: [
-          CustomButton(
-            onPressed: () => Navigator.pop(context),
-            text: 'Cancel',
-            buttonType: ButtonType.secondary,
-          ),
-          CustomButton(
-            text: 'Change Password',
-            onPressed: () {
-              // TODO: Implement password change
-            },
-          ),
-        ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   Future<void> _changeAvatarPhoto() async {
     try {
@@ -119,7 +110,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     } catch (e) {
       CustomErrorHandler.show(
         context,
-        message: 'Error: $e',
+        message: 'Error: ${e.toString().replaceAll('Exception: ', '')}',
         type: ErrorType.fail,
       );
     }
@@ -315,10 +306,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         );
       }
     } catch (e) {
-      print('Error picking audio: $e');
+      print('Error picking audio: ${e.toString().replaceAll('Exception: ', '')}');
       CustomErrorHandler.show(
         context,
-        message: 'Error picking file: $e',
+        message: 'Error picking file: ${e.toString().replaceAll('Exception: ', '')}',
         type: ErrorType.fail,
       );
     }

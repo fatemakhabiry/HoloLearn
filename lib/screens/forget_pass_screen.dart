@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../screens/login_screen.dart';
@@ -7,6 +11,7 @@ import '../services/password_reset_service.dart';
 import '../utils/app_state.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/app_bar_widget.dart';
+import '../widgets/error_handler_widget.dart';
 import '../widgets/message_handler_widget.dart';
 import '../widgets/text_form_widget.dart';
 
@@ -24,14 +29,15 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   String message = ""; //not required
   bool status = false;
   bool is_loading = false;
+  String? error_message = null;
 
   void _requestotp() async {
     setState(() {
       is_loading = true;
+      message = "";
     });
     try {
-      var data = await PasswordResetService.requestOTP(AppState.email);
-      print("request success");
+      await PasswordResetService.requestOTP(AppState.email);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -41,12 +47,24 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
           ),
         ),
       ); // Added closing parenthesis and semicolon
+    } on ClientException {
+      error_message = 'Cannot connect to server. Check internet or URL.';
+    } on SocketException {
+      error_message = 'No internet connection.';
+    } on TimeoutException {
+      error_message = 'Request timed out.';
     } catch (e) {
-      print(e);
-      message = 'Email does not Exist';
+      error_message = e.toString().replaceFirst('Exception: ',  '');
       status = false;
     } finally {
-      // Step 5: stop loading
+      if (error_message != null) {
+        CustomErrorHandler.show(
+          context,
+          message: error_message!,
+          type: ErrorType.fail,
+        );
+        error_message = null;
+      }
       if (mounted) {
         setState(() {
           is_loading = false;
@@ -142,23 +160,23 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                             buttonType: ButtonType.secondary,
                             fullWidth: true,
                           ),
-                          const SizedBox(height: AppStyles.spacingM),
-                          // Display message
-                          if (message.isNotEmpty) ...[
-                            const SizedBox(height: AppStyles.spacingL),
-                            MessageDisplay(
-                              isSuccess: status,
-                              massegeBanner: status
-                                  ? "Sent Successfuly"
-                                  : "Failed to Send!",
-                              message: message,
-                              onDismiss: () => setState(() => message = ''),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: AppStyles.spacingM),
+                  // Display message
+                  if (message.isNotEmpty) ...[
+                    const SizedBox(height: AppStyles.spacingL),
+                    MessageDisplay(
+                      isSuccess: status,
+                      massegeBanner: status
+                          ? "Sent Successfuly"
+                          : "Failed to Send!",
+                      message: message,
+                      onDismiss: () => setState(() => message = ''),
+                    ),
+                  ],
                 ],
               ),
             ),

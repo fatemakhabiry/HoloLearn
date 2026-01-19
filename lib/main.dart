@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../screens/create_avatar_screen.dart';
-import '../screens/login_screen.dart';
-import '../screens/teacher_profile_screen.dart';
-import 'package:http/http.dart';
+import 'screens/login_screen.dart';
+import 'screens/teacher_dashboard_screen.dart';
+
 
 void main() {
   runApp(const MyApp());

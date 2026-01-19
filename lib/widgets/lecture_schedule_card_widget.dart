@@ -50,14 +50,14 @@ class LectureScheduleCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: ElevatedButton(
                   onPressed: onEdit,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textBlack,
-                    side: const BorderSide(
-                      color: AppColors.textBlack,
-                      width: 1,
-                    ),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: AppColors.gray,
+                    // side: const BorderSide(
+                    //   width: 1,
+                    //   color: AppColors.gray
+                    // ),
                     padding: const EdgeInsets.symmetric(
                       vertical: AppStyles.spacingS,
                     ),
@@ -68,7 +68,7 @@ class LectureScheduleCard extends StatelessWidget {
                   child: Text(
                     'EDIT',
                     style: AppStyles.bodyMedium.copyWith(
-                      fontWeight: AppFonts.semiBold,
+                      fontWeight: AppFonts.regular,
                     ),
                   ),
                 ),

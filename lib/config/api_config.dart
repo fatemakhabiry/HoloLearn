@@ -13,16 +13,17 @@ class ApiConfig {
   // ===== Teacher Endpoints =====
   static const String teacherProfileEndpoint = '/teachers/profile';
   static const String avatarStatusEndpoint =
-      '/teachers/teachers/profile-status';
+      '/teachers/profile-status';
   static const String teacherUploadPhotoEndpoint = '/teachers/upload-photo';
   static const String teacherUploadVoiceEndpoint = '/teachers/upload-voice';
 
   // ===== Password Reset / OTP Endpoints =====
   static const String forgotPasswordEndpoint =
-      '/password-reset/forgot-password';
-  static const String verifyOtpEndpoint = '/password-reset/verify-otp';
-  static const String resetPasswordEndpoint = '/password-reset/reset-password';
-  static const String resendOtpEndpoint = '/password-reset/resend-otp';
+      '/password_reset/forgot-password';
+  static const String verifyOtpEndpoint = '/password_reset/verify-otp';
+  static const String resetPasswordEndpoint = '/password_reset/reset-password';
+  static const String changePasswordEndpoint = '/password_reset/change-password';
+  static const String resendOtpEndpoint = '/password_reset/resend-otp';
 
   // ===== Storage Keys =====
   static const String accessTokenKey = 'access_token';

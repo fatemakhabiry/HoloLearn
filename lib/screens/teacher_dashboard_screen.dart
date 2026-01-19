@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:untitled/screens/lecture_options_screen.dart';
-import 'package:untitled/utils/app_state.dart';
-import 'create_new_lecture_screen.dart';
+import 'package:hololearn/screens/create_new_lecture_screen.dart';
+import '../utils/app_state.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
+import '../widgets/confirmation_widget.dart';
 import '../widgets/lecture_schedule_card_widget.dart';
 import '../utils/schedule_slot.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/error_handler_widget.dart';
 import '../services/schedule_service.dart';
-import '../services/storage_service.dart';
+
+import 'edit_lecture_screen.dart';
+import 'lecture_options_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -23,7 +25,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   List<ScheduleSlot> myLectures = [];
   bool isLoading = true;
   String? authToken;
-  StorageService? storageService;
 
   @override
   void initState() {
@@ -76,7 +77,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       if (mounted) {
         CustomErrorHandler.show(
           context,
-          message: 'Failed to load lectures: ${e.toString()}',
+          message: 'Failed to load lectures: ${e.toString().replaceAll('Exception: ', '')}',
           type: ErrorType.fail,
         );
       }
@@ -85,34 +86,36 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       });
     }
   }
+void _handleCancel() {
+  CustomConfirmationDialog.show(
+    context,
+    title: 'Cancel Lecture',
+    message: 'Are you sure you want to cancel this lecture?',
+    confirmButtonText: 'Yes, Cancel',
+    cancelButtonText: 'No',
+    onConfirm: () {
+      //Apilcancel
+    },
+  );
+}
 
-  /// Cancel a lecture
-  // Future<void> cancelLecture(int scheduleId) async {
-  //   if (authToken == null) return;
-
-  //   try {
-  //     final message = await ScheduleService.cancelLecture(authToken!, scheduleId);
-
-  //     if (mounted) {
-  //       CustomErrorHandler.show(
-  //         context,
-  //         message: message,
-  //         type: ErrorType.success,
-  //       );
-
-  //       // Refresh the data
-  //       fetchScheduleData();
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       CustomErrorHandler.show(
-  //         context,
-  //         message: 'Failed to cancel lecture: ${e.toString()}',
-  //         type: ErrorType.fail,
-  //       );
-  //     }
-  //   }
-  // }
+void _handleEdit(){
+  CustomConfirmationDialog.show(
+    context,
+    title: 'Edit Lecture',
+    message: 'Are you sure you want to edit this lecture?',
+    confirmButtonText: 'Yes, Edit',
+    cancelButtonText: 'No',
+    onConfirm: () {
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => EditLectureScreen(),
+      //   ),
+      // );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +162,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            const LectureSetupScreen(),
+                                            const CreateNewLectureScreen(),
                                       ),
                                     );
-
                                     // Refresh data if a lecture was created
                                     if (result == true) {
                                       fetchScheduleData();
@@ -196,39 +198,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                   lectureTitle: lecture.lectureTitle,
                                   date: lecture.formattedDate,
                                   timeRange: lecture.timeRange,
-                                  onEdit: () {
-                                    // TODO: Navigate to edit lecture screen
-                                    // Pass the lecture object to pre-fill the form
-                                    print(
-                                      'Edit lecture: ${lecture.scheduleId}',
-                                    );
-                                  },
-                                  onCancel: () {
-                                    // Show confirmation dialog
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Cancel Lecture'),
-                                        content: const Text(
-                                          'Are you sure you want to cancel this lecture?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text('No'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              // cancelLecture(lecture.scheduleId);
-                                            },
-                                            child: const Text('Yes, Cancel'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                  onEdit: _handleEdit,
+                                  onCancel: _handleCancel
                                 ),
                               );
                             }).toList(),

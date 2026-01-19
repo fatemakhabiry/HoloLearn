@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
+import '../widgets/error_handler_widget.dart';
 import '../widgets/file_upload_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/message_handler_widget.dart';
@@ -22,18 +26,58 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? lecture_title;
   String? course_code;
-  //hshil de w a7ot get items mn el backend
-  // Future<List<String>> _items = Future.value([
-  //   'CS101',
-  //   'CS102',
-  //   'CS103',
-  //   'CS104',
-  // ]);
-  final List<String> _items = ['CS101', 'CS102', 'CS103', 'CS104'];
   bool is_loading = false;
   String message = "";
   bool _showbanner = false;
   bool _success = false;
+  String? error_message = null;
+
+  final List<String> _items = ['CS101', 'CS102', 'CS103', 'CS104'];
+  // Future<List<String>> _getItems() async {}
+  Future<void> _handleNext() async {
+    // Start loading
+    setState(() {
+      is_loading = true;
+    });
+
+    try {
+      await AvatarService.checkAvatarStatus();
+      if (AppState.isFirstTimeLogin) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CreateAvatarScreen()),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LectureSetupScreen()),
+        );
+      }
+    } on ClientException {
+      error_message = 'Cannot connect to server. Check internet or URL.';
+    } on SocketException {
+      error_message = 'No internet connection.';
+    } on TimeoutException {
+      error_message = 'Request timed out.';
+    } catch (e) {
+      error_message = e.toString().replaceFirst('Exception: ',  '');
+    } finally {
+      if (error_message != null) {
+        CustomErrorHandler.show(
+          context,
+          message: error_message!,
+          type: ErrorType.fail,
+        );
+        error_message = null;
+      }
+      if (mounted) {
+        setState(() {
+          is_loading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,58 +152,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
 
-                                // Start loading
-                                setState(() {
-                                  is_loading = true;
-                                });
-
-                                try {
-                                  // Simulate API call or processing
-                                  final result =
-                                      await AvatarService.checkAvatarStatus();
-                                  print('Avatar status result: $result');
-                                  if (AppState.isFirstTimeLogin) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const CreateAvatarScreen(),
-                                      ),
-                                    );
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LectureSetupScreen(),
-                                      ),
-                                    );
-                                  }
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppState.isFirstTimeLogin
-                                          ? const CreateAvatarScreen()
-                                          : const LectureSetupScreen(),
-                                    ),
-                                  );
-                                } catch (e) {
-                                  // Error
-                                  setState(() {
-                                    _showbanner = true;
-                                    _success = false;
-                                    message =
-                                        "Failed to create lecture. Please try again. $e";
-                                  });
-                                } finally {
-                                  // Stop loading
-                                  if (mounted) {
-                                    setState(() {
-                                      is_loading = false;
-                                    });
-                                  }
-                                }
+                                await _handleNext();
                               } else {
                                 // Form is not valid
                                 setState(() {

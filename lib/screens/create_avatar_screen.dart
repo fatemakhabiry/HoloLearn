@@ -293,6 +293,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   }) {
     return Container(
       padding: const EdgeInsets.all(AppStyles.spacingL),
+      height: 500,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
@@ -373,9 +374,8 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
               fullWidth: true,
               ),
           ]
-          else...[
-            
-            const SizedBox(height: AppStyles.spacingXXL),
+          else...[          
+            const SizedBox(height: AppStyles.spacingXL),
           ],
           
           const SizedBox(height: AppStyles.spacingM),

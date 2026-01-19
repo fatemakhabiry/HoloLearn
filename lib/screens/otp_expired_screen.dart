@@ -14,7 +14,7 @@ class OtpExpiredScreen extends StatelessWidget {
 
   final String bannerTitle = "Reset Link Expired";
   final String bannerMessage =
-      "This password reset link has expired or is invalid. Reset links are valid for10 minutes only.";
+      "This password reset link has expired or is invalid. Reset links are valid for 10 minutes only.";
   final String imagePath = 'images/time_expired_icon.png';
   final Color imageBackgroundColor = const Color(0xFFFFCDD2);
   final String title = 'OTP Expired';
@@ -33,8 +33,7 @@ class OtpExpiredScreen extends StatelessWidget {
 
     void _resendEmail() async {
       try {
-        var data = await PasswordResetService.resendOTP(AppState.email);
-        print("request success");
+        await PasswordResetService.resendOTP(AppState.email);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -45,7 +44,6 @@ class OtpExpiredScreen extends StatelessWidget {
           ),
         ); // Added closing parenthesis and semicolon
       } catch (e) {
-        print(e);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => OtpExpiredScreen()),

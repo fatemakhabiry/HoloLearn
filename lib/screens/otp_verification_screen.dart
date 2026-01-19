@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import '../constants/app_fonts.dart';
 import '../screens/otp_expired_screen.dart';
 import '../screens/reset_pass_screen.dart';
 import '../utils/app_state.dart';
 import 'dart:async';
+import '../widgets/error_handler_widget.dart';
 import 'login_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
@@ -32,6 +36,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   DateTime? currentLinkTime;
   String? otp;
   bool is_loading = false;
+  String? error_message = null;
   final String bannerTitle = "Check Your Email";
   final String bannerMessage =
       "We've sent a Verification code to your email address.";
@@ -41,6 +46,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   final String subtitle = "We've sent a reset link to:";
   final String description =
       "The code will expire in 10 minutes. Didn't receive the email? Check your spam folder or ";
+
   void _backToLogin() {
     // Back to login
     Navigator.pushReplacement(
@@ -57,12 +63,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
 
     try {
       // 2️⃣ Do async work OUTSIDE setState
-      var data = await PasswordResetService.verifyOTP(
-        AppState.email,
-        AppState.otp,
-      );
-
-      print("request success");
+      await PasswordResetService.verifyOTP(AppState.email, AppState.otp);
 
       // 3️⃣ Navigate (no setState needed)
       if (mounted) {
@@ -72,8 +73,6 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
         );
       }
     } catch (e) {
-      print("request error");
-
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -97,8 +96,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     });
     try {
       // 2️⃣ Async work outside setState
-      var data = await PasswordResetService.resendOTP(AppState.email);
-      print("request success");
+      await PasswordResetService.resendOTP(AppState.email);
 
       // 3️⃣ Navigate
       if (mounted) {
@@ -112,17 +110,29 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
           ),
         );
       }
+    } on ClientException {
+      error_message = 'Cannot connect to server. Check internet or URL.';
+    } on SocketException {
+      error_message = 'No internet connection.';
+    } on TimeoutException {
+      error_message = 'Request timed out.';
     } catch (e) {
-      print(e);
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
-        );
-      }
+      error_message = e.toString().replaceFirst('Exception: ',  '');
     } finally {
-      // 4️⃣ Stop loading
+      if (error_message != null) {
+        if (error_message == 'Invalid or expired OTP') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+            );
+        }
+        CustomErrorHandler.show(
+          context,
+          message: error_message!,
+          type: ErrorType.fail,
+        );
+        error_message = null;
+      }
       if (mounted) {
         setState(() {
           is_loading = false;
@@ -152,7 +162,6 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     // Link expires after 10 mins (using 1 minute for testing)
     if (difference.inMinutes >= 10) {
       setState(() {
-        // TODO: Implement resend email logic
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const OtpExpiredScreen()),
