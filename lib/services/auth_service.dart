@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-
+import '../utils/app_state.dart';
 
 class AuthService {
-  static Future <Map<String, dynamic>> login({
+  static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
@@ -12,17 +12,17 @@ class AuthService {
 
     final response = await http.post(
       uri,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: {
-        'username': email,
-        'password': password,
-      },
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {'username': email, 'password': password},
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      AppState.email = data['user']['email'];
+      AppState.userName = data['user']['full_name'];
+      AppState.userRole = data['user']['role'];
+      AppState.accessToken = data['access_token'];
+      print(AppState.accessToken);
       return data;
     } else {
       throw Exception('Login failed: ${response.statusCode} ${response.body}');

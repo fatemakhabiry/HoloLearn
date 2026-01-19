@@ -5,7 +5,11 @@ import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/file_upload_widget.dart';
 import '../widgets/text_form_widget.dart';
+import '../widgets/message_handler_widget.dart';
 import '../utils/app_state.dart';
+import '../services/avatar_data_service.dart';
+import './lecture_options_screen.dart';
+import 'create_avatar_screen.dart';
 
 class CreateNewLectureScreen extends StatefulWidget {
   const CreateNewLectureScreen({super.key});
@@ -26,6 +30,10 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   //   'CS104',
   // ]);
   final List<String> _items = ['CS101', 'CS102', 'CS103', 'CS104'];
+  bool is_loading = false;
+  String message = "";
+  bool _showbanner = false;
+  bool _success = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,13 +102,72 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                           const SizedBox(height: AppStyles.spacingL),
                           CustomButton(
                             text: 'NEXT: AVATAR OPTIONS & SCHEDULING',
-                            onPressed: () {
+                            isLoading: is_loading,
+                            fullWidth: true,
+                            onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
-                                if (course_code != null) {
-                                  // LectureState.lectureTitle = lecture_title!;
-                                  // LectureState.courseCode = course_code!;
+
+                                // Start loading
+                                setState(() {
+                                  is_loading = true;
+                                });
+
+                                try {
+                                  // Simulate API call or processing
+                                  final result =
+                                      await AvatarService.checkAvatarStatus();
+                                  print('Avatar status result: $result');
+                                  if (AppState.isFirstTimeLogin) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const CreateAvatarScreen(),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const LectureSetupScreen(),
+                                      ),
+                                    );
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          AppState.isFirstTimeLogin
+                                          ? const CreateAvatarScreen()
+                                          : const LectureSetupScreen(),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  // Error
+                                  setState(() {
+                                    _showbanner = true;
+                                    _success = false;
+                                    message =
+                                        "Failed to create lecture. Please try again. $e";
+                                  });
+                                } finally {
+                                  // Stop loading
+                                  if (mounted) {
+                                    setState(() {
+                                      is_loading = false;
+                                    });
+                                  }
                                 }
+                              } else {
+                                // Form is not valid
+                                setState(() {
+                                  _showbanner = true;
+                                  _success = false;
+                                  message =
+                                      "Please fill all required fields correctly!";
+                                });
                               }
                             },
                           ),
@@ -108,6 +175,17 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                       ),
                     ),
                   ),
+                  if (_showbanner) ...[
+                    const SizedBox(height: AppStyles.spacingL),
+                    MessageDisplay(
+                      isSuccess: _success,
+                      massegeBanner: _success
+                          ? "Lecture Created Successfully"
+                          : "Creation Failed",
+                      message: message,
+                      onDismiss: () => setState(() => _showbanner = false),
+                    ),
+                  ],
                 ],
               ),
             ),

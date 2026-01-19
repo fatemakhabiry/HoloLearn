@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
+import '../widgets/avatar_option_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/text_form_widget.dart';
-import '../widgets/avatar_option_widget.dart';
+import '../widgets/message_handler_widget.dart';
 
 class LectureSetupScreen extends StatefulWidget {
   const LectureSetupScreen({super.key});
@@ -20,6 +21,9 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   final _formKey = GlobalKey<FormState>(); // ✅ Form key added
 
   String? selectedDate;
+  String message = "";
+  bool _showbanner = false;
+  bool _success = false;
 
   @override
   void dispose() {
@@ -139,15 +143,67 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                         text: 'CONFIRM & PUBLISH LECTURE',
                         fullWidth: true,
                         isLoading: is_loading,
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
-                            print("Selected Date: $selectedDate");
-                            print("Selected Time Slot: $selectedTimeSlot");
-                            print("Selected Avatar: $selectedAvatar");
-                            // Proceed with backend API call or navigation  to Teacher Dashboard
+
+                            // Start loading
+                            setState(() {
+                              is_loading = true;
+                            });
+
+                            try {
+                              // Simulate API call for publishing lecture
+                              await Future.delayed(const Duration(seconds: 2));
+
+                              // Success - show success message
+                              setState(() {
+                                message = "Lecture published successfully!";
+                                _showbanner = true;
+                                _success = true;
+                              });
+
+                              // Navigate to teacher dashboard after success
+                              Future.delayed(const Duration(seconds: 1), () {
+                                if (mounted) {
+                                  // TODO: Navigate to teacher dashboard
+                                  print("Selected Date: $selectedDate");
+                                  print(
+                                    "Selected Time Slot: $selectedTimeSlot",
+                                  );
+                                  print("Selected Avatar: $selectedAvatar");
+                                  // Navigator.pushReplacement(
+                                  //   context,
+                                  //   MaterialPageRoute(
+                                  //     builder: (context) => const TeacherDashboardScreen(),
+                                  //   ),
+                                  // );
+                                }
+                              });
+                            } catch (e) {
+                              // Error - show error message
+                              setState(() {
+                                _showbanner = true;
+                                _success = false;
+                                message =
+                                    "Failed to publish lecture. Please try again.";
+                              });
+                            } finally {
+                              // Stop loading
+                              if (mounted) {
+                                setState(() {
+                                  is_loading = false;
+                                });
+                              }
+                            }
                           } else {
-                            print("Form is invalid"); // message handler
+                            // Form is not valid
+                            setState(() {
+                              _showbanner = true;
+                              _success = false;
+                              message =
+                                  "Please fill all required fields correctly!";
+                            });
                           }
                         },
                       ),
@@ -155,6 +211,17 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                     ],
                   ),
                 ),
+                if (_showbanner) ...[
+                  const SizedBox(height: AppStyles.spacingL),
+                  MessageDisplay(
+                    isSuccess: _success,
+                    massegeBanner: _success
+                        ? "Lecture Published Successfully"
+                        : "Publication Failed",
+                    message: message,
+                    onDismiss: () => setState(() => _showbanner = false),
+                  ),
+                ],
               ],
             ),
           ),

@@ -12,6 +12,7 @@ class ApiConfig {
 
   // ===== Teacher Endpoints =====
   static const String teacherProfileEndpoint = '/teachers/profile';
+  static const String avatarStatusEndpoint = '/teachers/teachers/profile-status';
   static const String teacherUploadPhotoEndpoint = '/teachers/upload-photo';
   static const String teacherUploadVoiceEndpoint = '/teachers/upload-voice';
 

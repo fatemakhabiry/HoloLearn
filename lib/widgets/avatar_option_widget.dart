@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
 import '../constants/app_fonts.dart';
+import '../constants/app_styles.dart';
 
 /// Generic model for any selectable option
 class SelectableOption {

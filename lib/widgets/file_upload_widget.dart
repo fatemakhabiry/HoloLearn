@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:hololearn/constants/app_colors.dart';
 import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/constants/app_fonts.dart';
 import './message_handler_widget.dart';
 
 import 'package:file_picker/file_picker.dart';

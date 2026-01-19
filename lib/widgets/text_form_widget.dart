@@ -9,10 +9,11 @@ class CustomTextFormField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
   final TextEditingController? controller;
+  final Widget? prefixIcon;     // ✅ Add this
   final Widget? suffixIcon;
   final bool isFieldRequired;
-  final VoidCallback? onTap;     // ✅ added
-  final bool readOnly;           // ✅ added
+  final VoidCallback? onTap;
+  final bool readOnly;
 
   const CustomTextFormField({
     super.key,
@@ -23,10 +24,11 @@ class CustomTextFormField extends StatelessWidget {
     this.validator,
     this.onSaved,
     this.controller,
+    this.prefixIcon,          // ✅ Add this
     this.suffixIcon,
     this.isFieldRequired = true,
-    this.onTap,                  // ✅ added
-    this.readOnly = false,        // ✅ added
+    this.onTap,
+    this.readOnly = false,
   });
 
   @override
@@ -54,11 +56,12 @@ class CustomTextFormField extends StatelessWidget {
           validator: validator,
           onSaved: onSaved,
           controller: controller,
-          onTap: onTap,              // ✅ here
-          readOnly: readOnly,        // ✅ here
+          onTap: onTap,
+          readOnly: readOnly,
           keyboardType: keyboardType,
           decoration: AppStyles.inputDecoration(
             hint: hintText,
+            prefixIcon: prefixIcon,  // ✅ Pass it here
             suffixIcon: suffixIcon,
           ),
           obscureText: obscureText,

@@ -1,0 +1,107 @@
+import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_fonts.dart';
+import '../constants/app_styles.dart';
+
+class LectureScheduleCard extends StatelessWidget {
+  final String lectureTitle;
+  final String date;
+  final String timeRange;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCancel;
+
+  const LectureScheduleCard({
+    super.key,
+    required this.lectureTitle,
+    required this.date,
+    required this.timeRange,
+    this.onEdit,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppStyles.spacingL),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppStyles.radiusM),
+        boxShadow: AppStyles.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Lecture Title
+          Text(
+            lectureTitle,
+            style: AppStyles.bodyLarge.copyWith(fontWeight: AppFonts.bold),
+          ),
+          const SizedBox(height: AppStyles.spacingS),
+
+          // Date and Time
+          Text(
+            '$date . $timeRange',
+            style: AppStyles.bodyMedium.copyWith(color: AppColors.textLight),
+          ),
+
+          const SizedBox(height: AppStyles.spacingL),
+
+          // Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onEdit,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textBlack,
+                    side: const BorderSide(
+                      color: AppColors.textBlack,
+                      width: 1,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppStyles.spacingS,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppStyles.radiusS),
+                    ),
+                  ),
+                  child: Text(
+                    'EDIT',
+                    style: AppStyles.bodyMedium.copyWith(
+                      fontWeight: AppFonts.semiBold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppStyles.spacingM),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onCancel,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textBlack,
+                    side: const BorderSide(
+                      color: AppColors.textBlack,
+                      width: 1,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppStyles.spacingS,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppStyles.radiusS),
+                    ),
+                  ),
+                  child: Text(
+                    'CANCEL',
+                    style: AppStyles.bodyMedium.copyWith(
+                      fontWeight: AppFonts.semiBold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

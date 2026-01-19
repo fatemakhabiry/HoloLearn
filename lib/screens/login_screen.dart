@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/constants/app_fonts.dart';
-import 'package:hololearn/screens/forget_pass_screen.dart';
-import 'package:hololearn/screens/otp_verification_screen.dart';
-import 'package:hololearn/utils./app_state.dart';
-import 'package:hololearn/widgets/message_handler_widget.dart';
-import 'package:hololearn/widgets/text_form_widget.dart';
-import 'package:hololearn/widgets/button_widget.dart';
-import 'package:hololearn/services/auth_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../constants/app_fonts.dart';
+import '../screens/forget_pass_screen.dart';
+import '../utils/app_state.dart';
+import '../widgets/message_handler_widget.dart';
+import '../widgets/text_form_widget.dart';
+import '../widgets/button_widget.dart';
+import '../services/auth_service.dart';
+
+import '../widgets/error_handler_widget.dart';
+import 'teacher_dashboard_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,6 +29,52 @@ class _LoginPageState extends State<LoginPage> {
   bool _loginSucess = false;
   bool _showbanner = false;
   bool is_loading = false;
+
+  Future<void> _handleLogin() async {
+    setState(() {
+      is_loading = true;
+    });
+    try {
+      final result = await AuthService.login(
+        email: email!,
+        password: password!,
+      );
+
+
+      // setState(() {
+      //   message = "You've logged in Success!";
+      //   _showbanner = true;
+      //   _loginSucess = true;
+      // });
+      if (AppState.userRole == 'teacher') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TeacherDashboardScreen(),
+          ),
+        );
+      }
+      // else {
+      // // Navigator.push(
+      // //   context,
+      // //   MaterialPageRoute(builder: (context) => const S()),
+      // // )
+      // }
+    } catch (e) {
+      CustomErrorHandler.show(
+        context,
+        message: 'Login failed: ${e.toString()}',
+        type: ErrorType.fail,
+      );
+    } finally {
+      // 5️⃣ Stop loading
+      if (mounted) {
+        setState(() {
+          is_loading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,40 +218,48 @@ class _LoginPageState extends State<LoginPage> {
                                 _formKey.currentState!.save();
 
                                 // 1️⃣ Start loading
-                                setState(() {
-                                  is_loading = true;
-                                });
+                                // setState(() {
+                                //   is_loading = true;
+                                // });
+                                await _handleLogin();
+                                //   // 2️⃣ Async work OUTSIDE setState
+                                //   data = await AuthService.login(
+                                //     email: email!,
+                                //     password: password!,
+                                //   );
 
-                                try {
-                                  // 2️⃣ Async work OUTSIDE setState
-                                  data = await AuthService.login(
-                                    email: email!,
-                                    password: password!,
-                                  );
-
-                                  // 3️⃣ Update UI after success
-                                  setState(() {
-                                    message =
-                                        "You've logged in Success! +$data";
-                                    AppState.email = email!;
-                                    _showbanner = true;
-                                    _loginSucess = true;
-                                  });
-                                } catch (e) {
-                                  // 4️⃣ Update UI after error
-                                  setState(() {
-                                    _showbanner = true;
-                                    _loginSucess = false;
-                                    message = "Exception was thrown";
-                                  });
-                                } finally {
-                                  // 5️⃣ Stop loading
-                                  if (mounted) {
-                                    setState(() {
-                                      is_loading = false;
-                                    });
-                                  }
-                                }
+                                //   // 3️⃣ Update UI after success
+                                //   setState(() {
+                                //     message =
+                                //         // "You've logged in Success! +$data";
+                                //         AppState.email = email!;
+                                //     _showbanner = false;
+                                //     _loginSucess = true;
+                                //     Navigator.push(
+                                //       context,
+                                //       MaterialPageRoute(
+                                //         builder: (context) =>
+                                //             const CreateNewLectureScreen(),
+                                //       ),
+                                //     );
+                                // });
+                                // } catch (e) {
+                                //   // 4️⃣ Update UI after error
+                                //   setState(() {
+                                //     CustomErrorHandler.show(
+                                //       context,
+                                //       message: 'Error: while logging In!',
+                                //       type: ErrorType.fail,
+                                //     );
+                                //   });
+                                // } finally {
+                                //   // 5️⃣ Stop loading
+                                //   if (mounted) {
+                                //     setState(() {
+                                //       is_loading = false;
+                                //     });
+                                //   }
+                                // }
                               } else {
                                 // Form is not valid
                                 setState(() {
