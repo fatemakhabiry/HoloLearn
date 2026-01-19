@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/widgets/app_bar_widget.dart';
-import 'package:hololearn/widgets/button_widget.dart';
-import 'package:hololearn/widgets/message_handler_widget.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../widgets/app_bar_widget.dart';
+import '../widgets/button_widget.dart';
+import '../widgets/message_handler_widget.dart';
 
 class ResetPassSuccessPage extends StatefulWidget {
   const ResetPassSuccessPage({super.key});
@@ -32,7 +32,7 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                 children: [
                   if (message.isNotEmpty) ...[
                     MessageDisplay(
-                      isSuccess:true ,
+                      isSuccess: true,
                       massegeBanner: "Password Reset Successful!",
                       message: message,
                     ),
@@ -80,7 +80,8 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => const LoginPage(),
-                                  )); 
+                                  ),
+                                );
                               },
                               buttonType: ButtonType.primary,
                               fullWidth: true,

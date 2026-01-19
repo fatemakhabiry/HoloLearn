@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/widgets/app_bar_widget.dart';
-import 'package:hololearn/widgets/button_widget.dart';
-import 'package:hololearn/widgets/message_handler_widget.dart';
-import 'package:hololearn/screens/otp_verification_screen.dart';
-import 'package:hololearn/utils/app_state.dart';
-import 'package:hololearn/services/password_reset_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../widgets/app_bar_widget.dart';
+import '../widgets/button_widget.dart';
+import '../widgets/message_handler_widget.dart';
+import '../screens/otp_verification_screen.dart';
+import '../utils/app_state.dart';
+import '../services/password_reset_service.dart';
 
 class OtpExpiredScreen extends StatelessWidget {
   const OtpExpiredScreen({super.key});

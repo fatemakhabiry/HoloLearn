@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/utils/app_state.dart';
-import 'package:hololearn/widgets/button_widget.dart';
-import 'package:hololearn/widgets/text_form_widget.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../utils/app_state.dart';
+import '../widgets/button_widget.dart';
+import '../widgets/text_form_widget.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:record/record.dart';
@@ -37,7 +37,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Change Password' ,style: AppStyles.h2.copyWith(color: AppColors.lightBlue),),
+        title: Text(
+          'Change Password',
+          style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+        ),
         content: Text(
           'Are you sure you want to change your password ?',
           style: AppStyles.h3,
@@ -45,7 +48,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         actions: [
           CustomButton(
             onPressed: () => Navigator.pop(context),
-            text:'Cancel',
+            text: 'Cancel',
             buttonType: ButtonType.secondary,
           ),
           CustomButton(
@@ -64,17 +67,26 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       final ImageSource? source = await showDialog<ImageSource>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Choose Photo Source',style: AppStyles.h2.copyWith(color: AppColors.lightBlue),),
+          title: Text(
+            'Choose Photo Source',
+            style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.lightBlue),
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.lightBlue,
+                ),
                 title: const Text('Camera', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library,color: AppColors.lightBlue),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.lightBlue,
+                ),
                 title: const Text('Gallery', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
@@ -119,7 +131,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title:Text('Change Voice Sample',style: AppStyles.h2.copyWith(color: AppColors.lightBlue)),           
+            title: Text(
+              'Change Voice Sample',
+              style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -204,15 +219,15 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 buttonType: ButtonType.secondary,
               ),
               CustomButton(
-                onPressed:() {
-                        // TODO: Save voice sample to backend
-                        Navigator.pop(dialogContext);
-                        CustomErrorHandler.show(
-                          context,
-                          message: 'Voice sample updated successfully!',
-                          type: ErrorType.success,
-                        );
-                      },
+                onPressed: () {
+                  // TODO: Save voice sample to backend
+                  Navigator.pop(dialogContext);
+                  CustomErrorHandler.show(
+                    context,
+                    message: 'Voice sample updated successfully!',
+                    type: ErrorType.success,
+                  );
+                },
                 text: 'Save',
                 buttonType: ButtonType.primary,
               ),
@@ -408,7 +423,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   ),
                   const SizedBox(height: AppStyles.spacingS),
                   CustomTextFormField(
-                    prefixIcon: Icon(Icons.photo_camera_outlined, color: AppColors.lightBlue),
+                    prefixIcon: Icon(
+                      Icons.photo_camera_outlined,
+                      color: AppColors.lightBlue,
+                    ),
                     hintText: 'change avatar photo',
                     readOnly: true,
                     suffixIcon: TextButton(
@@ -424,10 +442,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
                   const SizedBox(height: AppStyles.spacingS),
                   CustomTextFormField(
-                    prefixIcon: Icon(
-                      Icons.mic,
-                      color: AppColors.lightBlue,
-                    ),
+                    prefixIcon: Icon(Icons.mic, color: AppColors.lightBlue),
                     hintText: 'change voice sample',
                     readOnly: true,
                     suffixIcon: TextButton(

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/screens/login_screen.dart';
-import 'package:hololearn/screens/otp_verification_screen.dart';
-import 'package:hololearn/services/password_reset_service.dart';
-import 'package:hololearn/utils/app_state.dart';
-import 'package:hololearn/widgets/button_widget.dart';
-import 'package:hololearn/widgets/app_bar_widget.dart';
-import 'package:hololearn/widgets/message_handler_widget.dart';
-import 'package:hololearn/widgets/text_form_widget.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../screens/login_screen.dart';
+import '../screens/otp_verification_screen.dart';
+import '../services/password_reset_service.dart';
+import '../utils/app_state.dart';
+import '../widgets/button_widget.dart';
+import '../widgets/app_bar_widget.dart';
+import '../widgets/message_handler_widget.dart';
+import '../widgets/text_form_widget.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
   const ForgetPasswordPage({super.key});

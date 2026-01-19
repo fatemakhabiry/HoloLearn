@@ -1,7 +1,7 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-      'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
+      'https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1';
 
   // ===== Authentication Endpoints =====
   static const String loginEndpoint = '/auth/login';
@@ -12,7 +12,8 @@ class ApiConfig {
 
   // ===== Teacher Endpoints =====
   static const String teacherProfileEndpoint = '/teachers/profile';
-  static const String avatarStatusEndpoint = '/teachers/teachers/profile-status';
+  static const String avatarStatusEndpoint =
+      '/teachers/teachers/profile-status';
   static const String teacherUploadPhotoEndpoint = '/teachers/upload-photo';
   static const String teacherUploadVoiceEndpoint = '/teachers/upload-voice';
 
@@ -41,6 +42,12 @@ class ApiConfig {
 
   // Build full URL
   static String getUrl(String endpoint) => baseUrl + endpoint;
+
+  // Schedule Endpoints
+  static const String reservedSlotsEndpoint = '/schedules/all-reserved-slots';
+  // static const String createLectureEndpoint = '/schedule/create';
+  // static const String updateLectureEndpoint = '/schedule/update';
+  // static const String deleteLectureEndpoint = '/schedule/delete';
 
   // // Get full OTP URLs
   // static String get forgotPasswordUrl => getUrl(forgotPasswordEndpoint);
