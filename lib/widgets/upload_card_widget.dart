@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/widgets/button_widget.dart';
+import '../widgets/button_widget.dart';
 import 'dart:io';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
@@ -32,29 +32,22 @@ class UpoladCard extends StatelessWidget {
     File? photoFile,
   });
 
-
-
-     @override
+  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final cardMaxWidth = (screenWidth / 2) - 40;
     return Container(
-      constraints: BoxConstraints(
-        maxWidth: cardMaxWidth,
-      ),
+      constraints: BoxConstraints(maxWidth: cardMaxWidth),
       padding: const EdgeInsets.all(AppStyles.spacingL),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-            boxShadow: AppStyles.cardShadow
-          ),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+        boxShadow: AppStyles.cardShadow,
+      ),
       child: Column(
         children: [
           // Step Number
-          Text(
-            stepNumber,
-            style: AppStyles.h2
-          ),
+          Text(stepNumber, style: AppStyles.h2),
           const SizedBox(height: 24),
           // Icon or Photo
           if (photoFile != null && isDashed)
@@ -85,15 +78,10 @@ class UpoladCard extends StatelessWidget {
                   ? Center(
                       child: Text(
                         iconLabel,
-                        style:AppStyles.h2.copyWith(color: AppColors.gray),
+                        style: AppStyles.h2.copyWith(color: AppColors.gray),
                       ),
                     )
-                  : Center(
-                      child: Text(
-                        iconLabel,
-                        style:AppStyles.h2,
-                      ),
-                    ),
+                  : Center(child: Text(iconLabel, style: AppStyles.h2)),
             ),
           const SizedBox(height: 24),
           // Primary Button
@@ -101,15 +89,15 @@ class UpoladCard extends StatelessWidget {
             child: CustomButton(
               text: primaryButtonText,
               onPressed: onPrimaryPressed,
-              ),
-              // child: Text(
-              //   isRecording ? 'STOP RECORDING' : primaryButtonText,
-              //   style: const TextStyle(
-              //     fontSize: 14,
-              //     fontWeight: FontWeight.w600,
-              //     letterSpacing: 0.5,
-              //   ),
-              ),
+            ),
+            // child: Text(
+            //   isRecording ? 'STOP RECORDING' : primaryButtonText,
+            //   style: const TextStyle(
+            //     fontSize: 14,
+            //     fontWeight: FontWeight.w600,
+            //     letterSpacing: 0.5,
+            //   ),
+          ),
           //   ),
           // ),
           // Secondary Button (if exists)
@@ -123,11 +111,7 @@ class UpoladCard extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           // Subtext
-          Text(
-            subtext,
-            textAlign: TextAlign.center,
-            style: AppStyles.caption,
-          ),
+          Text(subtext, textAlign: TextAlign.center, style: AppStyles.caption),
         ],
       ),
     );

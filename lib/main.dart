@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/screens/create_avatar_screen.dart';
-import 'package:hololearn/screens/login_screen.dart';
-import 'package:hololearn/screens/teacher_profile_screen.dart';
+import '../screens/create_avatar_screen.dart';
+import '../screens/login_screen.dart';
+import '../screens/teacher_profile_screen.dart';
 import 'package:http/http.dart';
 
 void main() {

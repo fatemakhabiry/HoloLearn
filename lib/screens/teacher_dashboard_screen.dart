@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_state.dart';
+import 'package:untitled/screens/lecture_options_screen.dart';
+import 'package:untitled/utils/app_state.dart';
 import 'create_new_lecture_screen.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
@@ -158,7 +159,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            const CreateNewLectureScreen(),
+                                            const LectureSetupScreen(),
                                       ),
                                     );
 

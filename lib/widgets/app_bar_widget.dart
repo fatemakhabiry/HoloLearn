@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/screens/teacher_profile_screen.dart';
+import '../screens/teacher_profile_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import 'button_widget.dart';

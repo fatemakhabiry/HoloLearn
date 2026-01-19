@@ -95,7 +95,7 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hololearn/constants/app_colors.dart';
+import '../constants/app_colors.dart';
 
 class OtpInputWidget extends StatefulWidget {
   final Function(String) onCompleted;
@@ -163,9 +163,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 maxLength: 1,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -178,7 +176,10 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                   contentPadding: EdgeInsets.zero,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.gray, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppColors.gray,
+                      width: 1.5,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

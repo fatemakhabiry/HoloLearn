@@ -6,6 +6,8 @@ import '../widgets/avatar_option_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/message_handler_widget.dart';
+import '../services/availability_service.dart';
+import '../utils/app_state.dart';
 
 class LectureSetupScreen extends StatefulWidget {
   const LectureSetupScreen({super.key});
@@ -16,13 +18,18 @@ class LectureSetupScreen extends StatefulWidget {
 
 class _LectureSetupScreenState extends State<LectureSetupScreen> {
   String selectedAvatar = 'standard';
-  bool is_loading = false;
+  bool isLoading = false;
+  bool isFetchingSlots = false;
   final TextEditingController _dateController = TextEditingController();
-  final _formKey = GlobalKey<FormState>(); // ✅ Form key added
+  final _formKey = GlobalKey<FormState>();
 
-  String? selectedDate;
+  String? selectedDate; // YYYY-MM-DD format
+  String? selectedTimeSlot;
+  AvailabilitySlot? selectedSlot;
+  List<AvailabilitySlot> availableSlots = [];
+
   String message = "";
-  bool _showbanner = false;
+  bool _showBanner = false;
   bool _success = false;
 
   @override
@@ -35,40 +42,143 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2026),
+      firstDate: DateTime(2025),
       lastDate: DateTime(2030),
     );
 
     if (pickedDate != null) {
-      final formattedDate =
+      final formattedDateDisplay =
           "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+      final formattedDateAPI =
+          "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
 
       if (!mounted) return;
       setState(() {
-        _dateController.text = formattedDate;
-        selectedDate = formattedDate;
+        _dateController.text = formattedDateDisplay;
+        selectedDate = formattedDateAPI;
+        selectedTimeSlot = null;
+        selectedSlot = null;
+        availableSlots = [];
+      });
+
+      // Fetch available slots for the selected date
+      await _fetchAvailableSlots();
+    }
+  }
+
+  Future<void> _fetchAvailableSlots() async {
+    if (selectedDate == null) return;
+
+    setState(() {
+      isFetchingSlots = true;
+      _showBanner = false;
+    });
+
+    try {
+      final response = await AvailabilityService.fetchAvailableSlots(
+        token: AppState.accessToken,
+        date: selectedDate!,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        availableSlots = response.availableSlots
+            .where((slot) => slot.status == 'available')
+            .toList();
+        isFetchingSlots = false;
+
+        if (availableSlots.isEmpty) {
+          _showBanner = true;
+          _success = false;
+          message = "No available time slots for this date";
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isFetchingSlots = false;
+        _showBanner = true;
+        _success = false;
+        message = e.toString().replaceAll('Exception: ', '');
+        availableSlots = [];
       });
     }
   }
 
-  // 1. All possible time slots
-  final List<String> allTimeSlots = [
-    "9:00 to 10:00",
-    "10:00 to 11:00",
-    "11:00 to 12:00",
-    "12:00 to 1:00",
-    "1:00 to 2:00",
-    "2:00 to 3:00",
-  ];
-  final List<String> reservedSlots = ["10:00 to 11:00", "12:00 to 1:00"];
-  String? selectedTimeSlot;
-  List<String> get availableTimeSlots {
-    if (allTimeSlots.isEmpty) return [];
-    return allTimeSlots.where((slot) => !reservedSlots.contains(slot)).toList();
+  List<String> get availableTimeSlotsFormatted {
+    return availableSlots.map((slot) => slot.formattedTimeSlot).toList();
   }
+
+  // Future<void> _publishLecture() async {
+  //   if (_formKey.currentState!.validate()) {
+  //     _formKey.currentState!.save();
+
+  //     if (selectedSlot == null) {
+  //       setState(() {
+  //         _showBanner = true;
+  //         _success = false;
+  //         message = "Please select a time slot";
+  //       });
+  //       return;
+  //     }
+
+  //     setState(() {
+  //       isLoading = true;
+  //       _showBanner = false;
+  //     });
+
+  //     try {
+  //       // Map avatar selection to API format
+  //       String avatarType = selectedAvatar == 'standard'
+  //           ? 'standard'
+  //           : 'sign_language';
+
+  //       await AvailabilityService.publishLecture(
+  //         token: AppState.accessToken,
+  //         date: selectedDate!,
+  //         startTime: selectedSlot!.startTime.toIso8601String(),
+  //         endTime: selectedSlot!.endTime.toIso8601String(),
+  //         avatar: avatarType,
+  //       );
+
+  //       if (!mounted) return;
+  //       setState(() {
+  //         message = "Lecture published successfully!";
+  //         _showBanner = true;
+  //         _success = true;
+  //         isLoading = false;
+  //       });
+
+  //       // Navigate to teacher dashboard after success
+  //       Future.delayed(const Duration(seconds: 2), () {
+  //         if (mounted) {
+  //           Navigator.pop(context, true); // Return true to indicate success
+  //         }
+  //       });
+  //     } catch (e) {
+  //       if (!mounted) return;
+  //       setState(() {
+  //         _showBanner = true;
+  //         _success = false;
+  //         message = e.toString().replaceAll('Exception: ', '');
+  //         isLoading = false;
+  //       });
+  //     }
+  //   } else {
+  //     setState(() {
+  //       _showBanner = true;
+  //       _success = false;
+  //       message = "Please fill all required fields correctly!";
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
+    // Determine hologram room status
+    bool isRoomAvailable =
+        selectedDate != null && availableSlots.isNotEmpty && !isFetchingSlots;
+
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: CustomAppBar(title: "Lecture Setup", showBackButton: true),
@@ -76,11 +186,10 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
         child: Padding(
           padding: const EdgeInsets.all(AppStyles.spacingL),
           child: Form(
-            key: _formKey, // ✅ Wrapping everything in Form
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Container for Avatar + Time Slot
                 Container(
                   padding: const EdgeInsets.all(AppStyles.spacingL),
                   decoration: BoxDecoration(
@@ -100,14 +209,26 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                           setState(() {
                             selectedAvatar = id;
                           });
-                          print('Selected avatar: $id');
                         },
                       ),
                       const SizedBox(height: AppStyles.spacingL),
+
+                      // Scheduling Section Header
+                      Text(
+                        'SCHEDULING',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textLight,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: AppStyles.spacingM),
+
                       // Date Picker
                       CustomTextFormField(
-                        label: "Date",
-                        hintText: "DD/MM/YYYY",
+                        label: "DATE",
+                        hintText: "MM/DD/YYYY",
                         controller: _dateController,
                         readOnly: true,
                         onTap: () => _pickDate(context),
@@ -119,99 +240,103 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                         },
                       ),
                       const SizedBox(height: AppStyles.spacingL),
+
                       // Time Slot Dropdown
-                      CustomDropdown(
-                        label: "Time Slot",
-                        items: availableTimeSlots,
-                        selectedValue: selectedTimeSlot,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Time slot is required';
-                          }
-                          return null;
-                        },
-                        onChanged: (value) {
-                          setState(() {
-                            selectedTimeSlot = value;
-                          });
-                          print('Selected time slot: $value');
-                        },
-                      ),
+                      if (isFetchingSlots)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppStyles.spacingM),
+                            child: CircularProgressIndicator(
+                              color: AppColors.lightBlue,
+                            ),
+                          ),
+                        )
+                      else
+                        CustomDropdown(
+                          label: "TIME SLOT",
+                          items: availableTimeSlotsFormatted,
+                          selectedValue: selectedTimeSlot,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Time slot is required';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTimeSlot = value;
+                              // Find the corresponding slot object
+                              selectedSlot = availableSlots.firstWhere(
+                                (slot) => slot.formattedTimeSlot == value,
+                              );
+                            });
+                          },
+                        ),
                       const SizedBox(height: AppStyles.spacingL),
-                      // Proceed Button
+
+                      // // Hologram Room Status
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //     horizontal: AppStyles.spacingM,
+                      //     vertical: AppStyles.spacingS,
+                      //   ),
+                      //   decoration: BoxDecoration(
+                      //     color: isRoomAvailable
+                      //         ? AppColors.success.withOpacity(0.1)
+                      //         : AppColors.textLight.withOpacity(0.1),
+                      //     borderRadius: BorderRadius.circular(
+                      //       AppStyles.radiusM,
+                      //     ),
+                      //     border: Border.all(
+                      //       color: isRoomAvailable
+                      //           ? AppColors.success
+                      //           : AppColors.textLight,
+                      //       width: 1.5,
+                      //     ),
+                      //   ),
+                      //   child: Row(
+                      //     mainAxisAlignment: MainAxisAlignment.center,
+                      //     children: [
+                      //       Text(
+                      //         'HOLOGRAM ROOM STATUS: ',
+                      //         style: TextStyle(
+                      //           fontSize: 12,
+                      //           fontWeight: FontWeight.w600,
+                      //           color: AppColors.textBlack,
+                      //           letterSpacing: 0.5,
+                      //         ),
+                      //       ),
+                      //       Text(
+                      //         isRoomAvailable ? 'AVAILABLE' : 'UNAVAILABLE',
+                      //         style: TextStyle(
+                      //           fontSize: 12,
+                      //           fontWeight: FontWeight.bold,
+                      //           color: isRoomAvailable
+                      //               ? AppColors.success.withOpacity(0.1)
+                      //               : AppColors.textLight.withOpacity(0.1),
+                      //           letterSpacing: 0.5,
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
+                      const SizedBox(height: AppStyles.spacingL),
+
+                      // Confirm Button
                       CustomButton(
                         text: 'CONFIRM & PUBLISH LECTURE',
                         fullWidth: true,
-                        isLoading: is_loading,
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
-
-                            // Start loading
-                            setState(() {
-                              is_loading = true;
-                            });
-
-                            try {
-                              // Simulate API call for publishing lecture
-                              await Future.delayed(const Duration(seconds: 2));
-
-                              // Success - show success message
-                              setState(() {
-                                message = "Lecture published successfully!";
-                                _showbanner = true;
-                                _success = true;
-                              });
-
-                              // Navigate to teacher dashboard after success
-                              Future.delayed(const Duration(seconds: 1), () {
-                                if (mounted) {
-                                  // TODO: Navigate to teacher dashboard
-                                  print("Selected Date: $selectedDate");
-                                  print(
-                                    "Selected Time Slot: $selectedTimeSlot",
-                                  );
-                                  print("Selected Avatar: $selectedAvatar");
-                                  // Navigator.pushReplacement(
-                                  //   context,
-                                  //   MaterialPageRoute(
-                                  //     builder: (context) => const TeacherDashboardScreen(),
-                                  //   ),
-                                  // );
-                                }
-                              });
-                            } catch (e) {
-                              // Error - show error message
-                              setState(() {
-                                _showbanner = true;
-                                _success = false;
-                                message =
-                                    "Failed to publish lecture. Please try again.";
-                              });
-                            } finally {
-                              // Stop loading
-                              if (mounted) {
-                                setState(() {
-                                  is_loading = false;
-                                });
-                              }
-                            }
-                          } else {
-                            // Form is not valid
-                            setState(() {
-                              _showbanner = true;
-                              _success = false;
-                              message =
-                                  "Please fill all required fields correctly!";
-                            });
-                          }
-                        },
+                        isLoading: isLoading,
+                        // onPressed: _publishLecture,
+                        onPressed: () {},
                       ),
                       const SizedBox(height: AppStyles.spacingL),
                     ],
                   ),
                 ),
-                if (_showbanner) ...[
+
+                // Message Banner
+                if (_showBanner) ...[
                   const SizedBox(height: AppStyles.spacingL),
                   MessageDisplay(
                     isSuccess: _success,
@@ -219,7 +344,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                         ? "Lecture Published Successfully"
                         : "Publication Failed",
                     message: message,
-                    onDismiss: () => setState(() => _showbanner = false),
+                    onDismiss: () => setState(() => _showBanner = false),
                   ),
                 ],
               ],

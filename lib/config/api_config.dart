@@ -48,6 +48,7 @@ class ApiConfig {
   // static const String createLectureEndpoint = '/schedule/create';
   // static const String updateLectureEndpoint = '/schedule/update';
   // static const String deleteLectureEndpoint = '/schedule/delete';
+  static const String availabilitySlotsEndpoint = '/schedules/available-slots';
 
   // // Get full OTP URLs
   // static String get forgotPasswordUrl => getUrl(forgotPasswordEndpoint);

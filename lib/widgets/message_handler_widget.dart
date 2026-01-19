@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
-import 'package:hololearn/constants/app_fonts.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../constants/app_fonts.dart';
 
 class MessageDisplay extends StatelessWidget {
   final String? massegeBanner;
   final String message;
   final VoidCallback? onDismiss;
-  final bool isSuccess; 
-  final bool isInfo; 
-  final bool showIcon; 
+  final bool isSuccess;
+  final bool isInfo;
+  final bool showIcon;
 
   const MessageDisplay({
     super.key,
     this.massegeBanner,
     required this.message,
     this.onDismiss,
-    this.isInfo = false, 
-    this.isSuccess=false , 
-    this.showIcon = true, 
+    this.isInfo = false,
+    this.isSuccess = false,
+    this.showIcon = true,
   });
 
   @override
@@ -27,13 +27,13 @@ class MessageDisplay extends StatelessWidget {
 
     // Add info message type support
     final Color messageColor;
-    
+
     if (isInfo) {
       messageColor = Colors.blue; // Info color
     } else {
       messageColor = isSuccess ? AppColors.success : AppColors.error;
     }
-    
+
     final backgroundColor = messageColor.withOpacity(0.1);
 
     return Container(
@@ -56,9 +56,7 @@ class MessageDisplay extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isInfo 
-                    ? Icons.info 
-                    : (isSuccess ? Icons.check : Icons.close),
+                isInfo ? Icons.info : (isSuccess ? Icons.check : Icons.close),
                 color: Colors.white,
                 size: 16,
               ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:hololearn/constants/app_colors.dart';
-import 'package:hololearn/constants/app_styles.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
 
 enum ButtonType {
   primary, // blue button
@@ -112,13 +112,13 @@ class CustomDropdown extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.validator,
-    this.isFieldRequired=true,
+    this.isFieldRequired = true,
     this.selectedValue,
   });
 
   @override
   Widget build(BuildContext context) {
-    return  Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
@@ -136,17 +136,17 @@ class CustomDropdown extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppStyles.spacingM),
-    DropdownButtonFormField<String>(
-      validator: validator,
-      decoration: AppStyles.inputDecoration(hint: 'Select $label'),
-      items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item, style: AppStyles.bodyMedium),
-        );
-      }).toList(),
-      onChanged: onChanged,
-    ),
+        DropdownButtonFormField<String>(
+          validator: validator,
+          decoration: AppStyles.inputDecoration(hint: 'Select $label'),
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: AppStyles.bodyMedium),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
       ],
     );
   }
