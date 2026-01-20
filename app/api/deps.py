@@ -8,6 +8,8 @@ from app.core.database import get_session
 from app.core.config import settings
 from app.models.user import User, UserRole
 from pydantic import BaseModel
+from app.models.schedule import Schedule
+
 
 # OAuth2 scheme - extracts token from Authorization header
 # tokenUrl is the endpoint where users login to get tokens
@@ -185,6 +187,84 @@ def get_current_admin(
             detail="Not authorized. Admin access required."
         )
     return current_user
+
+def verify_schedule_ownership(
+    schedule_id: int,
+    current_user: User = Depends(get_current_teacher),
+    session: Session = Depends(get_session)
+) -> Schedule:
+    """
+    Security dependency to verify schedule ownership (IDOR protection).
+
+    PURPOSE:
+    --------
+    This function ensures that the requested schedule belongs to the
+    currently authenticated teacher. It prevents Insecure Direct Object
+    Reference (IDOR) attacks, where a user might try to access or modify
+    another user's data by guessing or changing an ID in the request.
+
+    HOW IT WORKS:
+    -------------
+    1. Receives the `schedule_id` from the request path or parameters.
+    2. Retrieves the currently authenticated teacher using `get_current_teacher`.
+       - Authentication is already handled before this function runs.
+    3. Fetches the schedule from the database using the provided session.
+    4. If the schedule does not exist:
+       - A 404 error is returned.
+       - This avoids leaking information about whether the schedule exists.
+    5. If the schedule exists but does NOT belong to the current teacher:
+       - A 403 Forbidden error is returned.
+       - This blocks unauthorized access (IDOR protection).
+    6. If ownership is verified:
+       - The schedule object is returned and can safely be used by the endpoint.
+
+    SECURITY BENEFITS:
+    ------------------
+    - Prevents unauthorized access to schedules.
+    - Ensures teachers can only access their own data.
+    - Avoids data leakage by returning 404 for non-existing resources.
+    - Centralizes access control logic for reuse across endpoints.
+
+    USAGE:
+    ------
+    This function is typically used as a FastAPI dependency in endpoints:
+
+        @router.get("/schedules/{schedule_id}")
+        def get_schedule(
+            schedule: Schedule = Depends(verify_schedule_ownership)
+        ):
+            return schedule
+
+    RETURNS:
+    --------
+    Schedule:
+        The schedule object if ownership validation succeeds.
+
+    RAISES:
+    -------
+    HTTPException (404):
+        If the schedule does not exist.
+
+    HTTPException (403):
+        If the schedule exists but does not belong to the current teacher.
+    """
+    schedule = session.get(Schedule, schedule_id)
+    
+    # Return 404 if not found (don't reveal it exists)
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Schedule not found"
+        )
+    
+    # Return 403 if user doesn't own it (IDOR protection)
+    if schedule.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this schedule"
+        )
+    
+    return schedule
 
 
 # Test the dependencies (optional - for development)

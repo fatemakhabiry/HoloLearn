@@ -3,6 +3,9 @@ from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.schedule import Schedule
+    from app.models.course import Course
+    from app.models.lecture import Lecture
 
 class TeacherBase(SQLModel):
     photo: Optional[str] = None  # Path to uploaded photo
@@ -14,6 +17,10 @@ class Teacher(TeacherBase, table=True):
     user_id: int = Field(foreign_key="users.user_id", primary_key=True)
     
     user: Optional["User"] = Relationship(back_populates="teacher")
+    schedules: List["Schedule"] = Relationship(back_populates="teacher")
+    courses: List["Course"] = Relationship(back_populates="teacher")
+    lectures: List["Lecture"] = Relationship(back_populates="teacher")
+
 
 
 class TeacherCreate(TeacherBase):

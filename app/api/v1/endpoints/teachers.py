@@ -8,7 +8,7 @@ from app.core.file_utils import save_teacher_file, delete_teacher_file, ensure_u
 from app.models.user import User
 from app.models.teacher import Teacher, TeacherPublic, TeacherUpdate, TeacherProfileStatus
 
-router=APIRouter(prefix="/teachers",tags=["teachers"])
+router=APIRouter()
 
 @router.post("/upload-photo",response_model=TeacherPublic)
 async def upload_teacher_photo(

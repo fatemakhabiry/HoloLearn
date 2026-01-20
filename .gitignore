@@ -231,3 +231,15 @@ ENV/
 # OS
 .DS_Store
 Thumbs.dbpy
+
+
+#drive service key
+service-account-key.json
+
+# Google OAuth secrets
+credentials.json
+token.pickle
+
+# Temporary uploads
+/tmp/
+uploads/

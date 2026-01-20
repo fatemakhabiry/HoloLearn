@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, users, teachers, password_reset
+from app.api.v1.endpoints import auth, users, teachers, password_reset ,courses , schedules , lecture
 
 api_router = APIRouter()
 
@@ -24,6 +24,26 @@ api_router.include_router(
 
 api_router.include_router(
     password_reset.router,
-    prefix="/password-reset",  # Uses same /auth prefix
-    tags=["Password Reset"]
+    prefix="/password_reset",
+    tags=["Password_reset"]
+)
+
+
+api_router.include_router(
+    courses.router,
+    prefix="/courses",
+    tags=["Courses"]
+)
+
+
+api_router.include_router(
+    schedules.router,
+    prefix="/schedules",
+    tags=["Schedules"]
+)
+
+api_router.include_router(
+    lecture.router,
+    prefix="/lecture",
+    tags=["Lecture"]
 )
