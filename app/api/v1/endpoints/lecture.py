@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlmodel import Session, select
 from typing import Optional
-from datetime import datetime
+from datetime import time , date
 from app.services.google_drive import drive_service
 import os
 
@@ -11,7 +11,7 @@ from app.models.schedule import Schedule, SchedulePublic, ScheduleCreate
 from app.models.user import User, UserRole
 from app.models.course import Course
 from app.api.deps import get_current_user,get_current_teacher
-from app.schemas.schedule_schemas import ConfirmPublishResponse,ConfirmPublishRequest
+from app.schemas.schedule_schemas import ConfirmPublishResponse,ConfirmPublishRequest,LectureEditDetails,EditLectureResponse
 
 router = APIRouter()
 
@@ -183,11 +183,11 @@ async def confirm_and_publish_lecture(
         )
     
     # 3. Verify lecture is in draft status
-    if lecture.status != LectureStatus.DRAFT:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Lecture is already {lecture.status}. Can only publish draft lectures."
-        )
+    # if lecture.status != LectureStatus.DRAFT:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=f"Lecture is already {lecture.status}. Can only publish draft lectures."
+    #     )
     
     # 4. Get the schedule slot
     schedule = session.get(Schedule, request_data.schedule_id)
@@ -249,186 +249,387 @@ async def confirm_and_publish_lecture(
 
 
 # ============================================
-# CANCEL: Delete Lecture and Schedule
+# Get Lecture Details by Schedule ID
 # ============================================
 
-# @router.delete("/{lecture_id}/cancel", status_code=status.HTTP_200_OK)
-# async def cancel_lecture(
-#     lecture_id: int,
-#     session: Session = Depends(get_session),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     """
-#     Cancel and delete a lecture
+@router.get("/schedule/{schedule_id}/edit-details", response_model=LectureEditDetails)
+async def get_lecture_edit_details_by_schedule(
+    schedule_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_teacher)
+):
+    """
+    Get lecture details for editing using schedule_id
     
-#     This deletes:
-#     1. The lecture record
-#     2. All associated schedules
-#     3. Optionally: the uploaded file
+    Flow:
+    1. Teacher clicks EDIT on scheduled lecture card
+    2. Frontend passes schedule_id from the card
+    3. Backend returns lecture details to pre-fill edit form
     
-#     Can be called from either screen
+    Request:
+    GET /api/lectures/schedule/{schedule_id}/edit-details
     
-#     Response:
-#     {
-#         "message": "Lecture cancelled successfully",
-#         "deleted_lecture_id": 1,
-#         "deleted_schedules": 2
-#     }
-#     """
+    Response:
+    {
+        "lecture_id": 5,
+        "schedule_id": 3,
+        "title": "Introduction to Algorithms",
+        "course_code": "CS101",
+        "current_file_url": "https://drive.google.com/...",
+        "current_file_name": "lecture_slides.pdf",
+        "scheduled_date": "2026-01-20",
+        "start_time": "14:00:00",
+        "end_time": "15:30:00",
+        "status": "scheduled"
+    }
+    """
     
-#     # 1. Get lecture
-#     lecture = session.get(Lecture, lecture_id)
+    # 1. Get schedule
+    schedule = session.get(Schedule, schedule_id)
     
-#     if not lecture:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Lecture with ID {lecture_id} not found"
-#         )
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Schedule with ID {schedule_id} not found"
+        )
     
-#     # 2. Verify ownership
-#     if lecture.teacher_id != current_user.user_id and current_user.role != UserRole.ADMIN:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You can only cancel your own lectures"
-#         )
+    # 2. Verify schedule ownership
+    if schedule.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own schedules"
+        )
     
-#     # 3. Delete associated schedules
-#     schedules = session.exec(
-#         select(Schedule).where(Schedule.lecture_id == lecture_id)
-#     ).all()
+    # 3. Get lecture_id from schedule
+    if schedule.lecture_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This schedule has no lecture assigned"
+        )
     
-#     schedules_count = len(schedules)
+    lecture_id = schedule.lecture_id
     
-#     for schedule in schedules:
-#         session.delete(schedule)
+    # 4. Get lecture details
+    lecture = session.get(Lecture, lecture_id)
     
-#     # 4. Optionally delete the file
-#     if lecture.final_content and os.path.exists(lecture.final_content):
-#         try:
-#             os.remove(lecture.final_content)
-#         except Exception as e:
-#             # Log error but don't fail the deletion
-#             print(f"Warning: Could not delete file {lecture.final_content}: {e}")
+    if not lecture:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lecture with ID {lecture_id} not found"
+        )
     
-#     # 5. Delete lecture
-#     lecture_title = lecture.title
-#     session.delete(lecture)
+    # 5. Verify lecture ownership
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own lectures"
+        )
     
-#     session.commit()
+    # 6. Extract file name from URL
+    file_name = "lecture_file.pdf"
+    if lecture.final_content:
+        if "/" in lecture.final_content:
+            file_name = lecture.final_content.split("/")[-1]
+        else:
+            file_name = lecture.final_content
     
-#     return {
-#         "message": "Lecture cancelled successfully",
-#         "deleted_lecture_id": lecture_id,
-#         "lecture_title": lecture_title,
-#         "deleted_schedules": schedules_count
-#     }
+    # 7. Return lecture details
+    return LectureEditDetails(
+        lecture_id=lecture.lecture_id,
+        schedule_id=schedule.schedule_id,
+        title=lecture.title,
+        course_code=lecture.course_code,
+        current_file_url=lecture.final_content or "",
+        current_file_name=file_name,
+        scheduled_date=schedule.date,
+        start_time=schedule.start_time,
+        end_time=schedule.end_time,
+        status=schedule.status
+    )
 
 
-# # ============================================
-# # HELPER ENDPOINTS
-# # ============================================
+# ============================================
+# Update Lecture and Schedule
+# ============================================
 
-# @router.get("/{lecture_id}", response_model=LecturePublic)
-# async def get_lecture(
-#     lecture_id: int,
-#     session: Session = Depends(get_session),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     """Get a specific lecture"""
+@router.put("/schedule/{schedule_id}/edit", response_model=EditLectureResponse)
+async def edit_lecture_by_schedule(
+    schedule_id: int,
+    title: Optional[str] = Form(None),
+    course_code: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    new_schedule_id: Optional[int] = Form(None),  # ← For changing schedule
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_teacher)
+):
+    """
+    Edit lecture details and/or change schedule
     
-#     lecture = session.get(Lecture, lecture_id)
+    Teacher can update:
+    1. Lecture title (updates lecture table)
+    2. Course code (updates lecture table)
+    3. Lecture file (uploads to Drive, updates lecture table)
+    4. Schedule slot (frees old schedule, reserves new schedule)
     
-#     if not lecture:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Lecture with ID {lecture_id} not found"
-#         )
+    Request (multipart/form-data):
+    PUT /api/lectures/schedule/{schedule_id}/edit
     
-#     # Check permissions
-#     if (current_user.role == UserRole.TEACHER and 
-#         lecture.teacher_id != current_user.user_id):
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You can only view your own lectures"
-#         )
+    Body:
+    - title: New title (optional)
+    - course_code: New course code (optional)
+    - file: New file (optional)
+    - new_schedule_id: ID of new schedule slot (optional)
     
-#     return lecture
+    Example 1 - Update title only:
+    {
+        "title": "Updated Title"
+    }
+    
+    Example 2 - Change schedule only:
+    {
+        "new_schedule_id": 5
+    }
+    
+    Example 3 - Update title AND change schedule:
+    {
+        "title": "Updated Title",
+        "new_schedule_id": 5
+    }
+    
+    Response:
+    {
+        "message": "Lecture updated successfully",
+        "lecture_id": 5,
+        "schedule_id": 5,
+        "lecture_title": "Updated Title",
+        "course_code": "CS101",
+        "lecture_status": "completed",
+        "scheduled_date": "2026-01-22",
+        "start_time": "14:00:00",
+        "end_time": "15:30:00",
+        "schedule_status": "scheduled",
+        "file_updated": true,
+        "file_url": "https://drive.google.com/...",
+        "schedule_changed": true
+    }
+    """
+    
+    # ============================================
+    # PART 1: Validate Current Schedule
+    # ============================================
+    
+    # Get current schedule
+    current_schedule = session.get(Schedule, schedule_id)
+    
+    if not current_schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Schedule with ID {schedule_id} not found"
+        )
+    
+    # Verify schedule ownership
+    if current_schedule.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own schedules"
+        )
+    
+    # Get lecture from current schedule
+    if current_schedule.lecture_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This schedule has no lecture assigned"
+        )
+    
+    lecture = session.get(Lecture, current_schedule.lecture_id)
+    
+    if not lecture:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lecture not found"
+        )
+    
+    # Verify lecture ownership
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own lectures"
+        )
+    
+    # ============================================
+    # PART 2: Update Lecture Details
+    # ============================================
+    
+    file_updated = False
+    new_file_url = None
+    
+    try:
+        # Update title
+        if title:
+            lecture.title = title
+        
+        # Update course code
+        if course_code and course_code != lecture.course_code:
+            from app.models.course import Course
+            course = session.get(Course, course_code)
+            
+            if not course:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Course '{course_code}' not found"
+                )
+            
+            if course.teacher_id != current_user.user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only assign lectures to your own courses"
+                )
+            
+            lecture.course_code = course_code
+        
+        # Update file
+        if file:
+            # Validate file type
+            ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".txt"}
+            file_ext = os.path.splitext(file.filename)[1].lower()
+            
+            if file_ext not in ALLOWED_EXTENSIONS:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"File type {file_ext} not allowed. Allowed: PDF, PPTX, TXT"
+                )
+            
+            # Save temporarily
+            temp_dir = "/tmp/hololearn_uploads"
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            temp_filename = f"temp_{current_user.user_id}_{file.filename}"
+            temp_path = os.path.join(temp_dir, temp_filename)
+            
+            with open(temp_path, "wb") as f:
+                content = await file.read()
+                f.write(content)
+            
+            # Upload to Google Drive
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            drive_filename = f"{lecture.course_code}_{lecture.title}_{timestamp}{file_ext}"
+            
+            drive_result = drive_service.upload_file(
+                file_path=temp_path,
+                filename=drive_filename,
+                mime_type=file.content_type
+            )
+            
+            lecture.final_content = drive_result['view_link']
+            new_file_url = drive_result['view_link']
+            file_updated = True
+            
+            # Cleanup
+            try:
+                os.remove(temp_path)
+            except:
+                pass
+        
+        # ============================================
+        # PART 3: Handle Schedule Change
+        # ============================================
+        
+        schedule_changed = False
+        final_schedule = current_schedule
+        
+        if new_schedule_id and new_schedule_id != schedule_id:
+            # Teacher wants to change schedule
+            
+            # Get new schedule
+            new_schedule = session.get(Schedule, new_schedule_id)
+            
+            if not new_schedule:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"New schedule with ID {new_schedule_id} not found"
+                )
+            
+            # Verify new schedule belongs to teacher
+            if new_schedule.teacher_id != current_user.user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="The new schedule slot does not belong to you"
+                )
+            
+            # Verify new schedule is available
+            if new_schedule.lecture_id is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="The new schedule slot is already reserved for another lecture"
+                )
+            
+            # Verify new schedule status
+            if new_schedule.status != "available":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"The new schedule slot is not available (status: {new_schedule.status})"
+                )
+            
+            # FREE old schedule
+            current_schedule.lecture_id = None
+            current_schedule.status = "available"
+            session.add(current_schedule)
+            
+            print(f"✅ Freed old schedule {schedule_id}: lecture_id=NULL, status=available")
+            
+            # RESERVE new schedule
+            new_schedule.lecture_id = lecture.lecture_id
+            new_schedule.status = "scheduled"
+            session.add(new_schedule)
+            
+            print(f"✅ Reserved new schedule {new_schedule_id}: lecture_id={lecture.lecture_id}, status=scheduled")
+            
+            # Update which schedule to return
+            final_schedule = new_schedule
+            schedule_changed = True
+        
+        # ============================================
+        # PART 4: Save All Changes
+        # ============================================
+        
+        session.add(lecture)
+        session.commit()
+        session.refresh(lecture)
+        session.refresh(final_schedule)
+        
+        print(f"✅ Lecture {lecture.lecture_id} updated successfully")
+        print(f"   - Title: {lecture.title}")
+        print(f"   - File updated: {file_updated}")
+        print(f"   - Schedule changed: {schedule_changed}")
+        print(f"   - Final schedule ID: {final_schedule.schedule_id}")
+        
+        # ============================================
+        # PART 5: Return Response
+        # ============================================
+        
+        return EditLectureResponse(
+            message="Lecture updated successfully",
+            lecture_id=lecture.lecture_id,
+            schedule_id=final_schedule.schedule_id,
+            lecture_title=lecture.title,
+            course_code=lecture.course_code,
+            lecture_status=lecture.status.value,
+            scheduled_date=final_schedule.date,
+            start_time=final_schedule.start_time,
+            end_time=final_schedule.end_time,
+            schedule_status=final_schedule.status,
+            file_updated=file_updated,
+            file_url=new_file_url or lecture.final_content,
+            schedule_changed=schedule_changed
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update lecture: {str(e)}"
+        )
 
-
-# @router.get("/{lecture_id}/schedule", response_model=SchedulePublic)
-# async def get_lecture_schedule(
-#     lecture_id: int,
-#     session: Session = Depends(get_session),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     """Get the schedule for a specific lecture"""
-    
-#     lecture = session.get(Lecture, lecture_id)
-    
-#     if not lecture:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Lecture with ID {lecture_id} not found"
-#         )
-    
-#     # Get schedule
-#     schedule = session.exec(
-#         select(Schedule).where(Schedule.lecture_id == lecture_id)
-#     ).first()
-    
-#     if not schedule:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"No schedule found for lecture {lecture_id}"
-#         )
-    
-#     return schedule
-
-
-# @router.put("/{lecture_id}/schedule", response_model=SchedulePublic)
-# async def update_lecture_schedule(
-#     lecture_id: int,
-#     schedule_data: ScheduleCreate,
-#     session: Session = Depends(get_session),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     """Update the schedule for a lecture"""
-    
-#     # Verify lecture exists and belongs to teacher
-#     lecture = session.get(Lecture, lecture_id)
-    
-#     if not lecture:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Lecture with ID {lecture_id} not found"
-#         )
-    
-#     if lecture.teacher_id != current_user.user_id:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="You can only update your own lecture schedules"
-#         )
-    
-#     # Get existing schedule
-#     schedule = session.exec(
-#         select(Schedule).where(Schedule.lecture_id == lecture_id)
-#     ).first()
-    
-#     if not schedule:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"No schedule found for lecture {lecture_id}"
-#         )
-    
-#     # Update schedule
-#     schedule.start_time = schedule_data.start_time
-#     schedule.end_time = schedule_data.end_time
-#     schedule.date = schedule_data.date
-#     if schedule_data.status:
-#         schedule.status = schedule_data.status
-    
-#     session.add(schedule)
-#     session.commit()
-#     session.refresh(schedule)
-    
-#     return schedule

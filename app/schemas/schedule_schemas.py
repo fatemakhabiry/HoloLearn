@@ -57,3 +57,37 @@ class ConfirmPublishResponse(BaseModel):
     start_time: time
     end_time: time
 
+# ============================================
+# Response Models
+# ============================================
+
+class LectureEditDetails(BaseModel):
+    """Lecture details for the edit form"""
+    lecture_id: int
+    schedule_id: int  # Include schedule_id
+    title: str
+    course_code: str
+    current_file_url: str
+    current_file_name: str
+    # Schedule info
+    scheduled_date: date
+    start_time: time
+    end_time: time
+    status: str
+
+
+class EditLectureResponse(BaseModel):
+    """Response after editing lecture"""
+    message: str
+    lecture_id: int
+    schedule_id: int
+    lecture_title: str
+    course_code: str
+    lecture_status: str
+    scheduled_date: date
+    start_time: time
+    end_time: time
+    schedule_status: str
+    file_updated: bool
+    file_url: Optional[str] = None
+    schedule_changed: bool  
