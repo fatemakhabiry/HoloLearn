@@ -1,3 +1,9 @@
 alembic revision --autogenerate -m "update schedule table "
 
 alembic upgrade head
+
+
+
+
+
+ngrok config add-authtoken 38R6kX5zmElRMWnSsVyTmDoAm0Y_7RPeqSPMTKRxTEYab3W1y
