@@ -243,3 +243,8 @@ token.pickle
 # Temporary uploads
 /tmp/
 uploads/
+
+
+# Google Drive credentials
+credentials.json
+token.pickle
