@@ -51,13 +51,13 @@ async def create_lecture_draft(
     
     # 2. Verify course exists and belongs to teacher
     course = session.get(Course, course_code)
-    
+    print("mo4kla")
     if not course:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Course '{course_code}' not found"
+            detail=f"Course '{course_code}'not found in database"
         )
-    
+    print("errooooooor")
     if course.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

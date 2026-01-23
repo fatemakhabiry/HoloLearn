@@ -30,7 +30,7 @@ class GoogleDriveService:
         self.token_file = 'token.pickle'  # Saved token
         
         # Your Google Drive folder ID (optional - leave empty for root)
-        self.folder_id = os.getenv('DRIVE_FOLDER_ID', '1pfzNzuThCSL_GfarFeGl5PcUewlL6-Eg')
+        self.folder_id = os.getenv('DRIVE_FOLDER_ID', '1fE8WGtnBlDVlnaJMUNGgk1W37rgjppSX')
         
         # Get authenticated service
         self.service = self._get_service()
