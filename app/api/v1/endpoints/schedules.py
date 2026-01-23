@@ -3,11 +3,14 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime, time, date
 from app.schemas.schedule_schemas import TimeSlot , DateAvailability,FullTimeSlot,CancelScheduleResponse,FullTimeSlot2
+from app.models.user import User, UserRole
+from app.models.lecture import Lecture
 
 
 from app.core.database import get_session
 from app.api.deps import (
     get_current_teacher,
+    get_current_user
 
 )
 
@@ -52,40 +55,31 @@ def check_schedule_conflict(
     return len(conflicts) > 0
 
 
-def validate_schedule_times(
-    target_date: date,
-    start_time: time,
-    end_time: time
-):
+def validate_schedule_times(target_date: date, start_time: time, end_time: time):
     """Validate schedule date and times"""
     
-    # Date must not be in the past
     if target_date < date.today():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot schedule in the past"
         )
     
-    # End time must be after start time
     if end_time <= start_time:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="End time must be after start time"
         )
     
-    # Calculate duration in hours
     start_minutes = start_time.hour * 60 + start_time.minute
     end_minutes = end_time.hour * 60 + end_time.minute
     duration_minutes = end_minutes - start_minutes
     
-    # Maximum 4 hours
-    if duration_minutes > 240:  # 4 hours = 240 minutes
+    if duration_minutes > 240:  # 4 hours
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Schedule duration cannot exceed 4 hours"
         )
     
-    # Minimum 30 minutes
     if duration_minutes < 30:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -98,21 +92,31 @@ def validate_schedule_times(
 @router.post("/", response_model=SchedulePublic, status_code=status.HTTP_201_CREATED)
 def create_schedule(
     schedule_data: ScheduleCreate,
-    current_user: User = Depends(get_current_teacher),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
-    Create a new schedule (Teacher only)
+    Create a new schedule slot (Admin only)
+    
+    ✅ UPDATED: Uses UserRole.ADMIN check instead of separate admin dependency
+    
+    Admins create public schedule slots that any teacher can use.
     
     Request Body:
     {
         "start_time": "10:00:00",
         "end_time": "11:30:00",
         "date": "2025-01-20",
-        "status": "scheduled",
-        "lecture_id": null
+        "status": "available"
     }
     """
+    
+    # ✅ Check user role
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can create schedules"
+        )
     
     # Validate times
     validate_schedule_times(
@@ -121,27 +125,14 @@ def create_schedule(
         schedule_data.end_time
     )
     
-    # Check for conflicts
-    if check_schedule_conflict(
-        session,
-        current_user.user_id,
-        schedule_data.date,
-        schedule_data.start_time,
-        schedule_data.end_time
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You have a conflicting schedule at this time"
-        )
-    
     # Create schedule
     schedule = Schedule(
-        teacher_id=current_user.user_id,
-        lecture_id=schedule_data.lecture_id,
+        created_by_user_id=current_user.user_id,  # ✅ Admin who created it
+        lecture_id=None,  # Empty slot
         start_time=schedule_data.start_time,
         end_time=schedule_data.end_time,
         date=schedule_data.date,
-        status=schedule_data.status
+        status="available"  # Always start as available
     )
     
     session.add(schedule)
@@ -150,6 +141,7 @@ def create_schedule(
     
     return schedule
 
+
 @router.get("/available-slots/{target_date}", response_model=DateAvailability)
 def get_date_availability(
     target_date: date,
@@ -157,19 +149,11 @@ def get_date_availability(
     session: Session = Depends(get_session)
 ):
     """
-    Get available time slots for a specific date
+    Get available time slots for a specific date (PUBLIC)
     
-    Returns slots that:
-    - Belong to current teacher
-    - Are on the specified date
-    - Have lecture_id = NULL (not reserved)
-    - Status = "available"
+    ✅ UPDATED: No created_by_user_id filter - shows ALL available slots
     
-    Query Parameter:
-    - target_date: Date to check (format: YYYY-MM-DD)
-    
-    Example:
-    GET /api/v1/schedules/available-slots/2025-01-20
+    Returns ALL available slots for any teacher to use.
     
     Response:
     {
@@ -179,40 +163,32 @@ def get_date_availability(
                 "schedule_id": 100,
                 "start_time": "10:00:00",
                 "end_time": "11:30:00",
-            },
-            {
-                "schedule_id": 101,
-                "start_time": "14:00:00",
-                "end_time": "15:30:00",
+                "status": "available"
             }
         ]
     }
     """
     
-    # Validate date is not in the past
     if target_date < date.today():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot check availability for past dates"
         )
     
-    # Query current teacher's schedules for this date
-    # ✅ UPDATED: Check lecture_id is NULL (not reserved)
+    # ✅ No created_by_user_id filter - public slots!
     schedules = session.exec(
         select(Schedule).where(
-            Schedule.teacher_id == current_user.user_id,
             Schedule.date == target_date,
-            Schedule.lecture_id.is_(None),  # ← IMPORTANT: Not reserved yet
+            Schedule.lecture_id.is_(None),  # Not reserved
             Schedule.status == "available"
         ).order_by(Schedule.start_time)
     ).all()
     
-    # Build available slots
     available_slots = []
     for schedule in schedules:
         available_slots.append(
             TimeSlot(
-                schedule_id=schedule.schedule_id,  # ← ADDED
+                schedule_id=schedule.schedule_id,
                 start_time=schedule.start_time,
                 end_time=schedule.end_time,
                 status=schedule.status
@@ -233,6 +209,11 @@ def get_my_scheduled_lectures(
     """
     Get all scheduled lectures for the current teacher (from today forward)
     
+    ✅ FIXED:
+    1. Removed admin_id filter (doesn't exist anymore)
+    2. Query by lecture.teacher_id instead
+    3. Fixed teacher name retrieval
+    
     Returns lectures with:
     - Course code (from lecture table)
     - Lecture title (from lecture table)
@@ -244,6 +225,7 @@ def get_my_scheduled_lectures(
     [
         {
             "schedule_id": 1,
+            "lecture_id": 5,
             "course_code": "CS101",
             "lecture_title": "Intro to Computing",
             "teacher_name": "Dr. Ahmed",
@@ -257,13 +239,14 @@ def get_my_scheduled_lectures(
     
     today = date.today()
     
-    # Query schedules (only those with lectures)
+    # ✅ FIXED: Query schedules by lecture ownership, not schedule ownership
     schedules = session.exec(
         select(Schedule)
+        .join(Lecture, Schedule.lecture_id == Lecture.lecture_id)  # ✅ Join with lectures
         .where(
-            Schedule.teacher_id == current_user.user_id,
+            Lecture.teacher_id == current_user.user_id,  # ✅ Filter by lecture owner
             Schedule.date >= today,
-            Schedule.lecture_id.isnot(None),  # Must have a lecture
+            Schedule.lecture_id.isnot(None),
             Schedule.status == "scheduled"
         )
         .order_by(Schedule.date, Schedule.start_time)
@@ -278,20 +261,19 @@ def get_my_scheduled_lectures(
         if not lecture:
             continue  # Skip if lecture deleted
         
-        # Get teacher name from user table
-        teacher_name = "Unknown"
-        if schedule.teacher and schedule.teacher.user:
-            teacher_name = schedule.teacher.user.full_name
+        # ✅ FIXED: Get teacher name from current_user (they're the teacher!)
+        teacher_name = current_user.full_name or "Unknown"
         
         result.append(
             FullTimeSlot(
                 schedule_id=schedule.schedule_id,
-                course_code=lecture.course_code,      # From lecture table
-                lecture_title=lecture.title,           # From lecture table
-                teacher_name=teacher_name,             # From user table
-                date=schedule.date,                    # date type
-                start_time=schedule.start_time,        # time type
-                end_time=schedule.end_time,            # time type
+                lecture_id=lecture.lecture_id,  # ✅ Added lecture_id
+                course_code=lecture.course_code,
+                lecture_title=lecture.title,
+                teacher_name=teacher_name,
+                date=schedule.date,
+                start_time=schedule.start_time,
+                end_time=schedule.end_time,
                 status=schedule.status
             )
         )
@@ -299,16 +281,17 @@ def get_my_scheduled_lectures(
     return result
 
 @router.patch("/{schedule_id}/cancel", response_model=CancelScheduleResponse)
-def cancel_schedule_patch(
+def cancel_schedule(
     schedule_id: int,
     current_user: User = Depends(get_current_teacher),
     session: Session = Depends(get_session)
 ):
     """
-    Cancel a schedule (PATCH version)
+    Cancel a schedule (free the slot)
     
-    Same as DELETE but uses PATCH method which is more semantically correct
-    since we're updating the schedule, not deleting it.
+    ✅ UPDATED: Checks lecture ownership, not schedule ownership
+    
+    Teacher can cancel any schedule that has their lecture assigned.
     """
     
     schedule = session.get(Schedule, schedule_id)
@@ -319,21 +302,25 @@ def cancel_schedule_patch(
             detail=f"Schedule with ID {schedule_id} not found"
         )
     
-    if schedule.teacher_id != current_user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only cancel your own schedules"
-        )
-    
-    if schedule.lecture_id is None and schedule.status == "available":
+    if schedule.lecture_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This schedule is already available"
+            detail="This schedule has no lecture to cancel"
+        )
+    
+    # ✅ Check lecture ownership, not schedule ownership
+    from app.models.lecture import Lecture
+    lecture = session.get(Lecture, schedule.lecture_id)
+    
+    if lecture and lecture.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only cancel schedules with your own lectures"
         )
     
     previous_lecture_id = schedule.lecture_id
     
-    # Free up the slot
+    # Free the slot
     schedule.lecture_id = None
     schedule.status = "available"
     

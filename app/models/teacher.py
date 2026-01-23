@@ -17,7 +17,6 @@ class Teacher(TeacherBase, table=True):
     user_id: int = Field(foreign_key="users.user_id", primary_key=True)
     
     user: Optional["User"] = Relationship(back_populates="teacher")
-    schedules: List["Schedule"] = Relationship(back_populates="teacher")
     courses: List["Course"] = Relationship(back_populates="teacher")
     lectures: List["Lecture"] = Relationship(back_populates="teacher")
 

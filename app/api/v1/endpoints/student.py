@@ -146,3 +146,5 @@ async def get_upcoming_lectures(
         lectures=upcoming_lectures,
         total_count=len(upcoming_lectures)
     )
+
+
