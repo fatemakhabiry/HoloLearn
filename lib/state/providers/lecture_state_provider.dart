@@ -100,7 +100,7 @@ class LectureStateProvider extends ChangeNotifier {
   Future<void> setFromScheduleSlot(ScheduleSlot scheduleSlot) async {
     _lectureId = scheduleSlot.lectureId ?? 0;
     _lectureTitle = scheduleSlot.lectureTitle;
-    _courseCode = scheduleSlot.courseCode ?? "";
+    _courseCode = scheduleSlot.courseCode ;
 
     // ✅ Parse date from startTime if date field is null
     String extractedDate = scheduleSlot.date ?? "";
