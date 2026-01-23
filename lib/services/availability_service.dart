@@ -71,46 +71,6 @@ class AvailabilityResponse {
   }
 }
 
-class ConfirmPublishResponse {
-  final String message;
-  final int lectureId;
-  final int scheduleId;
-  final String lectureTitle;
-  final String courseCode;
-  final String lectureStatus;
-  final String scheduleStatus;
-  final String scheduledDate;
-  final String startTime;
-  final String endTime;
-
-  ConfirmPublishResponse({
-    required this.message,
-    required this.lectureId,
-    required this.scheduleId,
-    required this.lectureTitle,
-    required this.courseCode,
-    required this.lectureStatus,
-    required this.scheduleStatus,
-    required this.scheduledDate,
-    required this.startTime,
-    required this.endTime,
-  });
-
-  factory ConfirmPublishResponse.fromJson(Map<String, dynamic> json) {
-    return ConfirmPublishResponse(
-      message: json['message'],
-      lectureId: json['lecture_id'],
-      scheduleId: json['schedule_id'],
-      lectureTitle: json['lecture_title'],
-      courseCode: json['course_code'],
-      lectureStatus: json['lecture_status'],
-      scheduleStatus: json['schedule_status'],
-      scheduledDate: json['scheduled_date'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-    );
-  }
-}
 
 class AvailabilityService {
   /// Fetch available time slots for a specific date
@@ -157,63 +117,6 @@ class AvailabilityService {
     }
   }
 
-  /// Confirm and publish lecture by reserving a schedule slot
-  /// 
-  /// This is STEP 2 of the lecture creation process:
-  /// 1. Create lecture (draft) - done in create_new_lecture_screen
-  /// 2. Confirm and publish - done here with schedule_id
-  static Future<ConfirmPublishResponse> confirmAndPublishLecture({
-    required String token,
-    required int lectureId,
-    required int scheduleId,
-  }) async {
-    try {
-      final uri = Uri.parse(
-        ApiConfig.getUrl('${ApiConfig.publishLectureEndpoint}/$lectureId/confirm-and-publish'),
-      );
 
-      print('📤 Publishing lecture $lectureId with schedule $scheduleId');
-      print('🌐 URL: $uri');
-
-      final response = await http
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'ngrok-skip-browser-warning': 'true',
-            },
-            body: json.encode({
-              'schedule_id': scheduleId,
-            }),
-          )
-          .timeout(ApiConfig.connectionTimeout);
-
-      print('📡 Status: ${response.statusCode}');
-      print('📥 Response: ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        return ConfirmPublishResponse.fromJson(data);
-      } else if (response.statusCode == 400) {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Invalid request');
-      } else if (response.statusCode == 401) {
-        throw Exception('Unauthorized - Please login again');
-      } else if (response.statusCode == 403) {
-        throw Exception('You can only publish your own lectures');
-      } else if (response.statusCode == 404) {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Lecture or schedule not found');
-      } else if (response.statusCode == 409) {
-        throw Exception('This schedule slot is already reserved');
-      } else {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to publish lecture');
-      }
-    } catch (e) {
-      print('❌ Error: $e');
-      throw Exception('Network error: $e');
-    }
-  }
+ 
 }

@@ -121,7 +121,7 @@ class LectureService {
       throw Exception('Network error: $e');
     }
   }
-
+ 
   /// Fetch lecture details by schedule_id
   static Future<LectureDetailResponse> getLectureByScheduleId({
     required AppStateProvider appState,
@@ -216,8 +216,7 @@ class LectureService {
     required AppStateProvider appState,
     required int lectureId,
   }) async {
-    const String lecturesEndpoint = '/api/lectures';
-    final uri = Uri.parse(ApiConfig.getUrl('$lecturesEndpoint/$lectureId'));
+    final uri = Uri.parse(ApiConfig.getUrl('${ApiConfig.lecturesEndpoint}$lectureId'));
 
     try {
       final response = await http

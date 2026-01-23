@@ -21,14 +21,77 @@ class TeacherDashboardScreen extends StatefulWidget {
   State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
 }
 
-class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
+class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> with WidgetsBindingObserver {
   List<ScheduleSlot> myLectures = [];
   bool isLoading = true;
+  bool _needsReload = false;
 
   @override
   void initState() {
     super.initState();
     loadTokenAndFetchData();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we need to reload data when dependencies change
+    if (_needsReload) {
+      _needsReload = false;
+      _reloadDataIfNeeded();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Reload data when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _reloadDataIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    // Mark that we need to reload when coming back
+    _needsReload = true;
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    // Reload data when screen becomes active again
+    super.activate();
+    if (_needsReload) {
+      _needsReload = false;
+      _reloadDataIfNeeded();
+    }
+  }
+
+  /// Reload data only if screen is visible and not already loading
+  void _reloadDataIfNeeded() {
+    if (mounted && !isLoading) {
+      // Small delay to ensure navigation is complete
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted && !isLoading) {
+          fetchScheduleData();
+        }
+      });
+    }
+  }
+
+  /// Public method to manually refresh data (can be called from other screens)
+  void refreshData() {
+    if (mounted && !isLoading) {
+      fetchScheduleData();
+    }
   }
 
   /// Load token from storage and fetch schedule data
@@ -137,6 +200,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               'Failed to cancel lecture: ${e.toString().replaceAll('Exception: ', '')}',
           type: ErrorType.fail,
         );
+      }
+    }finally {
+      // Ensure loading state is reset
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          CustomConfirmationDialog.dismiss(context);
+        });
       }
     }
   }

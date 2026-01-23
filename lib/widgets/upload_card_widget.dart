@@ -7,7 +7,7 @@ import '../constants/app_styles.dart';
 class UpoladCard extends StatelessWidget {
   final String stepNumber;
   final IconData icon;
-  final String iconLabel;
+  final String? iconLabel;
   final String primaryButtonText;
   final String? secondaryButtonText;
   final String subtext;
@@ -20,7 +20,7 @@ class UpoladCard extends StatelessWidget {
   const UpoladCard({
     required this.stepNumber,
     required this.icon,
-    required this.iconLabel,
+    this.iconLabel,
     required this.primaryButtonText,
     this.secondaryButtonText,
     required this.subtext,
@@ -38,6 +38,7 @@ class UpoladCard extends StatelessWidget {
     final cardMaxWidth = (screenWidth / 2) - 40;
     return Container(
       constraints: BoxConstraints(maxWidth: cardMaxWidth),
+      height: 550,
       padding: const EdgeInsets.all(AppStyles.spacingL),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -47,29 +48,17 @@ class UpoladCard extends StatelessWidget {
       child: Column(
         children: [
           // Step Number
-          Text(stepNumber, style: AppStyles.h2),
-          const SizedBox(height: 24),
-          // Icon or Photo
-          if (photoFile != null && isDashed)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                photoFile!,
-                width: 200,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
+          Text('Step $stepNumber', style: AppStyles.h2),
+          const SizedBox(height: AppStyles.spacingS),
             Container(
-              width: isDashed ? 200 : 80,
-              height: isDashed ? 200 : 80,
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
                 shape: isDashed ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: isDashed ? BorderRadius.circular(12) : null,
+                borderRadius: isDashed ? BorderRadius.circular(AppStyles.radiusM) : null,
                 border: Border.all(
-                  color: isDashed ? AppColors.gray : AppColors.darkBlue,
-                  width: isDashed ? 2 : 3,
+                  color: isDashed ? AppColors.gray : AppColors.lightBlue,
+                  width:2,
                   strokeAlign: BorderSide.strokeAlignInside,
                 ),
                 color: isDashed ? Colors.transparent : null,
@@ -77,13 +66,17 @@ class UpoladCard extends StatelessWidget {
               child: isDashed
                   ? Center(
                       child: Text(
-                        iconLabel,
+                        iconLabel!,
                         style: AppStyles.h2.copyWith(color: AppColors.gray),
                       ),
                     )
-                  : Center(child: Text(iconLabel, style: AppStyles.h2)),
+                  : Icon(
+                      icon,
+                      size: 40,
+                      color:  AppColors.lightBlue
+                    ),
             ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppStyles.spacingM),
           // Primary Button
           SizedBox(
             child: CustomButton(
@@ -102,14 +95,15 @@ class UpoladCard extends StatelessWidget {
           // ),
           // Secondary Button (if exists)
           if (secondaryButtonText != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height:AppStyles.spacingS),
             CustomButton(
               buttonType: ButtonType.secondary,
               onPressed: onSecondaryPressed!,
               text: secondaryButtonText!,
             ),
           ],
-          const SizedBox(height: 16),
+
+          const SizedBox(height: AppStyles.spacingS),
           // Subtext
           Text(subtext, textAlign: TextAlign.center, style: AppStyles.caption),
         ],

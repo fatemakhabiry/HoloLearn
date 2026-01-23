@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
@@ -7,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
+import '../services/avatar_service.dart';
 import '../state/providers/app_state_provider.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/text_form_widget.dart';
@@ -29,8 +31,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userRole = "Computer Engineering Professor";
   File? profileImage;
   bool isRecording = false;
+  bool isUploading = false;
   String? audioPath;
-  late AppStateProvider appState = Provider.of<AppStateProvider>(context, listen: false);
+  late AppStateProvider appState = Provider.of<AppStateProvider>(
+    context,
+    listen: false,
+  );
 
   @override
   void initState() {
@@ -60,80 +66,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
- void _lectureHistory() {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => TeacherLecturesScreen()),
-        );
+
+  void _lectureHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => TeacherLecturesScreen()),
+    );
   }
-  Future<void> _changeAvatarPhoto() async {
-    try {
-      final ImageSource? source = await showDialog<ImageSource>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(
-            'Choose Photo Source',
-            style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(
-                  Icons.camera_alt,
-                  color: AppColors.lightBlue,
-                ),
-                title: const Text('Camera', style: AppStyles.h3),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library,
-                  color: AppColors.lightBlue,
-                ),
-                title: const Text('Gallery', style: AppStyles.h3),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-            ],
-          ),
-        ),
-      );
 
-      if (source != null) {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: source,
-          maxWidth: 1920,
-          maxHeight: 1080,
-          imageQuality: 85,
-        );
 
-        if (image != null) {
-          setState(() {
-            profileImage = File(image.path);
-          });
-
-          CustomErrorHandler.show(
-            context,
-            message: 'Avatar photo updated!',
-            type: ErrorType.success,
-          );
-        }
-      }
-    } catch (e) {
-      CustomErrorHandler.show(
-        context,
-        message: 'Error: ${e.toString().replaceAll('Exception: ', '')}',
-        type: ErrorType.fail,
-      );
-    }
-  }
 
   void _changeVoiceSample() {
+    // Save the outer context
+    final outerContext = context;
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
+        builder: (_, setDialogState) {
           return AlertDialog(
             title: Text(
               'Change Voice Sample',
@@ -161,27 +111,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: AppStyles.spacingL),
 
-                // Record button
                 CustomButton(
                   text: isRecording ? 'STOP RECORDING' : 'RECORD VOICE',
-                  onPressed: () async {
-                    await _recordVoiceInDialog(setDialogState);
-                  },
+                  onPressed: () => _recordVoiceInDialog(setDialogState),
                   buttonType: ButtonType.primary,
                   fullWidth: true,
                 ),
-
                 const SizedBox(height: AppStyles.spacingM),
 
-                // Upload button
                 CustomButton(
                   text: 'Upload Audio File',
                   onPressed: () async {
-                    await _uploadVoiceFile();
-                    Navigator.pop(dialogContext);
+                    try {
+                      FilePickerResult? result = await FilePicker.platform
+                          .pickFiles(
+                            type: FileType.audio,
+                            allowMultiple: false,
+                          );
+
+                      if (result == null || result.files.single.path == null)
+                        return;
+
+                      final selectedFile = File(result.files.single.path!);
+
+                      // Update both states
+                      setState(() {
+                        audioPath = result.files.single.path;
+                      });
+
+                      setDialogState(() {
+                        isUploading = true;
+                      });
+
+                      // Use the outer context for provider
+                      final appState = Provider.of<AppStateProvider>(
+                        outerContext,
+                        listen: false,
+                      );
+
+                      await AvatarService.uploadVoiceSample(
+                        appState: appState,
+                        voiceFile: selectedFile,
+                      );
+
+                      if (!mounted) return;
+
+                      Navigator.pop(dialogContext);
+
+                      CustomErrorHandler.show(
+                        outerContext,
+                        message: 'Voice file uploaded successfully!',
+                        type: ErrorType.success,
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+
+                      setDialogState(() {
+                        isUploading = false;
+                      });
+
+                      CustomErrorHandler.show(
+                        outerContext,
+                        message: e.toString(),
+                        type: ErrorType.fail,
+                      );
+                    }
                   },
                   buttonType: ButtonType.secondary,
                   fullWidth: true,
@@ -223,17 +219,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 buttonType: ButtonType.secondary,
               ),
               CustomButton(
-                onPressed: () {
-                  // TODO: Save voice sample to backend
-                  Navigator.pop(dialogContext);
-                  CustomErrorHandler.show(
-                    context,
-                    message: 'Voice sample updated successfully!',
-                    type: ErrorType.success,
-                  );
+                onPressed: () async {
+                  if (audioPath == null) {
+                    CustomErrorHandler.show(
+                      outerContext,
+                      message: 'Please record or upload a voice sample first',
+                      type: ErrorType.fail,
+                    );
+                    return;
+                  }
+
+                  try {
+                    setDialogState(() {
+                      isUploading = true;
+                    });
+
+                    // Use the outer context for provider
+                    final appState = Provider.of<AppStateProvider>(
+                      outerContext,
+                      listen: false,
+                    );
+
+                    await AvatarService.uploadVoiceSample(
+                      appState: appState,
+                      voiceFile: File(audioPath!),
+                    );
+
+                    if (!mounted) return;
+
+                    Navigator.pop(dialogContext);
+
+                    CustomErrorHandler.show(
+                      outerContext,
+                      message: 'Voice sample uploaded successfully!',
+                      type: ErrorType.success,
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    setDialogState(() {
+                      isUploading = false;
+                    });
+
+                    CustomErrorHandler.show(
+                      outerContext,
+                      message: e.toString(),
+                      type: ErrorType.fail,
+                    );
+                  }
                 },
-                text: 'Save',
+                text: isUploading ? 'Uploading...' : 'Save',
                 buttonType: ButtonType.primary,
+                isLoading: isUploading,
               ),
             ],
           );
@@ -246,7 +283,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       if (await Permission.microphone.request().isGranted) {
         if (isRecording) {
-          // Stop recording
           final path = await _audioRecorder.stop();
           setDialogState(() {
             isRecording = false;
@@ -256,13 +292,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             isRecording = false;
           });
 
+          if (!mounted) return;
+
           CustomErrorHandler.show(
             context,
             message: 'Recording saved!',
             type: ErrorType.success,
           );
         } else {
-          // Start recording
           if (await _audioRecorder.hasPermission()) {
             await _audioRecorder.start(
               const RecordConfig(),
@@ -275,6 +312,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               isRecording = true;
             });
 
+            if (!mounted) return;
+
             CustomErrorHandler.show(
               context,
               message: 'Recording started... Tap stop to finish',
@@ -284,6 +323,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }
       } else {
+        if (!mounted) return;
+
         CustomErrorHandler.show(
           context,
           message: 'Microphone permission denied',
@@ -291,7 +332,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      print('Error recording: $e');
+      if (!mounted) return;
+
       CustomErrorHandler.show(
         context,
         message: 'Recording error: $e',
@@ -300,42 +342,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _uploadVoiceFile() async {
+Future<void> _changeAvatarPhoto() async {
+  try {
+    // Step 1: Show source selection
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Choose Photo Source',
+          style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.lightBlue,
+              ),
+              title: const Text('Camera', style: AppStyles.h3),
+              onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.lightBlue,
+              ),
+              title: const Text('Gallery', style: AppStyles.h3),
+              onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    // Step 2: Pick image
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 90,
+    );
+
+    if (image == null) return;
+
+    // Step 3: Set loading state
+    if (!mounted) return;
+    setState(() {
+      isUploading = true;
+    });
+
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        allowMultiple: false,
+      // Step 4: Process image
+      final File processedImage = await _processImage(File(image.path));
+
+      // Step 5: Get provider
+      if (!mounted) return;
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+
+      // Step 6: Upload
+      await AvatarService.uploadPhoto(
+        appState: appState,
+        photoFile: processedImage,
       );
 
-      if (result != null && result.files.single.path != null) {
-        setState(() {
-          audioPath = result.files.single.path;
-        });
+      // Step 7: Update UI on success
+      if (!mounted) return;
+      setState(() {
+        profileImage = processedImage;
+      });
 
-        CustomErrorHandler.show(
-          context,
-          message: 'Audio file uploaded successfully!',
-          type: ErrorType.success,
-        );
-      }
-    } catch (e) {
-      print(
-        'Error picking audio: ${e.toString().replaceAll('Exception: ', '')}',
-      );
       CustomErrorHandler.show(
         context,
-        message:
-            'Error picking file: ${e.toString().replaceAll('Exception: ', '')}',
+        message: 'Avatar photo uploaded successfully!',
+        type: ErrorType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        profileImage = null;
+      });
+
+      CustomErrorHandler.show(
+        context,
+        message: e.toString(),
         type: ErrorType.fail,
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploading = false;
+        });
+      }
     }
+  } catch (e) {
+    if (!mounted) return;
+
+    if (isUploading) {
+      setState(() {
+        isUploading = false;
+      });
+    }
+
+    CustomErrorHandler.show(
+      context,
+      message: 'Error selecting photo: $e',
+      type: ErrorType.fail,
+    );
   }
+}
+
+Future<File> _processImage(File imageFile) async {
+  try {
+    final bytes = await imageFile.readAsBytes();
+    img.Image? originalImage = img.decodeImage(bytes);
+
+    if (originalImage == null) {
+      throw 'Failed to decode image';
+    }
+
+    const int minDimension = 512;
+    img.Image processedImage;
+
+    if (originalImage.width < minDimension ||
+        originalImage.height < minDimension) {
+      processedImage = img.copyResize(
+        originalImage,
+        width: minDimension,
+        height: minDimension,
+        interpolation: img.Interpolation.cubic,
+      );
+    } else if (originalImage.width > 2048 || originalImage.height > 2048) {
+      int targetWidth = originalImage.width;
+      int targetHeight = originalImage.height;
+
+      if (targetWidth > targetHeight) {
+        targetWidth = 2048;
+        targetHeight =
+            (originalImage.height * 2048 / originalImage.width).round();
+      } else {
+        targetHeight = 2048;
+        targetWidth =
+            (originalImage.width * 2048 / originalImage.height).round();
+      }
+
+      processedImage = img.copyResize(
+        originalImage,
+        width: targetWidth,
+        height: targetHeight,
+        interpolation: img.Interpolation.cubic,
+      );
+    } else {
+      processedImage = originalImage;
+    }
+
+    final tempDir = Directory.systemTemp;
+    final tempFile = File(
+      '${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+    await tempFile.writeAsBytes(img.encodeJpg(processedImage, quality: 90));
+
+    return tempFile;
+  } catch (e) {
+    // If image processing fails, return original file
+    print('Image processing failed: $e');
+    return imageFile;
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
-      appBar: CustomAppBar(title: "${appState.userRole=='teacher' ? 'Teacher' : 'Student'} Profile", showBackButton: true),
+      appBar: CustomAppBar(
+        title:
+            "${appState.userRole == 'teacher' ? 'Teacher' : 'Student'} Profile",
+        showBackButton: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppStyles.spacingL),
         child: Column(
@@ -381,7 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: AppStyles.spacingS),
                   // Role
                   Text(
-                    appState.userRole=='teacher' ? userRole: 'Student',
+                    appState.userRole == 'teacher' ? userRole : 'Student',
                     style: AppStyles.caption,
                     textAlign: TextAlign.center,
                   ),
@@ -389,7 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: AppStyles.spacingL),
-             
+
             // Account Settings Card
             Container(
               padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -401,22 +588,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (appState.userRole == 'teacher')...[
-                  Text(
-                    "Lecture Settings",
-                    style: AppStyles.h3.copyWith(color: AppColors.textLight),
-                  ),
-                  const SizedBox(height: AppStyles.spacingS),
-                  CustomTextFormField(
-                    prefixIcon: Icon(
-                      Icons.history,
-                      color: AppColors.lightBlue,
+                  if (appState.userRole == 'teacher') ...[
+                    Text(
+                      "Lecture Settings",
+                      style: AppStyles.h3.copyWith(color: AppColors.textLight),
                     ),
-                    hintText: 'Lecture History',
-                    readOnly: true,
-                    onTap: _lectureHistory,
-                  ),
-                ],
+                    const SizedBox(height: AppStyles.spacingS),
+                    CustomTextFormField(
+                      prefixIcon: Icon(
+                        Icons.history,
+                        color: AppColors.lightBlue,
+                      ),
+                      hintText: 'Lecture History',
+                      readOnly: true,
+                      onTap: _lectureHistory,
+                    ),
+                  ],
                   const SizedBox(height: AppStyles.spacingL),
                   Text(
                     "Account Settings",
@@ -440,51 +627,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-                if(appState.userRole=='teacher')...[
-                  const SizedBox(height: AppStyles.spacingL),
-                  Text(
-                    "Avatar Settings",
-                    style: AppStyles.h3.copyWith(color: AppColors.textLight),
-                  ),
-                  const SizedBox(height: AppStyles.spacingS),
-                  CustomTextFormField(
-                    prefixIcon: Icon(
-                      Icons.photo_camera_outlined,
-                      color: AppColors.lightBlue,
+                  if (appState.userRole == 'teacher') ...[
+                    const SizedBox(height: AppStyles.spacingL),
+                    Text(
+                      "Avatar Settings",
+                      style: AppStyles.h3.copyWith(color: AppColors.textLight),
                     ),
-                    hintText: 'change avatar photo',
-                    readOnly: true,
-                    suffixIcon: TextButton(
-                      onPressed: _changeAvatarPhoto,
-                      child: Text(
-                        'Change',
-                        style: AppStyles.h3.copyWith(
-                          color: AppColors.lightBlue,
+                    const SizedBox(height: AppStyles.spacingS),
+                    CustomTextFormField(
+                      prefixIcon: Icon(
+                        Icons.photo_camera_outlined,
+                        color: AppColors.lightBlue,
+                      ),
+                      hintText: 'change avatar photo',
+                      readOnly: true,
+                      suffixIcon: TextButton(
+                        onPressed: _changeAvatarPhoto,
+                        child: Text(
+                          'Change',
+                          style: AppStyles.h3.copyWith(
+                            color: AppColors.lightBlue,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: AppStyles.spacingS),
-                  CustomTextFormField(
-                    prefixIcon: Icon(Icons.mic, color: AppColors.lightBlue),
-                    hintText: 'change voice sample',
-                    readOnly: true,
-                    suffixIcon: TextButton(
-                      onPressed: _changeVoiceSample,
-                      child: Text(
-                        'Change',
-                        style: AppStyles.h3.copyWith(
-                          color: AppColors.lightBlue,
+                    const SizedBox(height: AppStyles.spacingS),
+                    CustomTextFormField(
+                      prefixIcon: Icon(Icons.mic, color: AppColors.lightBlue),
+                      hintText: 'change voice sample',
+                      readOnly: true,
+                      suffixIcon: TextButton(
+                        onPressed: _changeVoiceSample,
+                        child: Text(
+                          'Change',
+                          style: AppStyles.h3.copyWith(
+                            color: AppColors.lightBlue,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(
-                    height: AppStyles.spacingL,
-                  ),
-                 ] // Avatar Settings Card
+                    const SizedBox(height: AppStyles.spacingL),
+                  ], // Avatar Settings Card
                 ],
               ),
             ),
@@ -493,6 +678,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
- 
 }

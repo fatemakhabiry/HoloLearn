@@ -190,7 +190,7 @@ class ScheduleService {
       final uri = Uri.parse(ApiConfig.getUrl(endpoint));
 
       final response = await http
-          .delete(
+          .patch(
             uri,
             headers: {
               'Content-Type': 'application/json',

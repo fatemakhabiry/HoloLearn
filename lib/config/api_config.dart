@@ -31,7 +31,7 @@ class ApiConfig {
   static const String availabilitySlotsEndpoint = '/schedules/available-slots';
 
   // Lecture endpoints
-  static const String lecturesEndpoint = '/api/lectures';
+  static const String lecturesEndpoint = '/lecture/';
   static const String createLectureDraftEndpoint = '/lecture/create-draft';
   static const String publishLectureEndpoint = '/lecture';
   static const String lectureHistoryendpoint =

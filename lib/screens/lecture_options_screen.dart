@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hololearn/models/lecture_model.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
@@ -13,7 +14,9 @@ import '../widgets/button_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/message_handler_widget.dart';
 import '../services/availability_service.dart';
+import '../services/lecture_service.dart';
 import '../state/providers/app_state_provider.dart';
+import '../state/providers/lecture_state_provider.dart';
 import 'teacher_dashboard_screen.dart';
 
 class LectureSetupScreen extends StatefulWidget {
@@ -27,6 +30,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   String selectedAvatar = 'standard';
   bool isLoading = false;
   bool isFetchingSlots = false;
+  bool isRescheduleMode = false; // ✅ NEW: Track if we're rescheduling
   final TextEditingController _dateController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -40,12 +44,82 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   bool _success = false;
   String? errorMessage;
 
-  @override
-  void dispose() {
-    _dateController.dispose();
-    super.dispose();
-  }
+@override
+void initState() {
+  super.initState();
+  // Don't call _checkRescheduleMode here, wait for didChangeDependencies
+}
 
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  // ✅ Only check once
+  if (!_hasCheckedRescheduleMode) {
+    _checkRescheduleMode();
+    _hasCheckedRescheduleMode = true;
+  }
+}
+
+// ✅ Add flag to prevent multiple checks
+bool _hasCheckedRescheduleMode = false;
+
+void _checkRescheduleMode() {
+  final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+  
+  print('🔍 Checking reschedule mode...');
+  print('   Lecture ID: ${lectureState.lectureId}');
+  print('   Date: ${lectureState.lectureDate}');
+  print('   Start Time: ${lectureState.lectureStartTime}');
+  
+  if (lectureState.lectureId > 0) {
+    setState(() {
+      isRescheduleMode = true;
+    });
+    
+    print('✅ Reschedule mode ACTIVATED');
+    
+    // Pre-fill date if available
+    if (lectureState.lectureDate.isNotEmpty) {
+      selectedDate = lectureState.lectureDate;
+      _dateController.text = _formatDateForDisplay(lectureState.lectureDate);
+      
+      print('   Pre-filling date: $selectedDate');
+      
+      // ✅ Fetch slots after setting date
+      Future.microtask(() => _fetchAvailableSlots());
+    }
+  } else {
+    print('ℹ️ Normal mode (not rescheduling)');
+  }
+}
+
+// ✅ Fix the time parsing helper
+TimeOfDay _parseTime(String timeString) {
+  try {
+    // Handle format "HH:mm" or "HH:mm:ss"
+    final parts = timeString.split(':');
+    if (parts.length >= 2) {
+      return TimeOfDay(
+        hour: int.parse(parts[0]), 
+        minute: int.parse(parts[1]),
+      );
+    }
+  } catch (e) {
+    print('Error parsing time "$timeString": $e');
+  }
+  return const TimeOfDay(hour: 0, minute: 0);
+}
+  String _formatDateForDisplay(String apiDate) {
+    try {
+      final dateParts = apiDate.split('-');
+      if (dateParts.length == 3) {
+        return '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}';
+      }
+    } catch (e) {
+      // Ignore formatting errors
+    }
+    return apiDate;
+  }
   Future<void> _pickDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -95,6 +169,23 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
             .toList();
         isFetchingSlots = false;
 
+        // ✅ NEW: In reschedule mode, try to pre-select the existing time slot
+        if (isRescheduleMode) {
+          final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+          final matchingSlot = availableSlots.firstWhere(
+            (slot) =>
+                slot.startTime.hour == _parseTime(lectureState.lectureStartTime).hour &&
+                slot.startTime.minute == _parseTime(lectureState.lectureStartTime).minute &&
+                slot.endTime.hour == _parseTime(lectureState.lectureEndTime).hour &&
+                slot.endTime.minute == _parseTime(lectureState.lectureEndTime).minute,
+            orElse: () => availableSlots.isNotEmpty ? availableSlots.first : null as AvailabilitySlot,
+          );
+          if (matchingSlot != null) {
+            selectedSlot = matchingSlot;
+            selectedTimeSlot = matchingSlot.formattedTimeSlot;
+          }
+        }
+
         if (availableSlots.isEmpty) {
           _showBanner = true;
           _success = false;
@@ -130,92 +221,102 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   }
 
   Future<void> _publishLecture() async {
-    if (!_formKey.currentState!.validate()) {
-      setState(() {
-        _showBanner = true;
-        _success = false;
-        message = "Please fill all required fields correctly!";
-      });
-      return;
-    }
-
-    _formKey.currentState!.save();
-
-    if (selectedSlot == null) {
-      setState(() {
-        _showBanner = true;
-        _success = false;
-        message = "Please select a time slot";
-      });
-      return;
-    }
-
+  if (!_formKey.currentState!.validate()) {
     setState(() {
-      isLoading = true;
-      _showBanner = false;
+      _showBanner = true;
+      _success = false;
+      message = "Please fill all required fields correctly!";
     });
+    return;
+  }
 
-    try {
-      // ✅ Call the confirm and publish API
-      final appState = Provider.of<AppStateProvider>(context, listen: false);
-      final response = await AvailabilityService.confirmAndPublishLecture(
-        token: appState.accessToken,
-        lectureId: appState.lectureId,
+  _formKey.currentState!.save();
+
+  if (selectedSlot == null) {
+    setState(() {
+      _showBanner = true;
+      _success = false;
+      message = "Please select a time slot";
+    });
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+    _showBanner = false;
+  });
+
+  try {
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+
+    late final LecturePublishResponse response;
+      // ✅ Reschedule existing lecture
+      
+      response = await LectureService.confirmAndPublishLecture(
+        appState: appState,
+        lectureId: isRescheduleMode? lectureState.lectureId:appState.lectureId,
         scheduleId: selectedSlot!.scheduleId,
       );
+      
 
-      if (!mounted) return;
-      setState(() {
-        message = response.message;
-        _showBanner = true;
-        _success = true;
-        isLoading = false;
-      });
+    if (!mounted) return;
+    
+    setState(() {
+      message = response.message;
+      _showBanner = true;
+      _success = true;
+      isLoading = false;
+    });
 
-      // Navigate back after success
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TeacherDashboardScreen(),
-            ),
-          );
-        }
-      });
-    } on ClientException {
-      errorMessage = 'Cannot connect to server. Check internet or URL.';
-    } on SocketException {
-      errorMessage = 'No internet connection.';
-    } on TimeoutException {
-      errorMessage = 'Request timed out.';
-    } catch (e) {
-      errorMessage = e.toString().replaceFirst('Exception: ', '');
-    } finally {
-      if (errorMessage != null) {
-        if (mounted) {
-          setState(() {
-            _showBanner = true;
-            _success = false;
-            message = errorMessage!;
-            isLoading = false;
-          });
-        }
-        errorMessage = null;
+    // ✅ Clear lecture state before navigating
+    await lectureState.clearLectureState();
+
+    // Navigate back after success
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TeacherDashboardScreen(),
+          ),
+          (route) => false,
+        );
       }
+    });
+  } on ClientException {
+    errorMessage = 'Cannot connect to server. Check internet or URL.';
+  } on SocketException {
+    errorMessage = 'No internet connection.';
+  } on TimeoutException {
+    errorMessage = 'Request timed out.';
+  } catch (e) {
+    errorMessage = e.toString().replaceFirst('Exception: ', '');
+  } finally {
+    if (errorMessage != null) {
       if (mounted) {
         setState(() {
+          _showBanner = true;
+          _success = false;
+          message = errorMessage!;
           isLoading = false;
         });
       }
+      errorMessage = null;
+    }
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
-      appBar: CustomAppBar(title: "Lecture Setup", showBackButton: true),
+      appBar: CustomAppBar(title: isRescheduleMode ? "Reschedule Lecture" : "Lecture Setup", showBackButton: true),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -384,7 +485,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
 
                       // Confirm Button
                       CustomButton(
-                        text: 'CONFIRM & PUBLISH LECTURE',
+                        text: isRescheduleMode ? 'CONFIRM & RESCHEDULE LECTURE' : 'CONFIRM & PUBLISH LECTURE',
                         fullWidth: true,
                         isLoading: isLoading,
                         onPressed: _publishLecture,

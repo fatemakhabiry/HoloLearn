@@ -6,6 +6,10 @@ class ScheduleSlot {
   final String teacherName;
   final String lectureTitle;
   final String status;
+  final int? lectureId; 
+  final String? courseCode; 
+  final String? date;  
+  final String? lectureType;  
 
   ScheduleSlot({
     required this.startTime,
@@ -14,6 +18,10 @@ class ScheduleSlot {
     required this.teacherName,
     required this.lectureTitle,
     required this.status,
+    this.lectureId,  
+    this.courseCode,  
+    this.date,  
+    this.lectureType,  
   });
 
   /// Parse from API JSON
@@ -25,6 +33,10 @@ class ScheduleSlot {
       teacherName: json['teacher_name'] ?? '',
       lectureTitle: json['lecture_title'] ?? '',
       status: json['status'] ?? '',
+      lectureId: json['lecture_id'],  
+      courseCode: json['course_code'],  
+      date: json['date'],  
+      lectureType: json['lecture_type'],  
     );
   }
 
@@ -50,7 +62,7 @@ class ScheduleSlot {
   /// Format date from "2025-01-20T10:00:00" to "Oct 15, 2025"
   String get formattedDate {
     try {
-      final dateTime = DateTime.parse(startTime);
+      final dateTime = DateTime.parse(date ?? startTime);
       final months = [
         'Jan',
         'Feb',
@@ -80,33 +92,10 @@ class ScheduleSlot {
       'teacher_name': teacherName,
       'lecture_title': lectureTitle,
       'status': status,
-    };
-  }
-}
-
-/// Model for the complete API response
-class ScheduleResponse {
-  final List<ScheduleSlot> reservedSlots;
-
-  ScheduleResponse({required this.reservedSlots});
-
-  /// Parse complete API response
-  factory ScheduleResponse.fromJson(Map<String, dynamic> json) {
-    return ScheduleResponse(
-      reservedSlots:
-          (json['reserved_slots'] as List<dynamic>?)
-              ?.map(
-                (slot) => ScheduleSlot.fromJson(slot as Map<String, dynamic>),
-              )
-              .toList() ??
-          [],
-    );
-  }
-
-  /// Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'reserved_slots': reservedSlots.map((slot) => slot.toJson()).toList(),
+      'lecture_id': lectureId, 
+      'course_code': courseCode, 
+      'date': date, 
+      'lecture_type': lectureType, 
     };
   }
 }

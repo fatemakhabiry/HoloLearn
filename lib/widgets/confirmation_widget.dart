@@ -84,4 +84,9 @@ class CustomConfirmationDialog extends StatelessWidget {
       ),
     );
   }
+
+  // Static method to dismiss the dialog programmatically
+  static void dismiss(BuildContext context) {
+    Navigator.of(context).pop();
+  }
 }

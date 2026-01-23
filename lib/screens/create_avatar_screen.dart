@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
-import'dart:io';
+import 'package:hololearn/screens/lecture_options_screen.dart';
+import 'dart:io';
 import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/error_handler_widget.dart';
 import '../widgets/button_widget.dart';
+import '../services/avatar_service.dart';
+import '../state/providers/app_state_provider.dart';
+import '../widgets/message_handler_widget.dart';
+import '../widgets/upload_card_widget.dart';
+
 class CreateAvatarScreen extends StatefulWidget {
   const CreateAvatarScreen({super.key});
 
@@ -17,14 +24,16 @@ class CreateAvatarScreen extends StatefulWidget {
 }
 
 class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
-   final AudioRecorder _audioRecorder = AudioRecorder();
-  
+  final AudioRecorder _audioRecorder = AudioRecorder();
+
   bool isRecording = false;
   bool hasRecordedVoice = false;
   bool hasUploadedPhoto = false;
-  
+  bool isLoading = false;
+
   String? audioPath;
   File? selectedImage;
+  String? message;
 
   @override
   void dispose() {
@@ -33,7 +42,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   }
 
   // ========== VOICE RECORDING ==========
-  
+
   Future<void> _recordVoice() async {
     try {
       // Request microphone permission
@@ -46,7 +55,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             hasRecordedVoice = true;
             audioPath = path;
           });
-          
+
           CustomErrorHandler.show(
             context,
             message: 'Recording saved!',
@@ -62,7 +71,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             setState(() {
               isRecording = true;
             });
-            
+
             CustomErrorHandler.show(
               context,
               message: 'Recording started... Tap again to stop',
@@ -101,7 +110,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
           audioPath = result.files.single.path;
           hasRecordedVoice = true;
         });
-        
+
         CustomErrorHandler.show(
           context,
           message: 'Audio file uploaded!',
@@ -119,7 +128,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   }
 
   // ========== IMAGE PICKING ==========
-  
+
   Future<void> _uploadPhoto() async {
     try {
       // Show dialog to choose camera or gallery
@@ -131,12 +140,18 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.lightBlue),
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.lightBlue,
+                ),
                 title: const Text('Camera', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library,color: AppColors.lightBlue),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.lightBlue,
+                ),
                 title: const Text('Gallery', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
@@ -173,7 +188,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             selectedImage = File(image.path);
             hasUploadedPhoto = true;
           });
-          
+
           CustomErrorHandler.show(
             context,
             message: 'Photo uploaded!',
@@ -191,22 +206,56 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
     }
   }
 
-  void _finishAndGenerate() {
+  Future<void> _finishAndGenerate() async {
     if (hasRecordedVoice && hasUploadedPhoto) {
-      // TODO: Send audioPath and selectedImage to your backend/API
-      print('Audio path: $audioPath');
-      print('Image path: ${selectedImage?.path}');
-      
-      CustomErrorHandler.show(
-        context,
-        message: 'Generating avatar...',
-        type: ErrorType.success,
-      );
-      
-      // TODO: Navigate to next screen
-      // Navigator.pushNamed(context, '/lecture-setup');
+      try {
+        setState(() {
+          isLoading = true;
+        });
+        // Get app state
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+
+        // Prepare files
+        File? voiceFile;
+        if (audioPath != null) {
+          voiceFile = File(audioPath!);
+        }
+
+        // Upload avatar
+        final result = await AvatarService.uploadAvatar(
+          appState: appState,
+          photoFile: selectedImage,
+          voiceFile: voiceFile,
+        );
+
+        print('Upload result: $result');
+
+        CustomErrorHandler.show(
+          context,
+          message: 'Avatar uploaded successfully! Generating...',
+          type: ErrorType.success,
+        );
+
+        if (!mounted) return;
+
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LectureSetupScreen()),
+        );
+      } catch (e) {
+        print('Error uploading avatar: $e');
+        CustomErrorHandler.show(
+          context,
+          message: 'Failed to upload avatar: $e',
+          type: ErrorType.fail,
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } else {
-      String message = '';
       if (!hasRecordedVoice && !hasUploadedPhoto) {
         message = 'Please complete both steps';
       } else if (!hasRecordedVoice) {
@@ -214,19 +263,17 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
       } else {
         message = 'Please upload a photo';
       }
-      
-      CustomErrorHandler.show(
-        context,
-        message: message,
-        type: ErrorType.fail,
-      );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
-      appBar: CustomAppBar(title:   "Create Hologram Avatar", showBackButton: true),
+      appBar: CustomAppBar(
+        title: "Create Hologram Avatar",
+        showBackButton: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppStyles.spacingL),
         child: Column(
@@ -237,158 +284,58 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
               children: [
                 // STEP 1 Card
                 Expanded(
-                  child: _buildStepCard(
+                  child: UpoladCard(
                     stepNumber: '1',
                     icon: Icons.mic,
                     primaryButtonText: 'RECORD VOICE',
-                    primaryButtonOnPressed: _recordVoice,
+                    onPrimaryPressed: _recordVoice,
                     secondaryButtonText: 'UPLOAD RECORD',
-                    secondaryButtonOnPressed: _uploadRecord,
-                    description: 'Used only for avatar voice synthesis',
-                    isCompleted: hasRecordedVoice,
+                    onSecondaryPressed: _uploadRecord,
+                    subtext: 'Used only for avatar voice synthesis',
+                    hasFile: hasRecordedVoice,
                   ),
                 ),
                 const SizedBox(width: AppStyles.spacingM),
-                
+
                 // STEP 2 Card
                 Expanded(
-                  child: _buildStepCard(
+                  child: UpoladCard(
                     stepNumber: '2',
                     icon: Icons.photo,
+                    iconLabel: 'PHOTO',
                     primaryButtonText: 'UPLOAD PHOTO',
-                    primaryButtonOnPressed: _uploadPhoto,
-                    description: 'Used as basis for 3D avatar model',
-                    isCompleted: hasUploadedPhoto,
-                    showDashedBorder: true,
+                    onPrimaryPressed: _uploadPhoto,
+                    subtext: 'Used as basis for 3D avatar model',
+                    hasFile: hasUploadedPhoto,
+                    isDashed: true,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: AppStyles.spacingXL),
-            
+
             // Finish button
             CustomButton(
               text: 'FINISH & GENERATE AVATAR',
               onPressed: _finishAndGenerate,
               buttonType: ButtonType.primary,
               fullWidth: true,
+              isLoading: isLoading,
             ),
+            const SizedBox(height: AppStyles.spacingXL),
+
+            if (message != null) ...[
+              const SizedBox(height: AppStyles.spacingL),
+              MessageDisplay(
+                isSuccess: false,
+                massegeBanner: "Error",
+                message: message!,
+                onDismiss: () => setState(() => message = null),
+              ),
+            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStepCard({
-    required String stepNumber,
-    required IconData icon,
-    required String primaryButtonText,
-    required VoidCallback primaryButtonOnPressed,
-    String? secondaryButtonText,
-    VoidCallback? secondaryButtonOnPressed,
-    required String description,
-    required bool isCompleted,
-    bool showDashedBorder = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(AppStyles.spacingL),
-      height: 500,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-        boxShadow: AppStyles.cardShadow,
-      ),
-      child: Column(
-        children: [
-          // Step header
-          Text(
-            'STEP $stepNumber',
-            style: AppStyles.h3.copyWith(
-              fontSize: AppStyles.spacingM,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          
-          const SizedBox(height: AppStyles.spacingL),
-          
-          // Icon circle or dashed box
-          if (showDashedBorder)
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppColors.gray.withOpacity(0.5),
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-                borderRadius: BorderRadius.circular(AppStyles.radiusM),
-              ),
-              child: Center(
-                child: Text(
-                  'PHOTO',
-                  style: AppStyles.bodyMedium.copyWith(
-                    color: AppColors.gray,
-                  ),
-                ),
-              ),
-            )
-          else
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.lightBlue,
-                  width: 3,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: AppColors.lightBlue,
-                ),
-              ),
-            ),
-          
-          const SizedBox(height: AppStyles.spacingL),
-          
-          // Primary button
-          CustomButton(
-            text: primaryButtonText,
-            onPressed: primaryButtonOnPressed,
-            buttonType: ButtonType.primary,
-            fullWidth: true,
-          ),
-          
-          // Secondary button (if exists)
-          if (secondaryButtonText != null && secondaryButtonOnPressed != null) ...[
-            const SizedBox(height: AppStyles.spacingM),
-            CustomButton(
-              onPressed: secondaryButtonOnPressed,
-              text:secondaryButtonText,
-              buttonType: ButtonType.secondary,
-              fullWidth: true,
-              ),
-          ]
-          else...[          
-            const SizedBox(height: AppStyles.spacingXL),
-          ],
-          
-          const SizedBox(height: AppStyles.spacingM),
-          
-          // Description
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: AppStyles.caption.copyWith(
-              color: AppColors.gray,
-            ),
-          ),
-        ],
       ),
     );
   }

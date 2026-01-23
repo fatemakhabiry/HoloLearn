@@ -3,19 +3,26 @@ class ScheduleSlot {
   final String startTime;
   final String endTime;
   final int? scheduleId;
+  final int? lectureId;
   final String teacherName;
   final String lectureTitle;
   final String courseCode;
   final String status;
+  final String? lectureType;
+  final String? date;
+
 
   ScheduleSlot({
     required this.startTime,
     required this.endTime,
     this.scheduleId,
+    this.lectureId,
     required this.teacherName,
     required this.lectureTitle,
     this.courseCode = '',
     this.status = '',
+    this.lectureType,
+    this.date,
   });
 
   /// Parse from API JSON
@@ -24,10 +31,13 @@ class ScheduleSlot {
       startTime: json['start_time'] ?? '',
       endTime: json['end_time'] ?? '',
       scheduleId: json['schedule_id'] ?? 0,
+      lectureId: json['lecture_id'] ?? 0,
       teacherName: json['teacher_name'] ?? '',
       lectureTitle: json['lecture_title'] ?? '',
       courseCode: json['course_code'] ?? '',
       status: json['status'] ?? '',
+      lectureType: json['lecture_type']?? '',
+      date: json['date'] ?? '',
     );
   }
 
@@ -121,10 +131,13 @@ class ScheduleSlot {
       'start_time': startTime,
       'end_time': endTime,
       'schedule_id': scheduleId,
+      'lecture_id': lectureId,
       'teacher_name': teacherName,
       'lecture_title': lectureTitle,
       'course_code': courseCode,
       'status': status,
+      'lecture_type': lectureType,
+      'date': date,
     };
   }
 }

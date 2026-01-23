@@ -5,8 +5,8 @@ import '../constants/app_styles.dart';
 
 class LectureScheduleCard extends StatelessWidget {
   final String lectureTitle;
-  final String date;
-  final String timeRange;
+  final String? date;
+  final String? timeRange;
   final String editButtonText;
   final String cancelButtonText;
   final VoidCallback? onEdit;
@@ -15,8 +15,8 @@ class LectureScheduleCard extends StatelessWidget {
   const LectureScheduleCard({
     super.key,
     required this.lectureTitle,
-    required this.date,
-    required this.timeRange,
+    this.date,
+    this.timeRange,
     this.editButtonText='EDIT',
     this.cancelButtonText='CANCEL',
     this.onEdit,
