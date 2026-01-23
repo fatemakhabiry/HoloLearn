@@ -20,7 +20,17 @@ class FullTimeSlot(BaseModel):
     teacher_name: str
     lecture_title: str
     status: str
-    course_code: str 
+    course_code: str
+
+class FullTimeSlot2(BaseModel):
+    schedule_id: Optional[int] = None      # Null if draft
+    lecture_id: int                        # Always present
+    course_code: str                       # Always present
+    lecture_title: str                     # Always present
+    teacher_name: str                      # Always present
+    start_time: Optional[datetime] = None  # Null if draft
+    end_time: Optional[datetime] = None    # Null if draft
+    status: str                            # "scheduled" or "draft"
 
 
 class CancelScheduleResponse(BaseModel):
@@ -64,17 +74,21 @@ class ConfirmPublishResponse(BaseModel):
 class LectureEditDetails(BaseModel):
     """Lecture details for the edit form"""
     lecture_id: int
-    schedule_id: int  # Include schedule_id
+    schedule_id: int
     title: str
     course_code: str
     current_file_url: str
-    current_file_name: str
-    # Schedule info
     scheduled_date: date
     start_time: time
     end_time: time
     status: str
 
+
+class EditLectureRequest(BaseModel):
+    """Request to edit lecture (JSON body)"""
+    title: Optional[str] = None
+    course_code: Optional[str] = None
+    new_schedule_id: Optional[int] = None
 
 class EditLectureResponse(BaseModel):
     """Response after editing lecture"""
@@ -88,6 +102,13 @@ class EditLectureResponse(BaseModel):
     start_time: time
     end_time: time
     schedule_status: str
-    file_updated: bool
-    file_url: Optional[str] = None
-    schedule_changed: bool  
+    schedule_changed: bool 
+
+
+class DeleteLectureResponse(BaseModel):
+    """Response after deleting a lecture"""
+    message: str
+    # lecture_id: int
+    # lecture_title: str
+    # schedules_freed: int  # Number of schedules that were freed
+    # freed_schedule_ids: List[int]  # IDs of schedules that were freed

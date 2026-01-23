@@ -2,15 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime, time, date
-from pydantic import BaseModel
-from app.schemas.schedule_schemas import TimeSlot , DateAvailability,FullTimeSlot,CancelScheduleResponse
+from app.schemas.schedule_schemas import TimeSlot , DateAvailability,FullTimeSlot,CancelScheduleResponse,FullTimeSlot2
 
 
 from app.core.database import get_session
 from app.api.deps import (
     get_current_teacher,
-    get_current_user,
-    verify_schedule_ownership
+
 )
 
 from app.models.user import User
@@ -349,3 +347,5 @@ def cancel_schedule_patch(
         status=schedule.status,
         previous_lecture_id=previous_lecture_id
     )
+
+

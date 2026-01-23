@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlmodel import Session, select
-from typing import Optional
-from datetime import time , date
+from typing import Optional ,List
+from datetime import time , date,datetime
 from app.services.google_drive import drive_service
 import os
 
@@ -11,7 +11,14 @@ from app.models.schedule import Schedule, SchedulePublic, ScheduleCreate
 from app.models.user import User, UserRole
 from app.models.course import Course
 from app.api.deps import get_current_user,get_current_teacher
-from app.schemas.schedule_schemas import ConfirmPublishResponse,ConfirmPublishRequest,LectureEditDetails,EditLectureResponse
+from app.schemas.schedule_schemas import (ConfirmPublishResponse,
+ ConfirmPublishRequest,
+ LectureEditDetails,
+ EditLectureResponse,
+ FullTimeSlot2,
+ EditLectureRequest,
+ DeleteLectureResponse
+)
 
 router = APIRouter()
 
@@ -261,30 +268,9 @@ async def get_lecture_edit_details_by_schedule(
     """
     Get lecture details for editing using schedule_id
     
-    Flow:
-    1. Teacher clicks EDIT on scheduled lecture card
-    2. Frontend passes schedule_id from the card
-    3. Backend returns lecture details to pre-fill edit form
-    
-    Request:
-    GET /api/lectures/schedule/{schedule_id}/edit-details
-    
-    Response:
-    {
-        "lecture_id": 5,
-        "schedule_id": 3,
-        "title": "Introduction to Algorithms",
-        "course_code": "CS101",
-        "current_file_url": "https://drive.google.com/...",
-        "current_file_name": "lecture_slides.pdf",
-        "scheduled_date": "2026-01-20",
-        "start_time": "14:00:00",
-        "end_time": "15:30:00",
-        "status": "scheduled"
-    }
+    Returns all current values to pre-fill the edit form
     """
     
-    # 1. Get schedule
     schedule = session.get(Schedule, schedule_id)
     
     if not schedule:
@@ -293,54 +279,38 @@ async def get_lecture_edit_details_by_schedule(
             detail=f"Schedule with ID {schedule_id} not found"
         )
     
-    # 2. Verify schedule ownership
     if schedule.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only edit your own schedules"
         )
     
-    # 3. Get lecture_id from schedule
     if schedule.lecture_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This schedule has no lecture assigned"
         )
     
-    lecture_id = schedule.lecture_id
-    
-    # 4. Get lecture details
-    lecture = session.get(Lecture, lecture_id)
+    lecture = session.get(Lecture, schedule.lecture_id)
     
     if not lecture:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Lecture with ID {lecture_id} not found"
+            detail=f"Lecture not found"
         )
     
-    # 5. Verify lecture ownership
     if lecture.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only edit your own lectures"
         )
     
-    # 6. Extract file name from URL
-    file_name = "lecture_file.pdf"
-    if lecture.final_content:
-        if "/" in lecture.final_content:
-            file_name = lecture.final_content.split("/")[-1]
-        else:
-            file_name = lecture.final_content
-    
-    # 7. Return lecture details
     return LectureEditDetails(
         lecture_id=lecture.lecture_id,
         schedule_id=schedule.schedule_id,
         title=lecture.title,
         course_code=lecture.course_code,
         current_file_url=lecture.final_content or "",
-        current_file_name=file_name,
         scheduled_date=schedule.date,
         start_time=schedule.start_time,
         end_time=schedule.end_time,
@@ -355,61 +325,40 @@ async def get_lecture_edit_details_by_schedule(
 @router.put("/schedule/{schedule_id}/edit", response_model=EditLectureResponse)
 async def edit_lecture_by_schedule(
     schedule_id: int,
-    title: Optional[str] = Form(None),
-    course_code: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None),
-    new_schedule_id: Optional[int] = Form(None),  # ← For changing schedule
+    request_data: EditLectureRequest,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_teacher)
 ):
     """
-    Edit lecture details and/or change schedule
+    Edit lecture title, course code, and/or schedule
     
-    Teacher can update:
-    1. Lecture title (updates lecture table)
-    2. Course code (updates lecture table)
-    3. Lecture file (uploads to Drive, updates lecture table)
-    4. Schedule slot (frees old schedule, reserves new schedule)
+    This is a SIMPLIFIED version that accepts JSON (not multipart/form-data)
+    and only updates: title, course_code, and schedule
     
-    Request (multipart/form-data):
+    Request (JSON):
     PUT /api/lectures/schedule/{schedule_id}/edit
     
     Body:
-    - title: New title (optional)
-    - course_code: New course code (optional)
-    - file: New file (optional)
-    - new_schedule_id: ID of new schedule slot (optional)
-    
-    Example 1 - Update title only:
-    {
-        "title": "Updated Title"
-    }
-    
-    Example 2 - Change schedule only:
-    {
-        "new_schedule_id": 5
-    }
-    
-    Example 3 - Update title AND change schedule:
     {
         "title": "Updated Title",
-        "new_schedule_id": 5
+        "course_code": "CS102",
+        "new_schedule_id": 10
     }
+    
+    All fields are optional - only send what you want to update.
     
     Response:
     {
         "message": "Lecture updated successfully",
-        "lecture_id": 5,
-        "schedule_id": 5,
+        "lecture_id": 3,
+        "schedule_id": 10,
         "lecture_title": "Updated Title",
-        "course_code": "CS101",
+        "course_code": "CS102",
         "lecture_status": "completed",
-        "scheduled_date": "2026-01-22",
-        "start_time": "14:00:00",
-        "end_time": "15:30:00",
+        "scheduled_date": "2026-01-23",
+        "start_time": "18:00:00",
+        "end_time": "19:30:00",
         "schedule_status": "scheduled",
-        "file_updated": true,
-        "file_url": "https://drive.google.com/...",
         "schedule_changed": true
     }
     """
@@ -418,7 +367,6 @@ async def edit_lecture_by_schedule(
     # PART 1: Validate Current Schedule
     # ============================================
     
-    # Get current schedule
     current_schedule = session.get(Schedule, schedule_id)
     
     if not current_schedule:
@@ -427,14 +375,12 @@ async def edit_lecture_by_schedule(
             detail=f"Schedule with ID {schedule_id} not found"
         )
     
-    # Verify schedule ownership
     if current_schedule.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only edit your own schedules"
         )
     
-    # Get lecture from current schedule
     if current_schedule.lecture_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -449,7 +395,6 @@ async def edit_lecture_by_schedule(
             detail="Lecture not found"
         )
     
-    # Verify lecture ownership
     if lecture.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -460,76 +405,32 @@ async def edit_lecture_by_schedule(
     # PART 2: Update Lecture Details
     # ============================================
     
-    file_updated = False
-    new_file_url = None
-    
     try:
         # Update title
-        if title:
-            lecture.title = title
+        if request_data.title is not None:
+            lecture.title = request_data.title
+            print(f"✅ Updated title: {lecture.title}")
         
         # Update course code
-        if course_code and course_code != lecture.course_code:
-            from app.models.course import Course
-            course = session.get(Course, course_code)
+        if request_data.course_code is not None and request_data.course_code != lecture.course_code:
+            # Verify new course exists
+            course = session.get(Course, request_data.course_code)
             
             if not course:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Course '{course_code}' not found"
+                    detail=f"Course '{request_data.course_code}' not found"
                 )
             
+            # Verify course belongs to teacher
             if course.teacher_id != current_user.user_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only assign lectures to your own courses"
                 )
             
-            lecture.course_code = course_code
-        
-        # Update file
-        if file:
-            # Validate file type
-            ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".txt"}
-            file_ext = os.path.splitext(file.filename)[1].lower()
-            
-            if file_ext not in ALLOWED_EXTENSIONS:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"File type {file_ext} not allowed. Allowed: PDF, PPTX, TXT"
-                )
-            
-            # Save temporarily
-            temp_dir = "/tmp/hololearn_uploads"
-            os.makedirs(temp_dir, exist_ok=True)
-            
-            temp_filename = f"temp_{current_user.user_id}_{file.filename}"
-            temp_path = os.path.join(temp_dir, temp_filename)
-            
-            with open(temp_path, "wb") as f:
-                content = await file.read()
-                f.write(content)
-            
-            # Upload to Google Drive
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            drive_filename = f"{lecture.course_code}_{lecture.title}_{timestamp}{file_ext}"
-            
-            drive_result = drive_service.upload_file(
-                file_path=temp_path,
-                filename=drive_filename,
-                mime_type=file.content_type
-            )
-            
-            lecture.final_content = drive_result['view_link']
-            new_file_url = drive_result['view_link']
-            file_updated = True
-            
-            # Cleanup
-            try:
-                os.remove(temp_path)
-            except:
-                pass
+            lecture.course_code = request_data.course_code
+            print(f"✅ Updated course code: {lecture.course_code}")
         
         # ============================================
         # PART 3: Handle Schedule Change
@@ -538,16 +439,16 @@ async def edit_lecture_by_schedule(
         schedule_changed = False
         final_schedule = current_schedule
         
-        if new_schedule_id and new_schedule_id != schedule_id:
+        if request_data.new_schedule_id and request_data.new_schedule_id != schedule_id:
             # Teacher wants to change schedule
             
             # Get new schedule
-            new_schedule = session.get(Schedule, new_schedule_id)
+            new_schedule = session.get(Schedule, request_data.new_schedule_id)
             
             if not new_schedule:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"New schedule with ID {new_schedule_id} not found"
+                    detail=f"New schedule with ID {request_data.new_schedule_id} not found"
                 )
             
             # Verify new schedule belongs to teacher
@@ -583,7 +484,7 @@ async def edit_lecture_by_schedule(
             new_schedule.status = "scheduled"
             session.add(new_schedule)
             
-            print(f"✅ Reserved new schedule {new_schedule_id}: lecture_id={lecture.lecture_id}, status=scheduled")
+            print(f"✅ Reserved new schedule {request_data.new_schedule_id}: lecture_id={lecture.lecture_id}, status=scheduled")
             
             # Update which schedule to return
             final_schedule = new_schedule
@@ -600,7 +501,7 @@ async def edit_lecture_by_schedule(
         
         print(f"✅ Lecture {lecture.lecture_id} updated successfully")
         print(f"   - Title: {lecture.title}")
-        print(f"   - File updated: {file_updated}")
+        print(f"   - Course Code: {lecture.course_code}")
         print(f"   - Schedule changed: {schedule_changed}")
         print(f"   - Final schedule ID: {final_schedule.schedule_id}")
         
@@ -619,8 +520,6 @@ async def edit_lecture_by_schedule(
             start_time=final_schedule.start_time,
             end_time=final_schedule.end_time,
             schedule_status=final_schedule.status,
-            file_updated=file_updated,
-            file_url=new_file_url or lecture.final_content,
             schedule_changed=schedule_changed
         )
         
@@ -633,3 +532,240 @@ async def edit_lecture_by_schedule(
             detail=f"Failed to update lecture: {str(e)}"
         )
 
+@router.get("/all-my-lectures", response_model=List[FullTimeSlot2])
+def get_all_my_lectures(
+    current_user: User = Depends(get_current_teacher),
+    session: Session = Depends(get_session)
+):
+    """
+    Get ALL lectures created by the current teacher
+    
+    Returns TWO types of lectures:
+    
+    1. SCHEDULED LECTURES (status = "completed"):
+       - Has schedule_id, date, start_time, end_time
+       - status = "scheduled" (from schedule.status)
+    
+    2. DRAFT LECTURES (status = "draft"):
+       - schedule_id = None
+       - date = None
+       - start_time = None
+       - end_time = None
+       - status = "draft" (from lecture.status)
+    
+    Logic:
+    - Query all lectures by teacher_id
+    - For each lecture, try to find its schedule
+    - If schedule exists → populate schedule fields
+    - If no schedule → set schedule fields to None
+    
+    Response Example:
+    [
+        {
+            "schedule_id": 3,
+            "lecture_id": 5,
+            "course_code": "AI201",
+            "lecture_title": "knn",
+            "teacher_name": "Dr. Ahmed",
+            "date": "2026-01-20",
+            "start_time": "2026-01-20T14:00:00",
+            "end_time": "2026-01-20T15:30:00",
+            "status": "scheduled"
+        },
+        {
+            "schedule_id": null,
+            "lecture_id": 8,
+            "course_code": "AI201",
+            "lecture_title": "neural networks",
+            "teacher_name": "Dr. Ahmed",
+            "date": null,
+            "start_time": null,
+            "end_time": null,
+            "status": "draft"
+        }
+    ]
+    """
+    
+    # ============================================
+    # STEP 1: Get ALL lectures by teacher
+    # ============================================
+    
+    lectures = session.exec(
+        select(Lecture)
+        .where(Lecture.teacher_id == current_user.user_id)
+        .order_by(Lecture.lecture_id.desc())  # Newest first
+    ).all()
+    
+    result = []
+    
+    # ============================================
+    # STEP 2: Get teacher name (once)
+    # ============================================
+    
+    teacher_name = current_user.full_name or "Unknown"
+    
+    # ============================================
+    # STEP 3: Process each lecture
+    # ============================================
+    
+    for lecture in lectures:
+        
+        # Try to find schedule(s) for this lecture
+        schedules = session.exec(
+            select(Schedule)
+            .where(
+                Schedule.lecture_id == lecture.lecture_id,
+                Schedule.status == "scheduled"
+            )
+            .order_by(Schedule.date, Schedule.start_time)
+        ).all()
+        
+        # ============================================
+        # Case A: Lecture HAS schedule(s)
+        # ============================================
+        
+        if schedules:
+            # Return one entry for EACH schedule
+            # (same lecture can be scheduled multiple times)
+            
+            for schedule in schedules:
+                # Convert time to datetime
+                start_datetime = datetime.combine(
+                    schedule.date,
+                    schedule.start_time
+                )
+                
+                end_datetime = datetime.combine(
+                    schedule.date,
+                    schedule.end_time
+                )
+                
+                result.append(
+                    FullTimeSlot2(
+                        schedule_id=schedule.schedule_id,
+                        lecture_id=lecture.lecture_id,
+                        course_code=lecture.course_code,
+                        lecture_title=lecture.title,
+                        teacher_name=teacher_name,
+                        start_time=start_datetime,
+                        end_time=end_datetime,
+                        status=schedule.status  # "scheduled"
+                    )
+                )
+        
+        # ============================================
+        # Case B: Lecture has NO schedule (DRAFT)
+        # ============================================
+        
+        else:
+            # Return lecture with null schedule fields
+            
+            result.append(
+                FullTimeSlot2(
+                    schedule_id=None,              # ← Null
+                    lecture_id=lecture.lecture_id,
+                    course_code=lecture.course_code,
+                    lecture_title=lecture.title,
+                    teacher_name=teacher_name,
+                    start_time=None,               # ← Null
+                    end_time=None,                 # ← Null
+                    status=lecture.status.value    # "draft" or "completed"
+                )
+            )
+    
+    return result
+
+# ============================================
+# Delete Lecture Endpoint
+# ============================================
+
+@router.delete("/{lecture_id}", response_model=DeleteLectureResponse)
+async def delete_lecture(
+    lecture_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_teacher)
+):
+    """
+    Delete a lecture and free all its schedules
+    
+    This endpoint:
+    1. Finds the lecture by ID
+    2. Verifies the teacher owns the lecture
+    3. Finds all schedules associated with this lecture
+    4. Frees all schedules (sets lecture_id=NULL, status="available")
+    5. Deletes the lecture record
+    
+    Important:
+    - Schedules are NOT deleted (they're reusable resources)
+    - Schedules are just freed for future use
+    - The lecture is permanently deleted
+    
+    Request:
+    DELETE /api/lectures/{lecture_id}
+    
+    Response:
+    {
+        "message": "Lecture deleted successfully"
+    }
+    """
+    
+    # ============================================
+    # STEP 1: Get and Validate Lecture
+    # ============================================
+    
+    lecture = session.get(Lecture, lecture_id)
+    
+    if not lecture:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lecture with ID {lecture_id} not found"
+        )
+    
+    # Verify ownership
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own lectures"
+        )
+    
+    
+    # ============================================
+    # STEP 2: Find All Schedules for This Lecture
+    # ============================================
+    
+    schedules = session.exec(
+        select(Schedule)
+        .where(Schedule.lecture_id == lecture_id)
+    ).all()
+        
+    # ============================================
+    # STEP 3: Free All Schedules
+    # ============================================
+    
+    for schedule in schedules:        
+        # Free the schedule
+        schedule.lecture_id = None
+        schedule.status = "available"
+        session.add(schedule)
+        
+        print(f"✅ Freed schedule {schedule.schedule_id}: lecture_id=NULL, status=available")
+    
+    # ============================================
+    # STEP 4: Delete the Lecture
+    # ============================================
+    
+    session.delete(lecture)
+    session.commit()
+    
+
+    # ============================================
+    # STEP 5: Return Response
+    # ============================================
+    
+    return DeleteLectureResponse(
+        message="Lecture deleted successfully",
+        # lecture_id=lecture_id,
+        # lecture_title=lecture_title,
+        # schedules_freed=len(freed_schedule_ids),
+        # freed_schedule_ids=freed_schedule_ids
+    )
