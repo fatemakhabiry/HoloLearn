@@ -5,31 +5,31 @@ import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 
 class UpoladCard extends StatelessWidget {
-  late String stepNumber;
-  late IconData icon;
-  late String iconLabel;
-  late String primaryButtonText;
-  late String? secondaryButtonText;
-  late String subtext;
-  late VoidCallback onPrimaryPressed;
-  late VoidCallback? onSecondaryPressed;
-  late bool hasFile;
-  late bool isRecording;
-  late bool isDashed;
-  late File? photoFile;
-  UpoladCard({
-    required String stepNumber,
-    required IconData icon,
-    required String iconLabel,
-    required String primaryButtonText,
-    String? secondaryButtonText,
-    required String subtext,
-    required VoidCallback onPrimaryPressed,
-    VoidCallback? onSecondaryPressed,
-    required bool hasFile,
-    bool isRecording = false,
-    bool isDashed = false,
-    File? photoFile,
+  final String stepNumber;
+  final IconData icon;
+  final String iconLabel;
+  final String primaryButtonText;
+  final String? secondaryButtonText;
+  final String subtext;
+  final VoidCallback onPrimaryPressed;
+  final VoidCallback? onSecondaryPressed;
+  final bool hasFile;
+  final bool isRecording;
+  final bool isDashed;
+  final File? photoFile;
+  const UpoladCard({
+    required this.stepNumber,
+    required this.icon,
+    required this.iconLabel,
+    required this.primaryButtonText,
+    this.secondaryButtonText,
+    required this.subtext,
+    required this.onPrimaryPressed,
+    this.onSecondaryPressed,
+    required this.hasFile,
+    this.isRecording = false,
+    this.isDashed = false,
+    this.photoFile,
   });
 
   @override

@@ -103,8 +103,10 @@ class CustomDropdown extends StatelessWidget {
   final bool isFieldRequired;
   final List<String> items;
   final String? selectedValue;
+  final String? hintText;
   final String? Function(String?)? validator;
   final Function(String?) onChanged;
+  final bool enabled;
 
   const CustomDropdown({
     super.key,
@@ -114,6 +116,8 @@ class CustomDropdown extends StatelessWidget {
     this.validator,
     this.isFieldRequired = true,
     this.selectedValue,
+    this.hintText,
+    this.enabled = true,
   });
 
   @override
@@ -137,15 +141,47 @@ class CustomDropdown extends StatelessWidget {
         ),
         SizedBox(height: AppStyles.spacingM),
         DropdownButtonFormField<String>(
+          value: selectedValue,
           validator: validator,
-          decoration: AppStyles.inputDecoration(hint: 'Select $label'),
+          // enabled: enabled,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.white,
+            hintText: hintText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppStyles.radiusM),
+              borderSide: BorderSide(
+                color: AppColors.gray.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppStyles.radiusM),
+              borderSide: BorderSide(
+                color: AppColors.gray.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppStyles.radiusM),
+              borderSide: const BorderSide(
+                color: AppColors.lightBlue,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppStyles.spacingM,
+              vertical: AppStyles.spacingM,
+            ),
+          ),
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
               child: Text(item, style: AppStyles.bodyMedium),
             );
           }).toList(),
-          onChanged: onChanged,
+          onChanged: enabled ? onChanged : null,
+          style: AppStyles.bodyMedium,
         ),
       ],
     );

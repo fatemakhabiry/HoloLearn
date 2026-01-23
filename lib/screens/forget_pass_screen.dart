@@ -8,7 +8,6 @@ import '../constants/app_styles.dart';
 import '../screens/login_screen.dart';
 import '../screens/otp_verification_screen.dart';
 import '../services/password_reset_service.dart';
-import '../utils/app_state.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/error_handler_widget.dart';
@@ -26,6 +25,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? password1;
   String? password2;
+  String? email;
   String message = ""; //not required
   bool status = false;
   bool is_loading = false;
@@ -37,12 +37,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       message = "";
     });
     try {
-      await PasswordResetService.requestOTP(AppState.email);
+      await PasswordResetService.requestOTP(email!);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => OtpVerficationScreen(
-            email: AppState.email,
+            email: email!,
             linkSentTime: DateTime.now(),
           ),
         ),
@@ -123,7 +123,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                               }
                               return null;
                             },
-                            onSaved: (value) => AppState.email = value!,
+                            onSaved: (value) => email = value,
                           ),
                           const SizedBox(height: AppStyles.spacingL),
                           // Submit Button

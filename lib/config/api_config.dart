@@ -12,8 +12,7 @@ class ApiConfig {
 
   // ===== Teacher Endpoints =====
   static const String teacherProfileEndpoint = '/teachers/profile';
-  static const String avatarStatusEndpoint =
-      '/teachers/profile-status';
+  static const String avatarStatusEndpoint = '/teachers/profile-status';
   static const String teacherUploadPhotoEndpoint = '/teachers/upload-photo';
   static const String teacherUploadVoiceEndpoint = '/teachers/upload-voice';
 
@@ -22,15 +21,31 @@ class ApiConfig {
       '/password_reset/forgot-password';
   static const String verifyOtpEndpoint = '/password_reset/verify-otp';
   static const String resetPasswordEndpoint = '/password_reset/reset-password';
-  static const String changePasswordEndpoint = '/password_reset/change-password';
+  static const String changePasswordEndpoint =
+      '/password_reset/change-password';
   static const String resendOtpEndpoint = '/password_reset/resend-otp';
+  
+  // ===== Schedule Endpoints =====
+  static const String reservedSlotsEndpoint =
+      '/schedules/my-scheduled-lectures';
+  static const String availabilitySlotsEndpoint = '/schedules/available-slots';
 
-  // ===== Storage Keys =====
-  static const String accessTokenKey = 'access_token';
-  static const String userIdKey = 'user_id';
-  static const String userEmailKey = 'user_email';
-  static const String userRoleKey = 'user_role';
-  static const String userNameKey = 'user_name';
+  // Lecture endpoints
+  static const String lecturesEndpoint = '/api/lectures';
+  static const String createLectureDraftEndpoint = '/lecture/create-draft';
+  static const String publishLectureEndpoint = '/lecture';
+  static const String lectureHistoryendpoint =
+      '/lecture/all-my-lectures';
+
+  // Delete and update endpoints with placeholders
+  // Note: {schedule_id} will be replaced with actual ID in the service
+  static const String deleteLectureEndpoint = '/schedules/{schedule_id}/cancel';
+  static const String updateLectureEndpoint =
+      '/lecture/schedule/{schedule_id}/edit';
+
+  // ===== Student Endpoints =====
+  static const String courseListEndpoint = '/courses/';
+  static const String studentLectureEndpoint = '/student/upcoming-lectures';
 
   // ===== Token Settings =====
   static const Duration tokenExpiry = Duration(minutes: 30);
@@ -44,16 +59,4 @@ class ApiConfig {
   // Build full URL
   static String getUrl(String endpoint) => baseUrl + endpoint;
 
-  // Schedule Endpoints
-  static const String reservedSlotsEndpoint = '/schedules/all-reserved-slots';
-  // static const String createLectureEndpoint = '/schedule/create';
-  // static const String updateLectureEndpoint = '/schedule/update';
-  // static const String deleteLectureEndpoint = '/schedule/delete';
-  static const String availabilitySlotsEndpoint = '/schedules/available-slots';
-
-  // // Get full OTP URLs
-  // static String get forgotPasswordUrl => getUrl(forgotPasswordEndpoint);
-  // static String get verifyOtpUrl => getUrl(verifyOtpEndpoint);
-  // static String get resetPasswordUrl => getUrl(resetPasswordEndpoint);
-  // static String get resendOtpUrl => getUrl(resendOtpEndpoint);
 }

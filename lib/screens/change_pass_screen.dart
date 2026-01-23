@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 import 'teacher_dashboard_screen.dart';
+import 'student_dashboard_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/button_widget.dart';
@@ -11,7 +13,7 @@ import '../widgets/text_form_widget.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/error_handler_widget.dart';
 import '../services/password_reset_service.dart';
-import '../utils/app_state.dart';
+import '../state/providers/app_state_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -46,7 +48,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
       await PasswordResetService.changePassword(
+        email: appState.email,
         oldPassword: oldPassword!,
         newPassword: newPassword!,
       );
@@ -61,11 +65,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
         // Wait 3 seconds
         await Future.delayed(const Duration(seconds: 3));
-
+if(appState.userRole=='teacher'){
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => TeacherDashboardScreen()),
         );
+      }else{
+         Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StudentDashboardScreen()),
+        );
+      }
       }
     } on ClientException {
       error_message = 'Cannot connect to server. Check internet or URL.';

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'login_screen.dart';
+import 'forget_pass_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/message_handler_widget.dart';
 import '../screens/otp_verification_screen.dart';
-import '../utils/app_state.dart';
+import '../state/providers/app_state_provider.dart';
 import '../services/password_reset_service.dart';
 
 class OtpExpiredScreen extends StatelessWidget {
@@ -32,21 +34,42 @@ class OtpExpiredScreen extends StatelessWidget {
     }
 
     void _resendEmail() async {
+      final email = Provider.of<AppStateProvider>(context, listen: false).email;
+      
+      // Validate email is not empty
+      if (email.isEmpty) {
+        // Show error and navigate back to forget password
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email not found. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ForgetPasswordPage()),
+        );
+        return;
+      }
+      
       try {
-        await PasswordResetService.resendOTP(AppState.email);
+        await PasswordResetService.resendOTP(email);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerficationScreen(
-              email: AppState.email,
+              email: email,
               linkSentTime: DateTime.now(),
             ),
           ),
-        ); // Added closing parenthesis and semicolon
+        );
       } catch (e) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+        // Handle error - could show a snackbar or navigate to error screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to resend OTP: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

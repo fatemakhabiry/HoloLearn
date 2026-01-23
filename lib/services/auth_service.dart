@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-import '../utils/app_state.dart';
 
 class AuthService {
   static Future<Map<String, dynamic>> login({
@@ -20,10 +19,6 @@ class AuthService {
       case 200:
         final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-        AppState.email = data['user']['email'];
-        AppState.userName = data['user']['full_name'];
-        AppState.userRole = data['user']['role'];
-        AppState.accessToken = data['access_token'];
         return data;
 
       case 400:

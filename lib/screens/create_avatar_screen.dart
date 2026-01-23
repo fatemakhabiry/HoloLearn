@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import'dart:io';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/button_widget.dart';
 import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_styles.dart';
+import '../widgets/app_bar_widget.dart';
 import '../widgets/error_handler_widget.dart';
+import '../widgets/button_widget.dart';
 class CreateAvatarScreen extends StatefulWidget {
   const CreateAvatarScreen({super.key});
 

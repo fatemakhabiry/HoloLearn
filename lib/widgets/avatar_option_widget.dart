@@ -5,9 +5,9 @@ import '../constants/app_styles.dart';
 
 /// Generic model for any selectable option
 class SelectableOption {
-  final String id; // Unique identifier (e.g., 'standard', 'sign')
-  final String title; // Display name (e.g., 'Standard Voice Avatar')
-  final String description; // Explanation text (e.g., 'Uses your recorded...')
+  final String id;
+  final String title;
+  final String description;
 
   const SelectableOption({
     required this.id,
@@ -16,12 +16,13 @@ class SelectableOption {
   });
 }
 
-// Can be used for avatars, settings, preferences, or any radio selection
+/// Truly reusable radio options group widget
+/// Can be used for avatars, settings, preferences, or any radio selection
 class RadioOptionsGroup extends StatelessWidget {
-  final String? sectionTitle; // Optional header (e.g., 'AVATAR OPTIONS')
-  final String selectedId; // Currently selected option ID
-  final List<SelectableOption> options; // List of choices to display
-  final Function(String) onOptionSelected; // Callback when user selects
+  final String? sectionTitle;
+  final String selectedId;
+  final List<SelectableOption> options;
+  final Function(String) onOptionSelected;
 
   const RadioOptionsGroup({
     super.key,
@@ -30,6 +31,7 @@ class RadioOptionsGroup extends StatelessWidget {
     required this.options,
     required this.onOptionSelected,
   });
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -141,10 +143,19 @@ class AvatarOptions {
     ),
   ];
 }
-//usage example:
-/*RadioOptionsGroup(
-  sectionTitle: 'AVATAR OPTIONS',
-  selectedId: selectedAvatar,
-  options: AvatarOptions.options,  // ← Simple!
-  onOptionSelected: (id) => setState(() => selectedAvatar = id),
-)*/
+
+/// Input type options for lecture content
+class LectureInputOptions {
+  static const List<SelectableOption> options = [
+    SelectableOption(
+      id: 'document',
+      title: 'Prepared',
+      description: 'Upload PDF, PPTX, or TXT files',
+    ),
+    SelectableOption(
+      id: 'url',
+      title: 'Generated',
+      description: 'Enter a web link to your lecture content',
+    ),
+  ];
+}

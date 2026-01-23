@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-import '../utils/app_state.dart';
 
 class PasswordResetService {
   /// Request OTP code - sends to user's email
@@ -122,6 +121,7 @@ class PasswordResetService {
   }
 
   static Future<String> changePassword({
+    required String email,
     required String oldPassword,
     required String newPassword,
   }) async {
@@ -130,7 +130,7 @@ class PasswordResetService {
           Uri.parse(ApiConfig.getUrl(ApiConfig.changePasswordEndpoint)),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
-            'email': AppState.email,
+            'email': email,
             'old_password': oldPassword,
             'new_password': newPassword,
           }),
@@ -167,6 +167,7 @@ class PasswordResetService {
 
   /// Resend OTP code
   static Future<String> resendOTP(String email) async {
+    print(email);
     final response = await http
         .post(
           Uri.parse(ApiConfig.getUrl(ApiConfig.resendOtpEndpoint)),
@@ -193,7 +194,8 @@ class PasswordResetService {
         throw Exception('OTP already sent. Please wait before retrying.');
 
       case 422:
-        throw Exception('Validation error: Invalid email format.');
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['detail'] ?? errorData['message'] ?? 'Validation error: Invalid email format.');
 
       case 429:
         throw Exception('Too many requests: Please wait and try again later.');

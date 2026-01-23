@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/teacher_profile_screen.dart';
+import '../screens/profile_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import 'button_widget.dart';
@@ -41,7 +41,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const TeacherProfileScreen(),
+                builder: (context) => const ProfileScreen(),
               ),
             ),
             child: const Icon(

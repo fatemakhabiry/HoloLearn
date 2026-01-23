@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/screens/create_new_lecture_screen.dart';
-import '../utils/app_state.dart';
+import 'package:provider/provider.dart';
+import '../screens/create_new_lecture_screen.dart';
+import '../state/providers/app_state_provider.dart';
+import '../models/schedule_models.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/confirmation_widget.dart';
 import '../widgets/lecture_schedule_card_widget.dart';
-import '../utils/schedule_slot.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/error_handler_widget.dart';
 import '../services/schedule_service.dart';
 
 import 'edit_lecture_screen.dart';
-import 'lecture_options_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -24,7 +24,6 @@ class TeacherDashboardScreen extends StatefulWidget {
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   List<ScheduleSlot> myLectures = [];
   bool isLoading = true;
-  String? authToken;
 
   @override
   void initState() {
@@ -35,8 +34,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   /// Load token from storage and fetch schedule data
   Future<void> loadTokenAndFetchData() async {
     try {
-      authToken = AppState.accessToken;
-      if (authToken == null || authToken!.isEmpty) {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      if (appState.accessToken.isEmpty) {
         throw Exception('No authentication token found. Please login again.');
       }
 
@@ -57,7 +56,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   /// Fetch schedule data from API using the token
   Future<void> fetchScheduleData() async {
-    if (authToken == null) return;
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    if (appState.accessToken.isEmpty) return;
 
     setState(() {
       isLoading = true;
@@ -65,7 +65,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     try {
       // Fetch lectures using the token - backend identifies teacher from token
-      final lecturesData = await ScheduleService.fetchMyLectures(authToken!);
+      final lecturesData = await ScheduleService.fetchMyLectures(appState);
 
       if (!mounted) return;
 
@@ -77,7 +77,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       if (mounted) {
         CustomErrorHandler.show(
           context,
-          message: 'Failed to load lectures: ${e.toString().replaceAll('Exception: ', '')}',
+          message:
+              'Failed to load lectures: ${e.toString().replaceAll('Exception: ', '')}',
           type: ErrorType.fail,
         );
       }
@@ -86,36 +87,84 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       });
     }
   }
-void _handleCancel() {
-  CustomConfirmationDialog.show(
-    context,
-    title: 'Cancel Lecture',
-    message: 'Are you sure you want to cancel this lecture?',
-    confirmButtonText: 'Yes, Cancel',
-    cancelButtonText: 'No',
-    onConfirm: () {
-      //Apilcancel
-    },
-  );
-}
 
-void _handleEdit(){
-  CustomConfirmationDialog.show(
-    context,
-    title: 'Edit Lecture',
-    message: 'Are you sure you want to edit this lecture?',
-    confirmButtonText: 'Yes, Edit',
-    cancelButtonText: 'No',
-    onConfirm: () {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => EditLectureScreen(),
-      //   ),
-      // );
-    },
-  );
-}
+  void _handleCancel(ScheduleSlot lecture) {
+    CustomConfirmationDialog.show(
+      context,
+      title: 'Cancel Lecture',
+      message: 'Are you sure you want to cancel this lecture?',
+      confirmButtonText: 'Yes, Cancel',
+      cancelButtonText: 'No',
+      onConfirm: () async {
+        // Call API to cancel lecture
+        await _cancelLecture(lecture.scheduleId ?? 0);
+      },
+    );
+  }
+
+  /// Cancel lecture by sending schedule_id to API
+  Future<void> _cancelLecture(int scheduleId) async {
+    if (scheduleId == 0) {
+      CustomErrorHandler.show(
+        context,
+        message: 'Invalid lecture ID',
+        type: ErrorType.fail,
+      );
+      return;
+    }
+
+    try {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await ScheduleService.cancelLecture(
+        appState: appState,
+        scheduleId: scheduleId,
+      );
+
+      if (mounted) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Lecture cancelled successfully',
+          type: ErrorType.success,
+        );
+        // Refresh the lecture list
+        await fetchScheduleData();
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomErrorHandler.show(
+          context,
+          message:
+              'Failed to cancel lecture: ${e.toString().replaceAll('Exception: ', '')}',
+          type: ErrorType.fail,
+        );
+      }
+    }
+  }
+
+  void _handleEdit(ScheduleSlot lecture) {
+    CustomConfirmationDialog.show(
+      context,
+      title: 'Edit Lecture',
+      message: 'Are you sure you want to edit this lecture?',
+      confirmButtonText: 'Yes, Edit',
+      cancelButtonText: 'No',
+      onConfirm: () async {
+        // Navigate to edit screen with scheduleId
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                EditLectureScreen(scheduleId: lecture.scheduleId ?? 0),
+          ),
+        );
+
+        // Refresh data if lecture was updated
+        if (result == true) {
+          await fetchScheduleData();
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,8 +247,8 @@ void _handleEdit(){
                                   lectureTitle: lecture.lectureTitle,
                                   date: lecture.formattedDate,
                                   timeRange: lecture.timeRange,
-                                  onEdit: _handleEdit,
-                                  onCancel: _handleCancel
+                                  onEdit: () => _handleEdit(lecture),
+                                  onCancel: () => _handleCancel(lecture),
                                 ),
                               );
                             }).toList(),

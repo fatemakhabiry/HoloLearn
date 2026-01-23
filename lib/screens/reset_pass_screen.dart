@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../screens/login_screen.dart';
@@ -13,7 +14,7 @@ import '../widgets/message_handler_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/app_bar_widget.dart';
 import '../services/password_reset_service.dart';
-import '../utils/app_state.dart';
+import '../state/providers/app_state_provider.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -55,10 +56,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       message = '';
     });
     try {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
       // 2️⃣ Do async work OUTSIDE setState
       await PasswordResetService.resetPassword(
-        email: AppState.email,
-        otpCode: AppState.otp,
+        email: appState.email,
+        otpCode: appState.otp,
         newPassword: password2!,
       );
 

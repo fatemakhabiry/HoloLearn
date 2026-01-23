@@ -1,14 +1,15 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
+import 'login_screen.dart';
 import '../constants/app_fonts.dart';
 import '../screens/otp_expired_screen.dart';
 import '../screens/reset_pass_screen.dart';
-import '../utils/app_state.dart';
-import 'dart:async';
+import '../state/providers/app_state_provider.dart';
 import '../widgets/error_handler_widget.dart';
-import 'login_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
@@ -63,7 +64,12 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
 
     try {
       // 2️⃣ Do async work OUTSIDE setState
-      await PasswordResetService.verifyOTP(AppState.email, AppState.otp);
+      await PasswordResetService.verifyOTP(widget.email, otp!);
+
+      // Set in provider
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.setEmail(widget.email);
+      appState.setOtp(otp!);
 
       // 3️⃣ Navigate (no setState needed)
       if (mounted) {
@@ -73,6 +79,10 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
         );
       }
     } catch (e) {
+      // Set email in provider even on failure so OtpExpiredScreen can access it
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.setEmail(widget.email);
+      
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -96,7 +106,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     });
     try {
       // 2️⃣ Async work outside setState
-      await PasswordResetService.resendOTP(AppState.email);
+      await PasswordResetService.resendOTP(widget.email);
 
       // 3️⃣ Navigate
       if (mounted) {
@@ -104,7 +114,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerficationScreen(
-              email: AppState.email,
+              email: widget.email,
               linkSentTime: DateTime.now(),
             ),
           ),
@@ -121,6 +131,10 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     } finally {
       if (error_message != null) {
         if (error_message == 'Invalid or expired OTP') {
+            // Ensure email is set in provider before navigating to expired screen
+            final appState = Provider.of<AppStateProvider>(context, listen: false);
+            await appState.setEmail(widget.email);
+            
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
@@ -231,7 +245,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             Text(subtitle, style: AppStyles.labelStyle),
                             const SizedBox(height: AppStyles.spacingS),
                             Text(
-                              AppState.email,
+                              widget.email,
                               style: AppStyles.link.copyWith(
                                 color: AppColors.lightBlue,
                                 fontWeight: AppFonts.semiBold,
@@ -270,8 +284,8 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             const SizedBox(height: AppStyles.spacingL),
                             OtpInputWidget(
                               onCompleted: (value) {
-                                AppState.otp = value;
-                                print("OTP entered: ${AppState.otp} ");
+                                otp = value;
+                                print("OTP entered: ${otp} ");
                                 // You can store it or instantly verify
                               },
                             ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_fonts.dart';
@@ -10,7 +11,7 @@ import '../widgets/text_form_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/error_handler_widget.dart';
 import '../services/auth_service.dart';
-import '../utils/app_state.dart';
+import '../state/providers/app_state_provider.dart';
 import 'forget_pass_screen.dart';
 import 'teacher_dashboard_screen.dart';
 import 'student_dashboard_screen.dart';
@@ -39,8 +40,15 @@ class _LoginPageState extends State<LoginPage> {
       is_loading = true;
     });
     try {
-      await AuthService.login(email: email!, password: password!);
+      data = await AuthService.login(email: email!, password: password!);
 
+      // Set app state
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.setEmail(data!['user']['email']);
+      await appState.setUserName(data!['user']['full_name']);
+      await appState.setUserRole(data!['user']['role']);
+      await appState.setAccessToken(data!['access_token']);
+      print('🔑 Access Token: ${appState.accessToken}');
       // Show success message
       if (mounted) {
         CustomErrorHandler.show(
@@ -51,35 +59,39 @@ class _LoginPageState extends State<LoginPage> {
         // Wait 3 seconds
         await Future.delayed(const Duration(seconds: 3));
 
-        if (AppState.userRole == 'teacher') {
+        if (appState.userRole == 'teacher') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => const TeacherDashboardScreen(),
             ),
           );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const StudentDashboardScreen(),
+            ),
+          );
         }
-        // else{
-        //     Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(
-        //       builder: (context) => const StudentDashboardScreen(),
-        //     ),
-        //   );
-        // }
       }
-    } on ClientException{
+    } on ClientException {
       error_message = 'Cannot connect to server. Check internet or URL.';
     } on SocketException {
       error_message = 'No internet connection.';
     } on TimeoutException {
       error_message = 'Request timed out.';
     } catch (e) {
-      error_message = e.toString().replaceFirst('Exception: ',  '');
+      error_message = e.toString().replaceFirst('Exception: ', '');
     } finally {
       if (error_message != null) {
-        CustomErrorHandler.show(context, message: error_message!, type: ErrorType.fail);
-        error_message = null;}
+        CustomErrorHandler.show(
+          context,
+          message: error_message!,
+          type: ErrorType.fail,
+        );
+        error_message = null;
+      }
       if (mounted) {
         setState(() {
           is_loading = false;
@@ -247,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: AppStyles.spacingL),
                     MessageDisplay(
                       isSuccess: _loginSucess,
-                      massegeBanner:_loginSucess? "": "Error",
+                      massegeBanner: _loginSucess ? "" : "Error",
                       message: message,
                       onDismiss: () => setState(() => message = ''),
                     ),

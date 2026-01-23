@@ -7,6 +7,8 @@ class LectureScheduleCard extends StatelessWidget {
   final String lectureTitle;
   final String date;
   final String timeRange;
+  final String editButtonText;
+  final String cancelButtonText;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
 
@@ -15,6 +17,8 @@ class LectureScheduleCard extends StatelessWidget {
     required this.lectureTitle,
     required this.date,
     required this.timeRange,
+    this.editButtonText='EDIT',
+    this.cancelButtonText='CANCEL',
     this.onEdit,
     this.onCancel,
   });
@@ -66,7 +70,7 @@ class LectureScheduleCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'EDIT',
+                    editButtonText,
                     style: AppStyles.bodyMedium.copyWith(
                       fontWeight: AppFonts.regular,
                     ),
@@ -91,7 +95,7 @@ class LectureScheduleCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'CANCEL',
+                    cancelButtonText,
                     style: AppStyles.bodyMedium.copyWith(
                       fontWeight: AppFonts.semiBold,
                     ),
