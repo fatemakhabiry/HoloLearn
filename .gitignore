@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+#security
+uploads/
+token.pickle
+service-account-key.json
+credentials.json
