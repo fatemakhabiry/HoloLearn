@@ -3,8 +3,6 @@ URL Extractor for HoloLearn
 Extracts text content from web pages.
 """
 
-import requests
-from bs4 import BeautifulSoup
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -28,19 +26,33 @@ from utils.configs import (
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
+try:
+    import requests
+    from bs4 import BeautifulSoup
+    _WEB_DEPS_AVAILABLE = True
+except ImportError as _web_import_err:
+    _WEB_DEPS_AVAILABLE = False
+    _web_import_err_msg = str(_web_import_err)
+
 
 class URLExtractor:
     """Extract text from web pages"""
     
     def __init__(self):
+        if not _WEB_DEPS_AVAILABLE:
+            raise ImportError(
+                f"Web dependencies missing: {_web_import_err_msg}. "
+                "Install with: pip install requests beautifulsoup4"
+            )
+
         self.text_cleaner = TextCleaner()
         self.base_output_dir = OUTPUT_DIR
         self.base_logs_dir = LOGS_DIR
-        
+
         # Ensure base directories exist
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Setup requests session with retries
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': USER_AGENT})

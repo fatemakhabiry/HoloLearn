@@ -3,7 +3,6 @@ Audio Extractor for HoloLearn
 Extracts text from audio files using Groq Whisper API.
 """
 
-from groq import Groq
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -27,6 +26,12 @@ from utils.configs import (
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
+try:
+    from groq import Groq
+    _GROQ_AVAILABLE = True
+except ImportError:
+    _GROQ_AVAILABLE = False
+
 
 class AudioExtractor:
     """Extract text from audio files using Groq Whisper"""
@@ -47,13 +52,18 @@ class AudioExtractor:
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize Groq client
+        if not _GROQ_AVAILABLE:
+            raise ImportError(
+                "groq package not installed. Install with: pip install groq"
+            )
+
         self.api_key = api_key or GROQ_API_KEY
-        
+
         if not self.api_key or self.api_key == "your-groq-api-key-here":
             raise ValueError(
                 "Groq API key not set! Please set GROQ_API_KEY in your .env file or config.py"
             )
-        
+
         self.client = Groq(api_key=self.api_key)
     
     def _create_resource_name(self, filename: str) -> str:

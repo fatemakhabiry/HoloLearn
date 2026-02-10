@@ -1,5 +1,3 @@
-
-
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
@@ -24,7 +22,6 @@ from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 from utils.video_processor import VideoProcessor
 from utils.ocr_handler import OCRHandler
-# from utils.math_detector import detect_spoken_math
 
 
 class VideoExtractor:
@@ -56,12 +53,8 @@ class VideoExtractor:
         name = name.strip('_')
         return name[:50] or "unnamed_video"
     
-    def _setup_resource_directories(self, resource_name: str, output_dir_override: Optional[Path] = None) -> tuple:
-        if output_dir_override:
-            out_dir = Path(output_dir_override)
-        else:
-            out_dir = self.base_output_dir / resource_name
-
+    def _setup_resource_directories(self, resource_name: str) -> tuple:
+        out_dir = self.base_output_dir / resource_name
         log_dir = self.base_logs_dir / resource_name
         out_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -92,10 +85,11 @@ class VideoExtractor:
         return f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
     
     def _transcribe_with_timestamps(self, audio_path: str, error_handler: ErrorHandler) -> List[Dict]:
+        # (unchanged - your original method)
         try:
             from groq import Groq
             client = Groq(api_key=self.api_key)
-
+            
             with open(audio_path, "rb") as f:
                 transcription = client.audio.transcriptions.create(
                     file=(Path(audio_path).name, f.read()),
@@ -103,7 +97,7 @@ class VideoExtractor:
                     response_format="verbose_json",
                     timestamp_granularities=["segment"]
                 )
-
+            
             segments = []
             if hasattr(transcription, 'segments') and transcription.segments:
                 for seg in transcription.segments:
@@ -122,22 +116,9 @@ class VideoExtractor:
             else:
                 text = getattr(transcription, 'text', str(transcription))
                 segments.append({'start': 0, 'end': 0, 'text': text})
-
-            # Run spoken math detection on each segment
-            # for seg in segments:
-            #     math_result = detect_spoken_math(seg['text'])
-            #     seg['spoken_equations'] = math_result.get('equations', [])
-            #     seg['spoken_equations_latex'] = math_result.get('latex', '')
-            #     seg['has_spoken_math'] = math_result.get('has_math', False)
-
-            # spoken_math_count = sum(1 for s in segments if s.get('has_spoken_math'))
-            # if spoken_math_count > 0:
-            #     error_handler.log_info(
-            #         f"Detected spoken math in {spoken_math_count}/{len(segments)} audio segments"
-            #     )
-
-            # return segments
-
+            
+            return segments
+            
         except Exception as e:
             error_handler.log_error(e, context="Audio transcription")
             return []
@@ -180,37 +161,32 @@ class VideoExtractor:
     
     def _organize_by_timeline(self, audio_segments: List[Dict], frames_data: List[Dict],
                              error_handler: ErrorHandler) -> List[Dict]:
+        # (unchanged)
         timeline = []
-
+        
         if not audio_segments and not frames_data:
             return timeline
-
+        
         if audio_segments and not frames_data:
             for seg in audio_segments:
                 timeline.append({
                     'start': seg['start'],
                     'end': seg['end'],
                     'audio': seg['text'],
-                    'spoken_equations': seg.get('spoken_equations', []),
-                    'spoken_equations_latex': seg.get('spoken_equations_latex', ''),
-                    'has_spoken_math': seg.get('has_spoken_math', False),
                     'frames': []
                 })
             return timeline
-
+        
         if frames_data and not audio_segments:
             for f in frames_data:
                 timeline.append({
                     'start': f['timestamp'],
                     'end': f['timestamp'] + 1,
                     'audio': '',
-                    'spoken_equations': [],
-                    'spoken_equations_latex': '',
-                    'has_spoken_math': False,
                     'frames': [f]
                 })
             return timeline
-
+        
         for seg in audio_segments:
             s, e = seg['start'], seg['end']
             matching = [f for f in frames_data if s <= f['timestamp'] <= e]
@@ -218,58 +194,44 @@ class VideoExtractor:
                 'start': s,
                 'end': e,
                 'audio': seg['text'],
-                'spoken_equations': seg.get('spoken_equations', []),
-                'spoken_equations_latex': seg.get('spoken_equations_latex', ''),
-                'has_spoken_math': seg.get('has_spoken_math', False),
                 'frames': matching
             })
-
+        
         return timeline
     
     def _format_timeline_output(self, timeline: List[Dict]) -> tuple:
+        # (unchanged - your original detailed format)
         combined_parts = []
         all_equations = []
         all_audio = []
         all_ocr = []
-
+        
         for i, segment in enumerate(timeline, 1):
             start_ts = self._format_timestamp(segment['start'])
             end_ts = self._format_timestamp(segment['end'])
-
-            header = f"\n{'='*70}\nSEGMENT {i} - [{start_ts} -> {end_ts}]\n{'='*70}\n\n"
+            
+            header = f"\n{'='*70}\nSEGMENT {i} - [{start_ts} → {end_ts}]\n{'='*70}\n\n"
             combined_parts.append(header)
-
+            
             if segment['audio']:
-                combined_parts.append(f"AUDIO TRANSCRIPTION:\n{segment['audio']}\n\n")
+                combined_parts.append(f"🎤 AUDIO TRANSCRIPTION:\n{segment['audio']}\n\n")
                 all_audio.append(f"[{start_ts}] {segment['audio']}")
-
-            # Spoken math equations detected in audio
-            if segment.get('has_spoken_math') and segment.get('spoken_equations'):
-                eq_list = segment['spoken_equations']
-                latex_full = segment.get('spoken_equations_latex', '')
-                eq_text = '\n'.join(f"  $ {eq} $" for eq in eq_list)
-                combined_parts.append(
-                    f"SPOKEN EQUATIONS (detected in audio at {start_ts}):\n{eq_text}\n\n"
-                )
-                for eq in eq_list:
-                    all_equations.append(f"[SPOKEN @ {start_ts}] {eq}")
-
-            # Frame visual content
+            
             if segment['frames']:
                 for frame in segment['frames']:
                     frame_ts = self._format_timestamp(frame['timestamp'])
                     if frame['text']:
                         combined_parts.append(
-                            f"SCREEN TEXT (Frame {frame['frame_number']} at {frame_ts}):\n{frame['text']}\n\n"
+                            f"📺 SCREEN TEXT (Frame {frame['frame_number']} at {frame_ts}):\n{frame['text']}\n\n"
                         )
                         all_ocr.append(f"[{frame_ts}] {frame['text']}")
-
+                    
                     if frame['equations']:
                         combined_parts.append(
-                            f"VISUAL EQUATIONS (Frame {frame['frame_number']} at {frame_ts}):\n{frame['equations']}\n\n"
+                            f"📐 MATHEMATICAL EQUATIONS (Frame {frame['frame_number']} at {frame_ts}):\n{frame['equations']}\n\n"
                         )
-                        all_equations.append(f"[VISUAL @ {frame_ts}] {frame['equations']}")
-
+                        all_equations.append(f"[{frame_ts}] {frame['equations']}")
+        
         return (
             ''.join(combined_parts),
             '\n\n'.join(all_equations) if all_equations else "",
@@ -403,43 +365,26 @@ class VideoExtractor:
                 spoken = seg.get('audio', '').strip()
                 if not spoken:
                     continue
-
+                    
                 start_str = self._format_timestamp(seg['start'])
                 end_str   = self._format_timestamp(seg['end'])
-
-                lines.append(f"[{start_str} - {end_str}]")
+                
+                lines.append(f"[{start_str} – {end_str}]")
                 lines.append(f"Spoken:  {spoken}")
                 lines.append("")
-
-                # Show spoken equations if detected
-                if seg.get('has_spoken_math') and seg.get('spoken_equations'):
-                    lines.append("Spoken equations (LaTeX):")
-                    for eq in seg['spoken_equations']:
-                        lines.append(f"  $ {eq} $")
-                    lines.append("")
-
-                # Show visual equations from frames
-                frame_equations = []
+                
                 screen_set = set()
                 for frame in seg['frames']:
                     txt = frame['text'].strip()
                     if len(txt) >= 10:
                         screen_set.add(txt)
-                    if frame.get('equations', '').strip():
-                        frame_equations.append(frame['equations'].strip())
-
+                
                 if screen_set:
                     lines.append("On screen:")
                     for txt in sorted(screen_set):
                         lines.append(f"- {txt}")
                 else:
                     lines.append("(no significant on-screen text)")
-
-                if frame_equations:
-                    lines.append("Visual equations (LaTeX):")
-                    for eq in frame_equations:
-                        lines.append(f"  $ {eq} $")
-
                 lines.append("")
         
         else:
@@ -533,21 +478,19 @@ class VideoExtractor:
         
         return "\n".join(lines) if lines else "No synchronized content available."
     
-    def extract(self,
+    def extract(self, 
                 video_path: str,
                 resource_id: Optional[str] = None,
                 clean_text: bool = True,
                 extract_audio: bool = True,
                 extract_frames: bool = True,
                 fps: Optional[float] = None,
-                max_frames: Optional[int] = None,
-                output_dir: Optional[str] = None) -> Dict[str, Any]:
+                max_frames: Optional[int] = None) -> Dict[str, Any]:
         start_time = time.time()
         video_path = Path(video_path)
-
+        
         resource_name = self._create_resource_name(video_path.name)
-        override = Path(output_dir) if output_dir else None
-        output_dir, logs_dir = self._setup_resource_directories(resource_name, output_dir_override=override)
+        output_dir, logs_dir = self._setup_resource_directories(resource_name)
         
         error_handler = ErrorHandler(f"video_{resource_name}")
         error_handler.log_file = logs_dir / "extraction.log"
@@ -621,17 +564,7 @@ class VideoExtractor:
                 ocr_file.write_text(ocr_text, encoding='utf-8')
             
             metadata_file = output_dir / f"{resource_name}_metadata.json"
-
-            # Count equations by source
-            visual_eq_count = sum(
-                1 for seg in timeline for f in seg.get('frames', [])
-                if f.get('equations', '').strip()
-            )
-            spoken_eq_count = sum(
-                len(seg.get('spoken_equations', []))
-                for seg in timeline
-            )
-
+            
             metadata = {
                 "resource_name": resource_name,
                 "resource_id": resource_id or resource_name,
@@ -648,9 +581,6 @@ class VideoExtractor:
                 "timeline_segments": len(timeline),
                 "audio_segments": len(audio_segments),
                 "frames_processed": len(frames_data),
-                "visual_equations_count": visual_eq_count,
-                "spoken_equations_count": spoken_eq_count,
-                "total_equations_count": visual_eq_count + spoken_eq_count,
                 "extracted_text_path": str(text_file),
                 "clean_transcript_path": str(clean_file),
                 "synchronized_view_path": str(sync_file),

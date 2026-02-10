@@ -5,8 +5,7 @@ Works on any system without manual configuration.
 """
 
 import torch
-import warnings
-from typing import Dict, Any, Literal
+from typing import Dict, Any
 
 class GPUDetector:
     """
@@ -47,43 +46,22 @@ class GPUDetector:
             self.device = "cpu"
             return
         
-        # Check for compatibility warnings
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            try:
-                # Try to create a tensor on GPU to trigger any compatibility warnings
-                test_tensor = torch.tensor([1.0]).cuda()
-                del test_tensor
-                torch.cuda.empty_cache()
-                
-                # If we get here without warnings, GPU is compatible
-                if len(w) == 0:
-                    self.gpu_compatible = True
-                    self.device = "cuda"
-                    self.compatibility_message = f"GPU compatible: {self.gpu_name}"
-                else:
-                    # Check if warning is about compute capability
-                    for warning in w:
-                        warning_msg = str(warning.message)
-                        if "CUDA capability" in warning_msg or "not compatible" in warning_msg:
-                            self.gpu_compatible = False
-                            self.device = "cpu"
-                            self.compatibility_message = (
-                                f"GPU detected but not compatible: {self.gpu_name}. "
-                                "PyTorch version doesn't support this GPU architecture. "
-                                "Falling back to CPU mode."
-                            )
-                            break
-                    else:
-                        # Other warnings - still use GPU
-                        self.gpu_compatible = True
-                        self.device = "cuda"
-                        self.compatibility_message = f"GPU compatible with warnings: {self.gpu_name}"
-            
-            except Exception as e:
-                self.gpu_compatible = False
-                self.device = "cpu"
-                self.compatibility_message = f"GPU compatibility test failed: {str(e)}. Using CPU."
+        # Test GPU with a real tensor operation - if it succeeds, GPU is usable
+        try:
+            test_tensor = torch.tensor([1.0]).cuda()
+            assert test_tensor.is_cuda, "Tensor did not land on CUDA"
+            del test_tensor
+            torch.cuda.empty_cache()
+
+            # Tensor op succeeded -> GPU works, use it regardless of warnings
+            self.gpu_compatible = True
+            self.device = "cuda"
+            self.compatibility_message = f"GPU compatible: {self.gpu_name}"
+
+        except Exception as e:
+            self.gpu_compatible = False
+            self.device = "cpu"
+            self.compatibility_message = f"GPU compatibility test failed: {str(e)}. Using CPU."
     
     def get_device(self) -> str:
         """Get the recommended device (cuda or cpu)"""

@@ -3,13 +3,21 @@ HoloLearn Extractors Package
 Maps file extensions and input patterns to extractor types.
 """
 
-from utils.configs import (
-    SUPPORTED_PDF_FORMATS,
-    SUPPORTED_DOCX_FORMATS,
-    SUPPORTED_PPTX_FORMATS,
-    SUPPORTED_VIDEO_FORMATS,
-    SUPPORTED_AUDIO_FORMATS,
-)
+try:
+    from utils.configs import (
+        SUPPORTED_PDF_FORMATS,
+        SUPPORTED_DOCX_FORMATS,
+        SUPPORTED_PPTX_FORMATS,
+        SUPPORTED_VIDEO_FORMATS,
+        SUPPORTED_AUDIO_FORMATS,
+    )
+except ImportError:
+    # Fallback defaults if configs cannot be loaded
+    SUPPORTED_PDF_FORMATS = ['.pdf']
+    SUPPORTED_DOCX_FORMATS = ['.docx', '.doc']
+    SUPPORTED_PPTX_FORMATS = ['.pptx', '.ppt']
+    SUPPORTED_VIDEO_FORMATS = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv']
+    SUPPORTED_AUDIO_FORMATS = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac']
 
 # Extension -> extractor type mapping (built from configs.py lists)
 EXTENSION_TYPE_MAP = {}

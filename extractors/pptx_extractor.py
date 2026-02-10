@@ -3,7 +3,6 @@ PPTX Extractor for HoloLearn
 Extracts text content from PowerPoint presentations.
 """
 
-from pptx import Presentation
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -18,15 +17,26 @@ from utils.configs import OUTPUT_DIR, LOGS_DIR
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
+try:
+    from pptx import Presentation
+    _PPTX_AVAILABLE = True
+except ImportError:
+    _PPTX_AVAILABLE = False
+
 
 class PPTXExtractor:
     """Extract text from PowerPoint files"""
     
     def __init__(self):
+        if not _PPTX_AVAILABLE:
+            raise ImportError(
+                "python-pptx not installed. Install with: pip install python-pptx"
+            )
+
         self.text_cleaner = TextCleaner()
         self.base_output_dir = OUTPUT_DIR
         self.base_logs_dir = LOGS_DIR
-        
+
         # Ensure base directories exist
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)

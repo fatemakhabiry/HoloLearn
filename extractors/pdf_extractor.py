@@ -3,7 +3,6 @@ PDF Extractor for HoloLearn
 Extracts text content from PDF files.
 """
 
-import fitz  # PyMuPDF
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -18,15 +17,26 @@ from utils.configs import OUTPUT_DIR, LOGS_DIR, MAX_PDF_SIZE
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
+try:
+    import fitz  # PyMuPDF
+    _FITZ_AVAILABLE = True
+except ImportError:
+    _FITZ_AVAILABLE = False
+
 
 class PDFExtractor:
     """Extract text from PDF files"""
     
     def __init__(self):
+        if not _FITZ_AVAILABLE:
+            raise ImportError(
+                "PyMuPDF not installed. Install with: pip install PyMuPDF"
+            )
+
         self.text_cleaner = TextCleaner()
         self.base_output_dir = OUTPUT_DIR
         self.base_logs_dir = LOGS_DIR
-        
+
         # Ensure base directories exist
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)

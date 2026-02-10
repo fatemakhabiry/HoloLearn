@@ -1,13 +1,23 @@
 import os
 from pathlib import Path
 from typing import List, Dict, Optional, Union
-import easyocr
-from PIL import Image
+
+try:
+    import easyocr
+    _EASYOCR_AVAILABLE = True
+except ImportError:
+    _EASYOCR_AVAILABLE = False
+
+try:
+    from PIL import Image
+    _PIL_AVAILABLE = True
+except ImportError:
+    _PIL_AVAILABLE = False
 
 # Import our utilities
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from configs import (
+from utils.configs import (
     EASYOCR_GPU, PIX2TEX_DEVICE, EASYOCR_LANGUAGES, _AUTO_CONFIG,
     ENABLE_SMART_MATH_DETECTION, MATH_SYMBOLS
 )
@@ -30,6 +40,15 @@ class OCRHandler:
             languages: List of language codes for OCR (default: from config)
                       Examples: ['en'], ['en', 'ar'], ['en', 'fr', 'es']
         """
+        if not _EASYOCR_AVAILABLE:
+            raise ImportError(
+                "easyocr not installed. Install with: pip install easyocr"
+            )
+        if not _PIL_AVAILABLE:
+            raise ImportError(
+                "Pillow not installed. Install with: pip install Pillow"
+            )
+
         self.error_handler = ErrorHandler("ocr_handler")
         self.languages = languages or EASYOCR_LANGUAGES
         self.text_cleaner = TextCleaner()

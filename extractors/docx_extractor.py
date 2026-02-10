@@ -3,7 +3,6 @@ DOCX Extractor for HoloLearn
 Extracts text content from Word documents.
 """
 
-from docx import Document
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -18,15 +17,26 @@ from utils.configs import OUTPUT_DIR, LOGS_DIR
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
+try:
+    from docx import Document
+    _DOCX_AVAILABLE = True
+except ImportError:
+    _DOCX_AVAILABLE = False
+
 
 class DOCXExtractor:
     """Extract text from Word documents"""
     
     def __init__(self):
+        if not _DOCX_AVAILABLE:
+            raise ImportError(
+                "python-docx not installed. Install with: pip install python-docx"
+            )
+
         self.text_cleaner = TextCleaner()
         self.base_output_dir = OUTPUT_DIR
         self.base_logs_dir = LOGS_DIR
-        
+
         # Ensure base directories exist
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)

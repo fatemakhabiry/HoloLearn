@@ -11,7 +11,7 @@ from fractions import Fraction
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from configs import TEMP_DIR
+from utils.configs import TEMP_DIR
 from utils.error_handler import ErrorHandler
 
 

@@ -10,11 +10,11 @@ except ImportError:
     # Fallback if gpu_detector not available yet
     _AUTO_CONFIG = {
         "device": "cpu",
-        "easyocr_gpu": False,
+        "easyocr_gpu": True,
         "easyocr_batch_size": 4,
         "pix2tex_device": "cpu",
         "pix2tex_batch_size": 2,
-        "use_gpu_for_video": False,
+        "use_gpu_for_video": True,
         "frame_extraction_batch_size": 4,
     }
     _GPU_DETECTOR = None
@@ -49,7 +49,9 @@ TEMP_DIR.mkdir(exist_ok=True)
 # Auto-detected settings based on GPU availability and compatibility
 # These values are automatically configured by gpu_detector.py
 EASYOCR_LANGUAGES = ['en']  # Add more languages as needed: ['en', 'ar']
-EASYOCR_GPU = _AUTO_CONFIG.get("easyocr_gpu", False)  # Auto-detected
+# GPU for EasyOCR: auto-detected from system. Set FORCE_GPU=true in .env to override.
+_FORCE_GPU = os.getenv("FORCE_GPU", "").lower() in ("true", "1", "yes")
+EASYOCR_GPU = _FORCE_GPU or _AUTO_CONFIG.get("easyocr_gpu", False)
 EASYOCR_BATCH_SIZE = _AUTO_CONFIG.get("easyocr_batch_size", 4)  # Auto-optimized
 
 # ==================== LATEX-OCR CONFIGURATION (Mathematical Equations OCR) ====================
@@ -137,8 +139,8 @@ AUDIO_TIMEOUT = 300
 URL_TIMEOUT = 60
 
 # ==================== FEATURE FLAGS ====================
-ENABLE_MATH_OCR = True  # Enable pix2tex (LaTeX-OCR) for visual math equations in frames
-ENABLE_SPOKEN_MATH_DETECTION = True  # Detect math in Whisper audio transcripts and convert to LaTeX
+ENABLE_MATH_OCR = False  # Enable pix2tex (LaTeX-OCR) for visual math equations in frames
+ENABLE_SPOKEN_MATH_DETECTION = False  # Detect math in Whisper audio transcripts and convert to LaTeX
 ENABLE_SCENE_DETECTION = True  # Use scene detection for video frame extraction
 ENABLE_DEDUPLICATION = True  # Remove duplicate extracted text
 ENABLE_TEXT_CLEANING = True  # Clean and normalize extracted text
