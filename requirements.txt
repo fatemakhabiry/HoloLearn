@@ -1,3 +1,62 @@
+# ==================== CORE DEPENDENCIES ====================
 langchain
 langchain-groq
 reportlab
+groq>=0.4.0                      # Groq API for Whisper transcription
+python-dotenv>=1.0.0             # Environment variable management
+
+# ==================== DOCUMENT PROCESSING ====================
+PyMuPDF>=1.23.0                  # PDF extraction (also known as fitz)
+python-pptx>=0.6.21              # PPTX extraction
+python-docx>=1.1.0               # DOCX extraction
+
+# ==================== OCR & COMPUTER VISION ====================
+# NOTE: Install torch first before other packages
+torch>=2.0.0                     # Required for EasyOCR and vision models
+torchvision>=0.15.0              # Required for vision models
+Pillow>=10.0.0                   # Image processing
+easyocr>=1.7.0                   # General OCR
+
+# Mathematical OCR - Install separately if needed (has dependency issues)
+# For now, skip nougat-ocr and use alternative approach
+# nougat-ocr>=0.1.17             # Mathematical equation OCR (COMMENTED OUT - dependency issues)
+
+# ==================== VIDEO & AUDIO PROCESSING ====================
+ffmpeg-python>=0.2.0             # Video/audio manipulation
+opencv-python>=4.8.0             # Video frame extraction and processing
+scenedetect[opencv]>=0.6.2       # Scene detection in videos (optional but recommended)
+
+# ==================== WEB SCRAPING ====================
+beautifulsoup4>=4.12.0           # HTML parsing
+requests>=2.31.0                 # HTTP requests
+lxml>=4.9.0                      # XML/HTML parser (faster than default)
+newspaper3k>=0.2.8               # Article extraction (optional)
+
+# ==================== UTILITIES ====================
+numpy>=1.24.0                    # Numerical operations
+tqdm>=4.65.0                     # Progress bars
+loguru>=0.7.0                    # Better logging (alternative to standard logging)
+
+# ==================== OPTIONAL BUT RECOMMENDED ====================
+ pytube>=15.0.0                 # YouTube video downloading (if supporting YouTube URLs)
+ yt-dlp>=2023.0.0               # Better alternative to pytube
+ pdf2image>=1.16.0              # Convert PDF to images for better OCR
+ pydub>=0.25.1                  # Audio file manipulation
+
+# ==================== MATHEMATICAL OCR ALTERNATIVES ====================
+# Since nougat-ocr has dependency issues, here are alternatives:
+
+# Option 1: Mathpix API (Paid but most accurate)
+# pip install mathpix
+# Requires API key from mathpix.com
+
+# Option 2: Pix2Text (Free, works well)
+pix2tex[mfr]>=0.1.2              # LaTeX OCR, handles math equations
+
+# Option 3: Use EasyOCR + Post-processing
+# EasyOCR can capture math symbols, then clean/format with regex
+
+# ==================== DEVELOPMENT TOOLS (Optional) ====================
+ pytest>=7.4.0                  # Testing
+ black>=23.0.0                  # Code formatting
+ flake8>=6.0.0                  # Code linting
