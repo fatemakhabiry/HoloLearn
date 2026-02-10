@@ -317,21 +317,21 @@ def read_text_file(path: str) -> str:
 # USAGE EXAMPLE
 # ============================================
 
-if __name__ == "__main__":
-    load_dotenv()
+# if __name__ == "__main__":
+#     load_dotenv()
 
-    content = read_text_file("nips_2017_attention_is_all_you_need_paper_text.txt")
+#     content = read_text_file("nips_2017_attention_is_all_you_need_paper_text.txt")
 
-    generator = SummaryGenerator()
+#     generator = SummaryGenerator()
     
-    print("="*80)
-    print("GENERATING STUDENT SUMMARY ")
-    print("="*80)
+#     print("="*80)
+#     print("GENERATING STUDENT SUMMARY ")
+#     print("="*80)
     
-    generator.generate_pdf(
-        content=content,
-        output_path="student_summary.pdf",
-        course_code="IS101",
-        title="Introduction to NetSecurity"
-    )
-    print("✅ Complete!")
+#     generator.generate_pdf(
+#         content=content,
+#         output_path="student_summary.pdf",
+#         course_code="IS101",
+#         title="Introduction to NetSecurity"
+#     )
+#     print("✅ Complete!")

@@ -124,7 +124,7 @@ Generate the COMPLETE script in {language} covering ALL content."""
     def generate_and_save(
         self,
         content: str,
-        output_path: str,
+        output_path: str="hologram_lecture_script.txt",
         course_code: str = "",
         title: str = "",
         duration: int = 45,
@@ -174,29 +174,29 @@ def read_text_file(path: str) -> str:
     return content
 
 
-if __name__ == "__main__":
-    load_dotenv()
-    api_key = os.getenv("GROQ_API_KEY")
+# if __name__ == "__main__":
+#     load_dotenv()
+#     api_key = os.getenv("GROQ_API_KEY")
 
-    generator = HologramScriptGenerator(api_key=api_key)
+#     generator = HologramScriptGenerator(api_key=api_key)
 
-    # ✅ 1) Put your extracted lecture here (txt file)
-    INPUT_LECTURE_TXT = "1_introduction_to_infosec_text.txt"  # <-- change to your file name/path
+#     # ✅ 1) Put your extracted lecture here (txt file)
+#     INPUT_LECTURE_TXT = "1_introduction_to_infosec_text.txt"  # <-- change to your file name/path
 
-    # ✅ 2) Output script file
-    OUTPUT_SCRIPT_TXT = "hologram_lecture_IS_script.txt"
+#     # ✅ 2) Output script file
+#     OUTPUT_SCRIPT_TXT = "hologram_lecture_IS_script.txt"
 
-    # ✅ 3) Read lecture from txt
-    lecture_content = read_text_file(INPUT_LECTURE_TXT)
+#     # ✅ 3) Read lecture from txt
+#     lecture_content = read_text_file(INPUT_LECTURE_TXT)
 
-    # ✅ 4) Generate and save script
-    generator.generate_and_save(
-        content=lecture_content,
-        output_path=OUTPUT_SCRIPT_TXT,
-        course_code="IS101",                    # optional
-        title="Introduction infosec",  # optional
-        duration=25,                             # change duration
-        language="English",
-    )
+#     # ✅ 4) Generate and save script
+#     generator.generate_and_save(
+#         content=lecture_content,
+#         output_path=OUTPUT_SCRIPT_TXT,
+#         course_code="IS101",                    # optional
+#         title="Introduction infosec",  # optional
+#         duration=25,                             # change duration
+#         language="English",
+#     )
 
-    print("\n✅ Complete! Check:", OUTPUT_SCRIPT_TXT)
+#     print("\n✅ Complete! Check:", OUTPUT_SCRIPT_TXT)

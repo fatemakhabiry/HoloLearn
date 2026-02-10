@@ -1,8 +1,3 @@
-"""
-Quiz Generator - Creates PDF quiz with answer key
-Generates two PDFs: quiz and answers
-"""
-
 from langchain_groq import ChatGroq
 from langchain.messages import SystemMessage, HumanMessage
 import os
@@ -240,22 +235,22 @@ def read_text_file(path: str) -> str:
 
     return content
 
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv()
+# if __name__ == "__main__":
+#     from dotenv import load_dotenv
+#     load_dotenv()
     
-    content =read_text_file("1_introduction_to_infosec_text.txt")
+#     content =read_text_file("1_introduction_to_infosec_text.txt")
     
-    generator = QuizGenerator()
+#     generator = QuizGenerator()
     
-    generator.generate_pdfs(
-        content=content,
-        quiz_path="quiz.pdf",
-        answers_path="quiz_answers.pdf",
-        course_code="IS101",
-        title="InfoSecurity Quiz",
-        num_questions=15,
-        time_limit=15
-    )
+#     generator.generate_pdfs(
+#         content=content,
+#         quiz_path="quiz.pdf",
+#         answers_path="quiz_answers.pdf",
+#         course_code="IS101",
+#         title="InfoSecurity Quiz",
+#         num_questions=15,
+#         time_limit=15
+#     )
     
-    print("\n✅ Complete!")
+#     print("\n✅ Complete!")

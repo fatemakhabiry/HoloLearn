@@ -267,29 +267,29 @@ def read_text_file(path: str) -> str:
 # USAGE EXAMPLE
 # ============================================
 
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv()
+# if __name__ == "__main__":
+#     from dotenv import load_dotenv
+#     load_dotenv()
     
-    content =read_text_file("1_introduction_to_infosec_text.txt")
+#     content =read_text_file("1_introduction_to_infosec_text.txt")
     
-    generator = FlowchartGenerator()
+#     generator = FlowchartGenerator()
     
-    print("="*80)
-    print("GENERATING LECTURE FLOWCHART")
-    print("="*80)
+#     print("="*80)
+#     print("GENERATING LECTURE FLOWCHART")
+#     print("="*80)
     
-    generator.generate_html(
-        content=content,
-        output_path="lecture_flowchart.html",
-        course_code="IS101",
-        title="Introduction to InfoSecurity"
-    )
+#     generator.generate_html(
+#         content=content,
+#         output_path="lecture_flowchart.html",
+#         course_code="IS101",
+#         title="Introduction to InfoSecurity"
+#     )
     
-    print("\n" + "="*80)
-    print("✅ Complete!")
-    print("="*80)
-    print("\nGenerated files:")
-    print("  📊 lecture_flowchart.html - Interactive flowchart")
-    print("  📝 lecture_flowchart.mmd - Mermaid code")
-    print("\nOpen the HTML file in your browser to view! 🎉")
+#     print("\n" + "="*80)
+#     print("✅ Complete!")
+#     print("="*80)
+#     print("\nGenerated files:")
+#     print("  📊 lecture_flowchart.html - Interactive flowchart")
+#     print("  📝 lecture_flowchart.mmd - Mermaid code")
+#     print("\nOpen the HTML file in your browser to view! 🎉")

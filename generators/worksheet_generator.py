@@ -329,24 +329,24 @@ def read_text_file(path: str) -> str:
 
     return content
 
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv()
+# if __name__ == "__main__":
+#     from dotenv import load_dotenv
+#     load_dotenv()
 
-    # Sample content
-    content = read_text_file("nips_2017_attention_is_all_you_need_paper_text.txt")
+#     # Sample content
+#     content = read_text_file("nips_2017_attention_is_all_you_need_paper_text.txt")
 
-    generator = WorksheetGenerator()
+#     generator = WorksheetGenerator()
 
-    generator.generate_pdfs(
-        content=content,
-        questions_path="worksheet2_questions.pdf",
-        answers_path="worksheet2_answers.pdf",
-        course_code="AI101",
-        title="Introduction to Transformers",
-        num_mcq=20,
-        num_tf=10,
-        num_written=15,
-    )
+#     generator.generate_pdfs(
+#         content=content,
+#         questions_path="worksheet2_questions.pdf",
+#         answers_path="worksheet2_answers.pdf",
+#         course_code="AI101",
+#         title="Introduction to Transformers",
+#         num_mcq=20,
+#         num_tf=10,
+#         num_written=15,
+#     )
 
-    print("\n✅ Complete! Check the PDF files.")
+#     print("\n✅ Complete! Check the PDF files.")
