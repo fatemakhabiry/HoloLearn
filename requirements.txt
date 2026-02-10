@@ -1,6 +1,8 @@
 # ==================== CORE DEPENDENCIES ====================
 langchain
 langchain-groq
+langchain_text_splitters
+
 reportlab
 groq>=0.4.0                      # Groq API for Whisper transcription
 python-dotenv>=1.0.0             # Environment variable management

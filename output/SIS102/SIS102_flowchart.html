@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flowchart: sist</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1565c0;
+            margin: 0 0 10px 0;
+        }
+        .course {
+            color: #666;
+            font-size: 14px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .mermaid {
+            text-align: center;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #1565c0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Lecture Flowchart</h1>
+        <h2>sist</h2>
+        <p class="course">Course: SIS102</p>
+    </div>
+    
+    <div class="container">
+        <div class="mermaid">
+flowchart TD
+    Start(["Lecture 2: sist"])
+    
+    Start --> T1["Insider Threat"]
+    T1 --> P1["Malicious intent"]
+    T1 --> P2["Negligence causes"]
+    T1 --> P3["Accidental insiders"]
+    
+    Start --> T2["Preventing Insider"]
+    T2 --> P4["Technical controls"]
+    T2 --> P5["Security awareness"]
+    T2 --> P6["Report suspicious"]
+    
+    Start --> T3["Ransomware"]
+    T3 --> P7["Malicious software"]
+    T3 --> P8["Double extortion"]
+    T3 --> P9["Spreads via phishing"]
+    
+    Start --> T4["Protecting Ransomware"]
+    T4 --> P10["Regular updates"]
+    T4 --> P11["Robust endpoint"]
+    T4 --> P12["Immutable storage"]
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>📊 How to Read This Flowchart:</h3>
+        <ul>
+            <li><strong>Top box</strong> = Lecture title</li>
+            <li><strong>Topic boxes</strong> = Main topics covered</li>
+            <li><strong>Bullet points</strong> = Key points under each topic</li>
+            <li><strong>Follow connections</strong> to see topic hierarchy</li>
+        </ul>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

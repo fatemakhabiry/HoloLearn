@@ -1,0 +1,20 @@
+{
+  "course_code": "AI103",
+  "title": "Transformers Fundamentals",
+  "timestamp": "2026-02-10T15:02:34.666606",
+  "files": {
+    "lecture": {
+      "pdf": "output\\AI103\\AI103_lecture.pdf",
+      "txt": "output\\AI103\\AI103_lecture.txt"
+    },
+    "quiz": {
+      "quiz_pdf": "output\\AI103\\AI103_quiz.pdf",
+      "answers_pdf": "output\\AI103\\AI103_quiz_answers.pdf"
+    },
+    "flowchart": {
+      "html": "output\\AI103\\AI103_flowchart.html",
+      "mmd": "output\\AI103\\AI103_flowchart.mmd"
+    }
+  },
+  "status": "completed"
+}

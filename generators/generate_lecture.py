@@ -5,8 +5,8 @@ from typing import Optional, Dict, List, Any
 from pathlib import Path
 from datetime import datetime
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.prompts import ChatPromptTemplate
+from  langchain_text_splitters import RecursiveCharacterTextSplitter
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -38,7 +38,7 @@ class LectureGenerator:
         """
         # Initialize Groq LLM with increased token limit for mathematical content
         self.llm = ChatGroq(
-            api_key=os.os.getenv("GROQ_API_KEY"),
+            api_key=os.getenv("GROQ_API_KEY_LECTURE"),
             model_name=model_name,
             temperature=0.5,
             max_tokens=8000  

@@ -1,9 +1,9 @@
-from ..generators.quiz_generator import QuizGenerator
-from ..generators.script_generator import HologramScriptGenerator
-from ..generators.summary_generator import SummaryGenerator
-from ..generators.worksheet_generator import WorksheetGenerator
-from ..generators.knowledge_graph_generator import FlowchartGenerator
-from ..generators.generate_lecture import LectureGenerator
+from generators.quiz_generator import QuizGenerator
+from generators.script_generator import HologramScriptGenerator
+from generators.summary_generator import SummaryGenerator
+from generators.worksheet_generator import WorksheetGenerator
+from generators.knowledge_graph_generator import FlowchartGenerator
+from generators.generate_lecture import LectureGenerator , generate_lecture_sync
 import os
 from pathlib import Path
 from typing import Optional, Dict
@@ -21,11 +21,12 @@ class SimpleExtractorWrapper:
     def extract_pdf(self, file_path: str) -> str:
         """Extract text from PDF"""
         try:
-            from ..extractors.pdf_extractor import PDFExtractor
+            from extractors.pdf_extractor import PDFExtractor
             extractor = PDFExtractor()
             result = extractor.extract(file_path)
             if result["success"]:
                 return result.get("extracted_text", "")
+            
             print(f"PDF extraction failed: {result.get('error', 'Unknown error')}")
             return ""
         except Exception as e:
@@ -35,7 +36,7 @@ class SimpleExtractorWrapper:
     def extract_docx(self, file_path: str) -> str:
         """Extract text from DOCX"""
         try:
-            from ..extractors.docx_extractor import DOCXExtractor
+            from extractors.docx_extractor import DOCXExtractor
             extractor = DOCXExtractor()
             result = extractor.extract(file_path)
             if result["success"]:
@@ -49,7 +50,7 @@ class SimpleExtractorWrapper:
     def extract_pptx(self, file_path: str) -> str:
         """Extract text from PowerPoint"""
         try:
-            from ..extractors.pptx_extractor import PPTXExtractor
+            from extractors.pptx_extractor import PPTXExtractor
             extractor = PPTXExtractor()
             result = extractor.extract(file_path)
             if result["success"]:
@@ -63,7 +64,7 @@ class SimpleExtractorWrapper:
     def extract_audio(self, file_path: str) -> str:
         """Extract transcript from audio"""
         try:
-            from ..extractors.audio_extractor import AudioExtractor
+            from extractors.audio_extractor import AudioExtractor
             extractor = AudioExtractor()
             result = extractor.extract(file_path)
             if result["success"]:
@@ -77,7 +78,7 @@ class SimpleExtractorWrapper:
     def extract_video(self, file_path: str) -> str:
         """Extract transcript from video (audio + OCR)"""
         try:
-            from ..extractors.video_extractor import VideoExtractor
+            from extractors.video_extractor import VideoExtractor
             extractor = VideoExtractor()
             result = extractor.extract(file_path)
             if result["success"]:
@@ -91,7 +92,7 @@ class SimpleExtractorWrapper:
     def extract_url(self, url: str) -> str:
         """Extract text from URL"""
         try:
-            from ..extractors.url_extractor import URLExtractor
+            from extractors.url_extractor import URLExtractor
             extractor = URLExtractor()
             result = extractor.extract(url)
             if result["success"]:
@@ -140,7 +141,7 @@ class SimpleExtractorWrapper:
 
 class SimpleGeneratorWrapper:
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self):
         pass
     
     # ============================================
@@ -180,11 +181,12 @@ class SimpleGeneratorWrapper:
             output_dir.mkdir(exist_ok=True, parents=True)
             filename = f"{course_code}_lecture" if course_code else "lecture"
             pdf_path = output_dir / f"{filename}.pdf"
+        
             
-            generator.generate_lecture_sync(
+            generate_lecture_sync(
                 lecture_topic=lecture_topic,
                 output_pdf_path=str(pdf_path),
-                groq_api_key=self.api_key,
+                groq_api_key=api_key,
                 website_text=website_text,
                 website_query=website_query,
                 video_text=video_text,

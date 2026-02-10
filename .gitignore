@@ -138,6 +138,7 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.Lecture_gen_env
 env/
 venv/
 ENV/

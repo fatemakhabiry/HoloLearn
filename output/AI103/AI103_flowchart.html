@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flowchart: Transformers Fundamentals</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1565c0;
+            margin: 0 0 10px 0;
+        }
+        .course {
+            color: #666;
+            font-size: 14px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .mermaid {
+            text-align: center;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #1565c0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Lecture Flowchart</h1>
+        <h2>Transformers Fundamentals</h2>
+        <p class="course">Course: AI103</p>
+    </div>
+    
+    <div class="container">
+        <div class="mermaid">
+flowchart TD
+    Start(["Transformers Fundamentals"])
+    
+    Start --> T1["Introduction to Transformers"]
+    T1 --> P1["• Revolutionized deep learning"]
+    T1 --> P2["• Handles long-range dependencies"]
+    T1 --> P3["• Parallelizes attention mechanism"]
+    
+    Start --> T2["Transformer Architecture"]
+    T2 --> P4["• Encoder-decoder structure"]
+    T2 --> P5["• Multi-head attention mechanism"]
+    T2 --> P6["• Position-wise feed-forward network"]
+    
+    Start --> T3["Mathematical Representation"]
+    T3 --> P7["• Scaled dot-product attention"]
+    T3 --> P8["• Multi-head attention mechanism"]
+    T3 --> P9["• Compatibility function"]
+    
+    Start --> T4["Real-World Applications"]
+    T4 --> P10["• Natural Language Processing"]
+    T4 --> P11["• Computer Vision"]
+    T4 --> P12["• Reinforcement Learning"]
+    
+    Start --> T5["Common Misconceptions"]
+    T5 --> P13["• Not just NLP"]
+    T5 --> P14["• Highly parallelizable"]
+    T5 --> P15["• Handles long-range dependencies"]
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>📊 How to Read This Flowchart:</h3>
+        <ul>
+            <li><strong>Top box</strong> = Lecture title</li>
+            <li><strong>Topic boxes</strong> = Main topics covered</li>
+            <li><strong>Bullet points</strong> = Key points under each topic</li>
+            <li><strong>Follow connections</strong> to see topic hierarchy</li>
+        </ul>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
