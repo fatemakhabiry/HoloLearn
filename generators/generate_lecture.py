@@ -38,7 +38,7 @@ class LectureGenerator:
         """
         # Initialize Groq LLM with increased token limit for mathematical content
         self.llm = ChatGroq(
-            api_key=os.os.getenv("GROQ_API_KEY"),
+            api_key=os.getenv("GROQ_API_KEY"),
             model_name=model_name,
             temperature=0.5,
             max_tokens=8000  

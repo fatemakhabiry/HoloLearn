@@ -24,7 +24,8 @@ from utils.configs import (
 from utils.error_handler import ErrorHandler
 from utils.text_cleaner import TextCleaner
 
-# Get device info from config
+# Note: GPU is always attempted first in OCRHandler.__init__
+# These are only used as reference, not to control EasyOCR GPU
 DEVICE = _AUTO_CONFIG.get('device', 'cpu')
 USE_GPU = EASYOCR_GPU
 
@@ -53,29 +54,48 @@ class OCRHandler:
         self.languages = languages or EASYOCR_LANGUAGES
         self.text_cleaner = TextCleaner()
 
-        # Initialize EasyOCR reader
-        self.error_handler.log_info(
-            f"Initializing EasyOCR with {DEVICE}...",
-            metadata={"languages": self.languages, "gpu": USE_GPU}
-        )
+        # Initialize EasyOCR reader - try GPU first, fall back to CPU
+        self.use_gpu = False
 
+        # Always attempt GPU first, let EasyOCR handle its own CUDA detection
         try:
+            self.error_handler.log_info(
+                "Initializing EasyOCR with GPU...",
+                metadata={"languages": self.languages}
+            )
             self.reader = easyocr.Reader(
                 self.languages,
-                gpu=USE_GPU,  # Auto-detected from config.py
+                gpu=True,
                 verbose=False
             )
+            self.use_gpu = True
             self.error_handler.log_success(
-                f"EasyOCR initialized on {DEVICE}",
+                "EasyOCR initialized on GPU",
                 metadata={"languages": self.languages}
             )
-        except Exception as e:
-            self.error_handler.log_error(
-                e,
-                context="Initializing EasyOCR",
+        except Exception as gpu_err:
+            # GPU failed - fall back to CPU
+            self.error_handler.log_warning(
+                f"GPU init failed ({gpu_err}), falling back to CPU",
                 metadata={"languages": self.languages}
             )
-            raise
+            try:
+                self.reader = easyocr.Reader(
+                    self.languages,
+                    gpu=False,
+                    verbose=False
+                )
+                self.error_handler.log_success(
+                    "EasyOCR initialized on CPU (fallback)",
+                    metadata={"languages": self.languages}
+                )
+            except Exception as cpu_err:
+                self.error_handler.log_error(
+                    cpu_err,
+                    context="Initializing EasyOCR",
+                    metadata={"languages": self.languages}
+                )
+                raise
 
         # Try to initialize pix2tex (LaTeX-OCR) for math equations
         self.latex_ocr_available = False
