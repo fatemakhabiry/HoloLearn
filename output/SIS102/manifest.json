@@ -1,0 +1,28 @@
+{
+  "course_code": "SIS102",
+  "title": "sist",
+  "timestamp": "2026-02-10T13:42:22.722779",
+  "files": {
+    "script": {
+      "txt": "output\\SIS102\\SIS102_script.txt"
+    },
+    "worksheet": {
+      "questions_pdf": "output\\SIS102\\SIS102_worksheet.pdf",
+      "answers_pdf": "output\\SIS102\\SIS102_worksheet_answers.pdf",
+      "json": "output\\SIS102\\SIS102_worksheet.json"
+    },
+    "quiz": {
+      "quiz_pdf": "output\\SIS102\\SIS102_quiz.pdf",
+      "answers_pdf": "output\\SIS102\\SIS102_quiz_answers.pdf"
+    },
+    "summary": {
+      "pdf": "output\\SIS102\\SIS102_summary.pdf",
+      "txt": "output\\SIS102\\SIS102_summary.txt"
+    },
+    "flowchart": {
+      "html": "output\\SIS102\\SIS102_flowchart.html",
+      "mmd": "output\\SIS102\\SIS102_flowchart.mmd"
+    }
+  },
+  "status": "completed"
+}

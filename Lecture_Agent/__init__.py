@@ -1,0 +1,1 @@
+from Lecture_Agent.wrapper import SimpleGeneratorWrapper, SimpleExtractorWrapper

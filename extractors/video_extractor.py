@@ -12,7 +12,7 @@ from utils.configs import (
     OUTPUT_DIR, 
     LOGS_DIR,
     TEMP_DIR,
-    GROQ_API_KEY,
+    GROQ_API_KEY_VIDEO,
     SUPPORTED_VIDEO_FORMATS,
     MAX_VIDEO_SIZE,
     FRAME_EXTRACTION_FPS,
@@ -40,7 +40,7 @@ class VideoExtractor:
         self.video_processor = VideoProcessor()
         self.ocr_handler = OCRHandler()
         
-        self.api_key = api_key or GROQ_API_KEY
+        self.api_key = api_key or GROQ_API_KEY_VIDEO
     
     # ────────────────────────────────────────
     # Existing methods (unchanged except where noted)
@@ -654,7 +654,7 @@ if __name__ == "__main__":
     
     print("=== Testing Video Extractor with Clean Transcript ===\n")
     
-    if GROQ_API_KEY == "your-groq-api-key-here":
+    if GROQ_API_KEY_VIDEO == "your-groq-api-key-here":
         print("⚠️ Groq API key not set — audio transcription will be skipped.")
     
     try:

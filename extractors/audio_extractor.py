@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from utils.configs import (
     OUTPUT_DIR, 
     LOGS_DIR,
-    GROQ_API_KEY,
+    GROQ_API_KEY_AUDIO,
     WHISPER_MODEL,
     WHISPER_LANGUAGE,
     WHISPER_TEMPERATURE,
@@ -57,7 +57,7 @@ class AudioExtractor:
                 "groq package not installed. Install with: pip install groq"
             )
 
-        self.api_key = api_key or GROQ_API_KEY
+        self.api_key = api_key or GROQ_API_KEY_AUDIO
 
         if not self.api_key or self.api_key == "your-groq-api-key-here":
             raise ValueError(
@@ -410,7 +410,7 @@ if __name__ == "__main__":
     print("=== Testing Audio Extractor ===\n")
     
     # Check API key
-    if GROQ_API_KEY == "your-groq-api-key-here":
+    if GROQ_API_KEY_AUDIO == "your-groq-api-key-here":
         print("❌ ERROR: Groq API key not set!")
         print("   Please set your API key in one of these ways:")
         print("   1. Create a .env file with: GROQ_API_KEY=your_key_here")

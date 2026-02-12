@@ -28,7 +28,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Configuration
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "your-groq-api-key-here")
+GROQ_API_KEY_VIDEO = os.getenv("GROQ_API_KEY_VIDEO")
+GROQ_API_KEY_AUDIO = os.getenv("GROQ_API_KEY_AUDIO")
+
 
 # Groq Models
 WHISPER_MODEL = "whisper-large-v3-turbo"  # For audio transcription
