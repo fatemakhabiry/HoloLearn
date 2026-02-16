@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
-import '../screens/login_screen.dart';
-import '../screens/otp_verification_screen.dart';
+import '../routes/app_routes.dart';
 import '../services/password_reset_service.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/app_bar_widget.dart';
@@ -38,15 +37,20 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     });
     try {
       await PasswordResetService.requestOTP(email!);
-      Navigator.pushReplacement(
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => OtpVerficationScreen(
+      //       email: email!,
+      //       linkSentTime: DateTime.now(),
+      //     ),
+      //   ),
+      // ); // Added closing parenthesis and semicolon
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (context) => OtpVerficationScreen(
-            email: email!,
-            linkSentTime: DateTime.now(),
-          ),
-        ),
-      ); // Added closing parenthesis and semicolon
+        AppRoutes.otpVerification,
+        arguments: {'email': email!, 'linkSentTime': DateTime.now()},
+      );
     } on ClientException {
       error_message = 'Cannot connect to server. Check internet or URL.';
     } on SocketException {
@@ -54,7 +58,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     } on TimeoutException {
       error_message = 'Request timed out.';
     } catch (e) {
-      error_message = e.toString().replaceFirst('Exception: ',  '');
+      error_message = e.toString().replaceFirst('Exception: ', '');
       status = false;
     } finally {
       if (error_message != null) {
@@ -150,11 +154,15 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           CustomButton(
                             text: "Back To Login",
                             onPressed: () {
-                              Navigator.pushReplacement(
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => LoginPage(),
+                              //   ),
+                              // );
+                              Navigator.pushReplacementNamed(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) => LoginPage(),
-                                ),
+                                AppRoutes.login,
                               );
                             },
                             buttonType: ButtonType.secondary,

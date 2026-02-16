@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:hololearn/services/lecture_service.dart';
 import 'package:provider/provider.dart';
 import '../state/providers/app_state_provider.dart';
@@ -11,8 +12,6 @@ import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/error_handler_widget.dart';
 import '../services/schedule_service.dart';
-import 'lecture_options_screen.dart';
-import 'teacher_dashboard_screen.dart';
 
 class TeacherLecturesScreen extends StatefulWidget {
   const TeacherLecturesScreen({super.key});
@@ -116,11 +115,9 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
                 );
                 Future.delayed(const Duration(seconds: 1), () {
                   if (mounted) {
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.pushNamedAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const TeacherDashboardScreen(),
-                      ),
+                      AppRoutes.teacherDashboard,
                       (route) => false,
                     );
                   }
@@ -189,12 +186,13 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
 
           // ✅ Navigate to lecture setup screen
           if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LectureSetupScreen(),
-              ),
-            ).then((_) {
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => const LectureSetupScreen(),
+            //   ),
+            // )
+            Navigator.pushNamed(context, AppRoutes.lectureSetup).then((_) {
               lectureState.clearLectureState();
               fetchData();
             });
@@ -254,8 +252,12 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
                                 ),
                                 child: LectureScheduleCard(
                                   lectureTitle: lecture.lectureTitle,
-                                  date: lecture.formattedDate==''?'Drafted': lecture.formattedDate,
-                                  timeRange: lecture.timeRange==''?'': lecture.timeRange,
+                                  date: lecture.formattedDate == ''
+                                      ? 'Drafted'
+                                      : lecture.formattedDate,
+                                  timeRange: lecture.timeRange == ''
+                                      ? ''
+                                      : lecture.timeRange,
                                   editButtonText: 'RESCHEDULE',
                                   cancelButtonText: 'DELETE RECORD',
                                   onEdit: () => _handleReschedule(index),

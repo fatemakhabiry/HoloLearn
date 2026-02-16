@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-
+import 'package:hololearn/routes/app_routes.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
@@ -76,11 +75,15 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                               text: "GO TO LOGIN",
                               onPressed: () {
                                 //back to login
-                                Navigator.pushReplacement(
+                                // Navigator.pushReplacement(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //     builder: (context) => const LoginPage(),
+                                //   ),
+                                // );
+                                Navigator.pushReplacementNamed(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
+                                  AppRoutes.login,
                                 );
                               },
                               buttonType: ButtonType.primary,

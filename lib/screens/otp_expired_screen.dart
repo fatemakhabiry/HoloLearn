@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:provider/provider.dart';
-import 'login_screen.dart';
-import 'forget_pass_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/message_handler_widget.dart';
-import '../screens/otp_verification_screen.dart';
 import '../state/providers/app_state_provider.dart';
 import '../services/password_reset_service.dart';
 
@@ -27,15 +25,16 @@ class OtpExpiredScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     void _backToLogin() {
       // Back to login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const LoginPage()),
+      // );
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
 
     void _resendEmail() async {
       final email = Provider.of<AppStateProvider>(context, listen: false).email;
-      
+
       // Validate email is not empty
       if (email.isEmpty) {
         // Show error and navigate back to forget password
@@ -45,29 +44,37 @@ class OtpExpiredScreen extends StatelessWidget {
             backgroundColor: Colors.red,
           ),
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ForgetPasswordPage()),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const ForgetPasswordPage()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.forgetPassword);
         return;
       }
-      
+
       try {
         await PasswordResetService.resendOTP(email);
-        Navigator.pushReplacement(
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => OtpVerficationScreen(
+        //       email: email,
+        //       linkSentTime: DateTime.now(),
+        //     ),
+        //   ),
+        // );
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => OtpVerficationScreen(
-              email: email,
-              linkSentTime: DateTime.now(),
-            ),
-          ),
+          AppRoutes.otpVerification,
+          arguments: {'email': email, 'linkSentTime': DateTime.now()},
         );
       } catch (e) {
         // Handle error - could show a snackbar or navigate to error screen
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to resend OTP: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content: Text(
+              'Failed to resend OTP: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             backgroundColor: Colors.red,
           ),
         );

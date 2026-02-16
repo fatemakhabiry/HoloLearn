@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'teacher_dashboard_screen.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import '../services/lecture_service.dart';
@@ -44,7 +44,6 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
   String? lectureUrl;
   String? currentDocumentName;
   String? newCourseCode;
-
 
   // Scheduling
   String? selectedDate;
@@ -179,7 +178,10 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
 
     try {
       final response = await AvailabilityService.fetchAvailableSlots(
-        token: Provider.of<AppStateProvider>(context, listen: false).accessToken,
+        token: Provider.of<AppStateProvider>(
+          context,
+          listen: false,
+        ).accessToken,
         date: selectedDate!,
       );
 
@@ -280,7 +282,6 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
     });
 
     try {
-
       final appState = Provider.of<AppStateProvider>(context, listen: false);
       // Call update API
       final response = await LectureService.updateLecture(
@@ -302,9 +303,10 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
       // Navigate back after success
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(
-            builder: (context) => TeacherDashboardScreen(),
-          ));
+          // Navigator.pushReplacement(context, MaterialPageRoute(
+          //   builder: (context) => TeacherDashboardScreen(),
+          // ));
+          Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
         }
       });
     } catch (e) {
@@ -319,7 +321,6 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +546,9 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                                       CustomDropdown(
                                         label: 'Time Slot',
                                         items: availableSlots
-                                            .map((slot) => slot.formattedTimeSlot)
+                                            .map(
+                                              (slot) => slot.formattedTimeSlot,
+                                            )
                                             .toList(),
                                         selectedValue: selectedTimeSlot,
                                         hintText: selectedDate == null

@@ -15,8 +15,7 @@ import '../widgets/text_form_widget.dart';
 import '../widgets/app_bar_widget.dart';
 import '../widgets/confirmation_widget.dart';
 import '../widgets/error_handler_widget.dart';
-import 'change_pass_screen.dart';
-import 'teacher_lectures_screen.dart';
+import '../routes/app_routes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -59,22 +58,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       confirmButtonText: 'Change Password',
       onConfirm: () {
         Navigator.pop(context); // Close dialog
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ChangePasswordScreen()),
+        // );
+        Navigator.pushNamed(context, AppRoutes.changePassword);
       },
     );
   }
 
   void _lectureHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => TeacherLecturesScreen()),
-    );
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => TeacherLecturesScreen()),
+    // );
+    Navigator.pushNamed(context, AppRoutes.teacherLectures);
   }
-
-
 
   void _changeVoiceSample() {
     // Save the outer context
@@ -342,177 +341,177 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-Future<void> _changeAvatarPhoto() async {
-  try {
-    // Step 1: Show source selection
-    final ImageSource? source = await showDialog<ImageSource>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Choose Photo Source',
-          style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(
-                Icons.camera_alt,
-                color: AppColors.lightBlue,
-              ),
-              title: const Text('Camera', style: AppStyles.h3),
-              onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.photo_library,
-                color: AppColors.lightBlue,
-              ),
-              title: const Text('Gallery', style: AppStyles.h3),
-              onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source == null) return;
-
-    // Step 2: Pick image
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: source,
-      maxWidth: 2048,
-      maxHeight: 2048,
-      imageQuality: 90,
-    );
-
-    if (image == null) return;
-
-    // Step 3: Set loading state
-    if (!mounted) return;
-    setState(() {
-      isUploading = true;
-    });
-
+  Future<void> _changeAvatarPhoto() async {
     try {
-      // Step 4: Process image
-      final File processedImage = await _processImage(File(image.path));
-
-      // Step 5: Get provider
-      if (!mounted) return;
-      final appState = Provider.of<AppStateProvider>(context, listen: false);
-
-      // Step 6: Upload
-      await AvatarService.uploadPhoto(
-        appState: appState,
-        photoFile: processedImage,
+      // Step 1: Show source selection
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(
+            'Choose Photo Source',
+            style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.lightBlue,
+                ),
+                title: const Text('Camera', style: AppStyles.h3),
+                onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.lightBlue,
+                ),
+                title: const Text('Gallery', style: AppStyles.h3),
+                onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
       );
 
-      // Step 7: Update UI on success
+      if (source == null) return;
+
+      // Step 2: Pick image
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 90,
+      );
+
+      if (image == null) return;
+
+      // Step 3: Set loading state
       if (!mounted) return;
       setState(() {
-        profileImage = processedImage;
+        isUploading = true;
       });
 
-      CustomErrorHandler.show(
-        context,
-        message: 'Avatar photo uploaded successfully!',
-        type: ErrorType.success,
-      );
+      try {
+        // Step 4: Process image
+        final File processedImage = await _processImage(File(image.path));
+
+        // Step 5: Get provider
+        if (!mounted) return;
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+
+        // Step 6: Upload
+        await AvatarService.uploadPhoto(
+          appState: appState,
+          photoFile: processedImage,
+        );
+
+        // Step 7: Update UI on success
+        if (!mounted) return;
+        setState(() {
+          profileImage = processedImage;
+        });
+
+        CustomErrorHandler.show(
+          context,
+          message: 'Avatar photo uploaded successfully!',
+          type: ErrorType.success,
+        );
+      } catch (e) {
+        if (!mounted) return;
+
+        setState(() {
+          profileImage = null;
+        });
+
+        CustomErrorHandler.show(
+          context,
+          message: e.toString(),
+          type: ErrorType.fail,
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            isUploading = false;
+          });
+        }
+      }
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        profileImage = null;
-      });
-
-      CustomErrorHandler.show(
-        context,
-        message: e.toString(),
-        type: ErrorType.fail,
-      );
-    } finally {
-      if (mounted) {
+      if (isUploading) {
         setState(() {
           isUploading = false;
         });
       }
-    }
-  } catch (e) {
-    if (!mounted) return;
 
-    if (isUploading) {
-      setState(() {
-        isUploading = false;
-      });
-    }
-
-    CustomErrorHandler.show(
-      context,
-      message: 'Error selecting photo: $e',
-      type: ErrorType.fail,
-    );
-  }
-}
-
-Future<File> _processImage(File imageFile) async {
-  try {
-    final bytes = await imageFile.readAsBytes();
-    img.Image? originalImage = img.decodeImage(bytes);
-
-    if (originalImage == null) {
-      throw 'Failed to decode image';
-    }
-
-    const int minDimension = 512;
-    img.Image processedImage;
-
-    if (originalImage.width < minDimension ||
-        originalImage.height < minDimension) {
-      processedImage = img.copyResize(
-        originalImage,
-        width: minDimension,
-        height: minDimension,
-        interpolation: img.Interpolation.cubic,
+      CustomErrorHandler.show(
+        context,
+        message: 'Error selecting photo: $e',
+        type: ErrorType.fail,
       );
-    } else if (originalImage.width > 2048 || originalImage.height > 2048) {
-      int targetWidth = originalImage.width;
-      int targetHeight = originalImage.height;
+    }
+  }
 
-      if (targetWidth > targetHeight) {
-        targetWidth = 2048;
-        targetHeight =
-            (originalImage.height * 2048 / originalImage.width).round();
-      } else {
-        targetHeight = 2048;
-        targetWidth =
-            (originalImage.width * 2048 / originalImage.height).round();
+  Future<File> _processImage(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      img.Image? originalImage = img.decodeImage(bytes);
+
+      if (originalImage == null) {
+        throw 'Failed to decode image';
       }
 
-      processedImage = img.copyResize(
-        originalImage,
-        width: targetWidth,
-        height: targetHeight,
-        interpolation: img.Interpolation.cubic,
+      const int minDimension = 512;
+      img.Image processedImage;
+
+      if (originalImage.width < minDimension ||
+          originalImage.height < minDimension) {
+        processedImage = img.copyResize(
+          originalImage,
+          width: minDimension,
+          height: minDimension,
+          interpolation: img.Interpolation.cubic,
+        );
+      } else if (originalImage.width > 2048 || originalImage.height > 2048) {
+        int targetWidth = originalImage.width;
+        int targetHeight = originalImage.height;
+
+        if (targetWidth > targetHeight) {
+          targetWidth = 2048;
+          targetHeight = (originalImage.height * 2048 / originalImage.width)
+              .round();
+        } else {
+          targetHeight = 2048;
+          targetWidth = (originalImage.width * 2048 / originalImage.height)
+              .round();
+        }
+
+        processedImage = img.copyResize(
+          originalImage,
+          width: targetWidth,
+          height: targetHeight,
+          interpolation: img.Interpolation.cubic,
+        );
+      } else {
+        processedImage = originalImage;
+      }
+
+      final tempDir = Directory.systemTemp;
+      final tempFile = File(
+        '${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
-    } else {
-      processedImage = originalImage;
+      await tempFile.writeAsBytes(img.encodeJpg(processedImage, quality: 90));
+
+      return tempFile;
+    } catch (e) {
+      // If image processing fails, return original file
+      print('Image processing failed: $e');
+      return imageFile;
     }
-
-    final tempDir = Directory.systemTemp;
-    final tempFile = File(
-      '${tempDir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
-    );
-    await tempFile.writeAsBytes(img.encodeJpg(processedImage, quality: 90));
-
-    return tempFile;
-  } catch (e) {
-    // If image processing fails, return original file
-    print('Image processing failed: $e');
-    return imageFile;
   }
-}
 
   @override
   Widget build(BuildContext context) {

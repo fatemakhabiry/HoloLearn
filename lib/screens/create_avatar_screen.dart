@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/screens/lecture_options_screen.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'dart:io';
 import 'package:record/record.dart';
 import 'package:image_picker/image_picker.dart';
@@ -238,11 +238,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
         if (!mounted) return;
 
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LectureSetupScreen()),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const LectureSetupScreen()),
+        // );
+        Navigator.pushNamed(context, AppRoutes.lectureSetup);
       } catch (e) {
         print('Error uploading avatar: $e');
         CustomErrorHandler.show(

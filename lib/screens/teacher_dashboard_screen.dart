@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../screens/create_new_lecture_screen.dart';
 import '../state/providers/app_state_provider.dart';
@@ -21,7 +22,8 @@ class TeacherDashboardScreen extends StatefulWidget {
   State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
 }
 
-class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> with WidgetsBindingObserver {
+class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
+    with WidgetsBindingObserver {
   List<ScheduleSlot> myLectures = [];
   bool isLoading = true;
   bool _needsReload = false;
@@ -201,7 +203,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> with Wi
           type: ErrorType.fail,
         );
       }
-    }finally {
+    } finally {
       // Ensure loading state is reset
       if (mounted) {
         setState(() {
@@ -221,12 +223,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> with Wi
       cancelButtonText: 'No',
       onConfirm: () async {
         // Navigate to edit screen with scheduleId
-        final result = await Navigator.push(
+        final result = await Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                EditLectureScreen(scheduleId: lecture.scheduleId ?? 0),
-          ),
+          AppRoutes.editLecture,
+          arguments: {'scheduleId': lecture.scheduleId ?? 0},
         );
 
         // Refresh data if lecture was updated
@@ -278,12 +278,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> with Wi
                                 ),
                                 child: IconsButton(
                                   onPressed: () async {
-                                    final result = await Navigator.push(
+                                    final result = await Navigator.pushNamed(
                                       context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const CreateNewLectureScreen(),
-                                      ),
+                                      AppRoutes.createNewLecture,
                                     );
                                     // Refresh data if a lecture was created
                                     if (result == true) {

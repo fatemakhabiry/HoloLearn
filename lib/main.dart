@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'state/providers/app_state_provider.dart';
-import 'screens/splash_screen.dart'; // ADD THIS
-import 'screens/login_screen.dart';
-// ... other imports
+import 'state/providers/lecture_state_provider.dart';
+import 'routes/app_routes.dart';
+import 'routes/route_generator.dart';
+import 'screens/splash_screen.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,16 +22,16 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
-        // ... other providers
+        ChangeNotifierProvider(create: (_) => LectureStateProvider()),
+        // Add other providers here if needed
       ],
       child: MaterialApp(
         title: 'HoloLearn',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-        ),
-        home: const SplashScreen(), // CHANGE THIS from LoginPage to SplashScreen
+        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+        initialRoute: AppRoutes.splash, // start with splash screen route
+        onGenerateRoute: RouteGenerator.generateRoute,
+        navigatorObservers: [routeObserver],
       ),
     );
   }

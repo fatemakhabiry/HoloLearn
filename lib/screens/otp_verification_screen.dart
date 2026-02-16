@@ -4,10 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import 'login_screen.dart';
+import '../routes/app_routes.dart';
 import '../constants/app_fonts.dart';
-import '../screens/otp_expired_screen.dart';
-import '../screens/reset_pass_screen.dart';
 import '../state/providers/app_state_provider.dart';
 import '../widgets/error_handler_widget.dart';
 import '../constants/app_colors.dart';
@@ -50,10 +48,11 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
 
   void _backToLogin() {
     // Back to login
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+    // Navigator.pushReplacement(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => const LoginPage()),
+    // );
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   void _verifyCode() async {
@@ -73,21 +72,23 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
 
       // 3️⃣ Navigate (no setState needed)
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ResetPasswordPage()),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.resetPassword);
       }
     } catch (e) {
       // Set email in provider even on failure so OtpExpiredScreen can access it
       final appState = Provider.of<AppStateProvider>(context, listen: false);
       await appState.setEmail(widget.email);
-      
+
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.otpExpired);
       }
     } finally {
       // 4️⃣ Stop loading
@@ -110,14 +111,19 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
 
       // 3️⃣ Navigate
       if (mounted) {
-        Navigator.pushReplacement(
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => OtpVerficationScreen(
+        //       email: widget.email,
+        //       linkSentTime: DateTime.now(),
+        //     ),
+        //   ),
+        // );
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => OtpVerficationScreen(
-              email: widget.email,
-              linkSentTime: DateTime.now(),
-            ),
-          ),
+          AppRoutes.otpVerification,
+          arguments: {'email': widget.email, 'linkSentTime': DateTime.now()},
         );
       }
     } on ClientException {
@@ -127,18 +133,22 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     } on TimeoutException {
       error_message = 'Request timed out.';
     } catch (e) {
-      error_message = e.toString().replaceFirst('Exception: ',  '');
+      error_message = e.toString().replaceFirst('Exception: ', '');
     } finally {
       if (error_message != null) {
         if (error_message == 'Invalid or expired OTP') {
-            // Ensure email is set in provider before navigating to expired screen
-            final appState = Provider.of<AppStateProvider>(context, listen: false);
-            await appState.setEmail(widget.email);
-            
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
-            );
+          // Ensure email is set in provider before navigating to expired screen
+          final appState = Provider.of<AppStateProvider>(
+            context,
+            listen: false,
+          );
+          await appState.setEmail(widget.email);
+
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => OtpExpiredScreen()),
+          // );
+          Navigator.pushReplacementNamed(context, AppRoutes.otpExpired);
         }
         CustomErrorHandler.show(
           context,
@@ -176,10 +186,11 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
     // Link expires after 10 mins (using 1 minute for testing)
     if (difference.inMinutes >= 10) {
       setState(() {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const OtpExpiredScreen()),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const OtpExpiredScreen()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.otpExpired);
       });
     }
   }

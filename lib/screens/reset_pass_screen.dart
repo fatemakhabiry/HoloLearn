@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
-import '../screens/login_screen.dart';
-import '../screens/reset_pass_success_screen.dart';
+// import '../screens/login_screen.dart';
+// import '../screens/reset_pass_success_screen.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/error_handler_widget.dart';
 import '../widgets/message_handler_widget.dart';
@@ -41,10 +42,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   void _backToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
+    // Navigator.pushReplacement(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => LoginPage()),
+    // );
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   Future<void> _handleResetPassword() async {
@@ -66,10 +68,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
       // 3️⃣ Navigate (no setState needed)
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ResetPassSuccessPage()),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ResetPassSuccessPage()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.resetPassSuccess);
       }
     } on ClientException {
       error_message = 'Cannot connect to server. Check internet or URL.';

@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import '../screens/create_avatar_screen.dart';
-import '../screens/lecture_options_screen.dart';
 import '../services/course_service.dart';
 import '../services/lecture_service.dart';
 import '../services/avatar_service.dart';
@@ -156,18 +155,20 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
 
       // Navigate to next screen with lecture_id
       if (appState.isFirstTimeLogin) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CreateAvatarScreen()),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const CreateAvatarScreen()),
+        // );
+        Navigator.pushNamed(context, AppRoutes.createAvatar);
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LectureSetupScreen(
-            ),
-          ),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => LectureSetupScreen(
+        //     ),
+        //   ),
+        // );
+        Navigator.pushNamed(context, AppRoutes.createAvatar);
       }
     } on http.ClientException {
       error_message = 'Cannot connect to server. Check internet or URL.';

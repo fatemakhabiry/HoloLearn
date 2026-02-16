@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../state/providers/app_state_provider.dart';
 import '../constants/app_colors.dart';
@@ -41,52 +42,53 @@ class _SplashScreenState extends State<SplashScreen> {
         // User has valid session and Remember Me checked
         print('✅ Auto-login successful');
         print('👤 Role: ${appState.userRole}');
-        
+
         final role = appState.userRole;
-        
+
         if (role == 'teacher') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TeacherDashboardScreen(),
-            ),
-          );
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => const TeacherDashboardScreen(),
+          //   ),
+          // );
+          Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
         } else if (role == 'student') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const StudentDashboardScreen(),
-            ),
-          );
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => const StudentDashboardScreen(),
+          //   ),
+          // );
+          Navigator.pushReplacementNamed(context, AppRoutes.studentDashboard);
         } else {
           // Unknown role, go to login
           print('⚠️ Unknown role: $role');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const LoginPage(),
-            ),
-          );
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const LoginPage()),
+          // );
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
         }
       } else {
         // Not logged in or Remember Me not checked
         print('ℹ️ No saved login found, going to login screen');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          ),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const LoginPage()),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
     } catch (e) {
       print('❌ Error during splash: $e');
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          ),
-        );
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => const LoginPage(),
+        //   ),
+        // );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
       }
     }
   }
@@ -121,37 +123,31 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: AppStyles.spacingM),
-            
+
             // App Name
-             Text(
+            Text(
               'HoloLearn',
-              style: AppStyles.logo.copyWith(
-                color: AppColors.white,
-              ),
+              style: AppStyles.logo.copyWith(color: AppColors.white),
             ),
             const SizedBox(height: AppStyles.spacingS),
-            
+
             // Tagline
             Text(
               'Holographic Learning Platform',
-              style: AppStyles.h1.copyWith(
-                color: AppColors.textLight,
-              ),
+              style: AppStyles.h1.copyWith(color: AppColors.textLight),
             ),
             const SizedBox(height: AppStyles.spacingL),
-            
+
             // Loading Indicator
             const CircularProgressIndicator(
               color: Colors.white,
               strokeWidth: 3,
             ),
             const SizedBox(height: AppStyles.spacingS),
-            
-             Text(
+
+            Text(
               'Loading...',
-              style: AppStyles.bodySmall.copyWith(
-                color: AppColors.textLight,
-              ),
+              style: AppStyles.bodySmall.copyWith(color: AppColors.textLight),
             ),
           ],
         ),
