@@ -25,15 +25,45 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
   Map<String, dynamic>? data;
   String? email;
   String? password;
-  String message = ""; //not required
+  String message = "";
   bool _obscureText = true;
   bool _loginSucess = false;
   bool _showbanner = false;
   bool is_loading = false;
   String? error_message = null;
+  bool _rememberMe = false; // NEW: Remember Me checkbox state
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail(); // NEW: Load saved email on init
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // NEW: Load saved email from storage
+  Future<void> _loadSavedEmail() async {
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    await appState.init(); // Load from storage
+    
+    if (appState.email.isNotEmpty && mounted) {
+      setState(() {
+        _emailController.text = appState.email;
+        _rememberMe = appState.rememberMe; // Load remember me state
+      });
+    }
+  }
 
   Future<void> _handleLogin() async {
     setState(() {
@@ -48,7 +78,11 @@ class _LoginPageState extends State<LoginPage> {
       await appState.setUserName(data!['user']['full_name']);
       await appState.setUserRole(data!['user']['role']);
       await appState.setAccessToken(data!['access_token']);
+      await appState.setRememberMe(_rememberMe); // NEW: Save Remember Me preference
+      
       print('🔑 Access Token: ${appState.accessToken}');
+      print('✅ Remember Me: $_rememberMe'); // NEW: Debug log
+      
       // Show success message
       if (mounted) {
         CustomErrorHandler.show(
@@ -134,13 +168,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(
                     height: AppStyles.spacingM,
-                  ), // for space between logo and title
+                  ),
                   // HoloLearn Title
                   Text('HoloLearn', style: AppStyles.logo),
 
                   const SizedBox(
                     height: AppStyles.spacingXS,
-                  ), //for space between title and subtitle
+                  ),
                   // Subtitle
                   Text(
                     'Next-generation virtual education',
@@ -163,6 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           CustomTextFormField(
+                            controller: _emailController, // NEW: Add controller
                             hintText: 'Enter your email',
                             label: "Email Address",
                             keyboardType: TextInputType.emailAddress,
@@ -179,6 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: AppStyles.spacingL),
                           CustomTextFormField(
+                            controller: _passwordController, // NEW: Add controller
                             suffixIcon: IconsButton(
                               size: 24,
                               iconColor: Colors.grey,
@@ -202,32 +238,52 @@ class _LoginPageState extends State<LoginPage> {
                             onSaved: (value) => password = value,
                           ),
                           const SizedBox(height: AppStyles.spacingM),
-                          // Forgot Password Link
-                          Align(
-                            alignment: Alignment.center,
-                            child: TextButton(
-                              onPressed: () {
-                                // *****go to forgot password page ********
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ForgetPasswordPage(),
-                                  ),
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          
+                          // NEW: Remember Me Checkbox Row
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.lightBlue,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
                               ),
-                              child: Text(
-                                'Forgot Password?',
-                                style: AppStyles.link.copyWith(
-                                  color: AppColors.lightBlue,
+                              Text(
+                                'Remember me',
+                                style: AppStyles.bodyMedium.copyWith(
+                                  color: AppColors.textBlack,
                                 ),
                               ),
-                            ),
+                              const Spacer(),
+                              // Forgot Password Link (moved to row)
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ForgetPasswordPage(),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: AppStyles.link.copyWith(
+                                    color: AppColors.lightBlue,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: AppStyles.spacingL),
 

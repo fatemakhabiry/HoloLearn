@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../utils/storage_helper.dart';
 
-
 class AppStateProvider extends ChangeNotifier {
   // Auth state
   String _email = "";
@@ -9,6 +8,7 @@ class AppStateProvider extends ChangeNotifier {
   String _userRole = "";
   String _accessToken = "";
   bool _isFirstTimeLogin = false;
+  bool _rememberMe = false; // NEW
   DateTime _linkSentTime = DateTime.now();
   String _otp = '';
   int _lectureId = 0;
@@ -19,6 +19,7 @@ class AppStateProvider extends ChangeNotifier {
   String get userRole => _userRole;
   String get accessToken => _accessToken;
   bool get isFirstTimeLogin => _isFirstTimeLogin;
+  bool get rememberMe => _rememberMe; // NEW
   DateTime get linkSentTime => _linkSentTime;
   String get otp => _otp;
   int get lectureId => _lectureId;
@@ -30,6 +31,7 @@ class AppStateProvider extends ChangeNotifier {
     _userRole = await StorageHelper.getUserRole() ?? "";
     _accessToken = await StorageHelper.getAccessToken() ?? "";
     _isFirstTimeLogin = await StorageHelper.getFirstTimeLogin();
+    _rememberMe = await StorageHelper.getRememberMe(); // NEW
     notifyListeners();
   }
 
@@ -64,6 +66,13 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // NEW: Remember Me setter
+  Future<void> setRememberMe(bool value) async {
+    _rememberMe = value;
+    await StorageHelper.saveRememberMe(value);
+    notifyListeners();
+  }
+
   void setOtp(String value) {
     _otp = value;
     notifyListeners();
@@ -80,12 +89,13 @@ class AppStateProvider extends ChangeNotifier {
   }
 
   // Clear all auth data on logout
-  Future<void> clearAuth() async {
-    _email = "";
+  Future<void> clearAuth({bool keepEmail = true}) async {
+    _email = keepEmail ? _email : "";
     _userName = "";
     _userRole = "";
     _accessToken = "";
     _isFirstTimeLogin = false;
+    _rememberMe = false; // NEW
     _otp = '';
     await StorageHelper.clearAuth();
     notifyListeners();
@@ -93,34 +103,9 @@ class AppStateProvider extends ChangeNotifier {
 
   // Check if user is logged in
   bool get isLoggedIn => _accessToken.isNotEmpty;
+
+  // NEW: Check if should auto-login
+  Future<bool> shouldAutoLogin() async {
+    return await StorageHelper.shouldAutoLogin();
+  }
 }
-
-
-
-/// Usage in main.dart:
-/// ```dart
-/// void main() {
-///   runApp(
-///     MultiProvider(
-///       providers: [
-///         ChangeNotifierProvider(create: (_) => AppStateProvider()),
-///         ChangeNotifierProvider(create: (_) => LectureStateProvider()),
-///         ChangeNotifierProvider(create: (_) => ScheduleStateProvider()),
-///       ],
-///       child: MyApp(),
-///     ),
-///   );
-/// }
-/// ```
-///
-/// Usage in widgets:
-/// ```dart
-/// // Read value
-/// final token = context.read<AppStateProvider>().accessToken;
-/// 
-/// // Listen to changes
-/// final userName = context.watch<AppStateProvider>().userName;
-/// 
-/// // Update value
-/// context.read<AppStateProvider>().setAccessToken(newToken);
-/// ```

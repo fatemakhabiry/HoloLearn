@@ -1,9 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
-/// Helper class for persisting data using SharedPreferences
+/// Helper class for persisting data using SharedPreferences and Secure Storage
 /// This allows data to survive app restarts
 class StorageHelper {
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  
   // Keys for storing data
   static const String _accessTokenKey = 'access_token';
   static const String _emailKey = 'email';
@@ -11,17 +16,39 @@ class StorageHelper {
   static const String _userRoleKey = 'user_role';
   static const String _isFirstTimeLoginKey = 'is_first_time_login';
   static const String _lectureStateKey = 'lecture_state';
+  static const String _keyRememberMe = 'remember_me';
 
-  // ========== Auth Data ==========
+  // ========== REMEMBER ME ==========
   
-  static Future<void> saveAccessToken(String token) async {
+  /// Save "Remember Me" preference
+  static Future<void> saveRememberMe(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_accessTokenKey, token);
+    await prefs.setBool(_keyRememberMe, value);
   }
 
-  static Future<String?> getAccessToken() async {
+  /// Get "Remember Me" preference
+  static Future<bool> getRememberMe() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accessTokenKey);
+    return prefs.getBool(_keyRememberMe) ?? false;
+  }
+
+  /// Check if user should auto-login
+  static Future<bool> shouldAutoLogin() async {
+    final rememberMe = await getRememberMe();
+    final token = await getAccessToken();
+    return rememberMe && token != null && token.isNotEmpty;
+  }
+  
+  // ========== Auth Data ==========
+  
+  /// Save access token in secure storage (encrypted)
+  static Future<void> saveAccessToken(String token) async {
+    await _secureStorage.write(key: _accessTokenKey, value: token);
+  }
+
+  /// Get access token from secure storage
+  static Future<String?> getAccessToken() async {
+    return await _secureStorage.read(key: _accessTokenKey);
   }
 
   static Future<void> saveEmail(String email) async {
@@ -80,22 +107,37 @@ class StorageHelper {
     return null;
   }
 
-  // ========== Clear All Data ==========
+  // ========== Clear Data ==========
   
-  /// Clear all stored data (useful for logout)
+  /// Clear all stored data (useful for complete logout)
   static Future<void> clearAll() async {
+    await _secureStorage.deleteAll();
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
 
-  /// Clear only auth data
-  static Future<void> clearAuth() async {
+  /// Clear only auth data (with option to keep email)
+  static Future<void> clearAuth({bool keepEmail = true}) async {
+    // Clear secure storage (token)
+    await _secureStorage.delete(key: _accessTokenKey);
+    
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_accessTokenKey);
-    await prefs.remove(_emailKey);
+    
+    // Save email before clearing if needed
+    final lastEmail = keepEmail ? prefs.getString(_emailKey) : null;
+    
+    // Clear auth data
     await prefs.remove(_userNameKey);
     await prefs.remove(_userRoleKey);
     await prefs.remove(_isFirstTimeLoginKey);
+    await prefs.remove(_keyRememberMe);
+    
+    if (!keepEmail) {
+      await prefs.remove(_emailKey);
+    } else if (lastEmail != null) {
+      // Restore email for next login
+      await prefs.setString(_emailKey, lastEmail);
+    }
   }
 
   /// Clear only lecture state
