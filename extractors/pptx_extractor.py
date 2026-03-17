@@ -9,6 +9,8 @@ from datetime import datetime
 import json
 import time
 import re
+import tempfile
+import shutil
 
 # Import our utilities
 import sys
@@ -22,6 +24,12 @@ try:
     _PPTX_AVAILABLE = True
 except ImportError:
     _PPTX_AVAILABLE = False
+
+try:
+    import win32com.client
+    _WIN32COM_AVAILABLE = True
+except ImportError:
+    _WIN32COM_AVAILABLE = False
 
 
 class PPTXExtractor:
@@ -41,6 +49,60 @@ class PPTXExtractor:
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)
     
+    def _convert_ppt_to_pptx(self, ppt_path: Path) -> Optional[Path]:
+        """
+        Convert a legacy .ppt file to .pptx using PowerPoint COM (Windows)
+        or LibreOffice as a fallback.
+
+        Returns:
+            Path to a temporary .pptx file, or None if conversion failed.
+            Caller is responsible for deleting the temp file.
+        """
+        tmp_dir = Path(tempfile.mkdtemp())
+        pptx_path = tmp_dir / (ppt_path.stem + ".pptx")
+
+        # --- Try win32com (requires Microsoft Office installed) ---
+        if _WIN32COM_AVAILABLE:
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()
+                ppt_app = win32com.client.Dispatch("PowerPoint.Application")
+                ppt_app.Visible = 1
+                presentation = ppt_app.Presentations.Open(
+                    str(ppt_path.resolve()), ReadOnly=True, Untitled=False, WithWindow=False
+                )
+                # 24 = ppSaveAsOpenXMLPresentation (.pptx)
+                presentation.SaveAs(str(pptx_path.resolve()), 24)
+                presentation.Close()
+                ppt_app.Quit()
+                if pptx_path.exists():
+                    return pptx_path
+            except Exception:
+                pass
+            finally:
+                try:
+                    pythoncom.CoUninitialize()
+                except Exception:
+                    pass
+
+        # --- Fallback: LibreOffice CLI ---
+        import subprocess
+        for libreoffice_cmd in ("libreoffice", "soffice"):
+            try:
+                result = subprocess.run(
+                    [libreoffice_cmd, "--headless", "--convert-to", "pptx",
+                     "--outdir", str(tmp_dir), str(ppt_path.resolve())],
+                    capture_output=True, timeout=60
+                )
+                if result.returncode == 0 and pptx_path.exists():
+                    return pptx_path
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+
+        # Cleanup temp dir if nothing worked
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
     def _create_resource_name(self, filename: str) -> str:
         """
         Create a clean resource name from filename
@@ -117,6 +179,23 @@ class PPTXExtractor:
         """
         start_time = time.time()
         pptx_path = Path(pptx_path)
+        _tmp_dir_to_cleanup = None  # track temp dir for .ppt conversion
+
+        # Auto-convert legacy .ppt to .pptx
+        if pptx_path.suffix.lower() == ".ppt":
+            converted = self._convert_ppt_to_pptx(pptx_path)
+            if converted is None:
+                resource_name = self._create_resource_name(pptx_path.name)
+                override = Path(output_dir) if output_dir else None
+                out_dir, _ = self._setup_resource_directories(resource_name, output_dir_override=override)
+                return self._create_error_result(
+                    resource_name,
+                    "Cannot convert .ppt file: install Microsoft Office (win32com) or LibreOffice.",
+                    out_dir,
+                    pptx_path.name
+                )
+            _tmp_dir_to_cleanup = converted.parent
+            pptx_path = converted
 
         # Create resource name from filename
         resource_name = self._create_resource_name(pptx_path.name)
@@ -259,13 +338,13 @@ class PPTXExtractor:
             
         except Exception as e:
             processing_time = time.time() - start_time
-            
+
             error_handler.log_error(
                 e,
                 context=f"Extracting PPTX: {pptx_path.name}",
                 metadata={"resource_name": resource_name}
             )
-            
+
             return self._create_error_result(
                 resource_name,
                 str(e),
@@ -274,6 +353,9 @@ class PPTXExtractor:
                 file_size,
                 processing_time
             )
+        finally:
+            if _tmp_dir_to_cleanup:
+                shutil.rmtree(_tmp_dir_to_cleanup, ignore_errors=True)
     
     def _create_error_result(self,
                            resource_name: str,
@@ -319,8 +401,15 @@ class PPTXExtractor:
         Returns:
             Dictionary with PPTX metadata
         """
+        _tmp_dir = None
         try:
             pptx_path = Path(pptx_path)
+            if pptx_path.suffix.lower() == ".ppt":
+                converted = self._convert_ppt_to_pptx(pptx_path)
+                if converted is None:
+                    return {}
+                _tmp_dir = converted.parent
+                pptx_path = converted
             prs = Presentation(pptx_path)
             
             # Count slides with notes
@@ -343,7 +432,7 @@ class PPTXExtractor:
             }
             
             return metadata
-            
+
         except Exception as e:
             error_handler = ErrorHandler("pptx_metadata")
             error_handler.log_error(
@@ -351,6 +440,9 @@ class PPTXExtractor:
                 context=f"Extracting metadata from {pptx_path}"
             )
             return {}
+        finally:
+            if _tmp_dir:
+                shutil.rmtree(_tmp_dir, ignore_errors=True)
 
 
 # Example usage and testing
