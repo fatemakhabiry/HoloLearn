@@ -1,0 +1,63 @@
+{
+  "title": "Logistic Regression: Theory, Mathematics, and Applications",
+  "learning_objectives": [
+    "Understand the mathematical formulation of logistic regression and its relationship to probability theory",
+    "Derive and apply the sigmoid function for binary classification problems",
+    "Implement maximum likelihood estimation and gradient ascent for parameter optimization",
+    "Extend logistic regression to multi-class classification problems",
+    "Apply regularization techniques to prevent overfitting in logistic regression models",
+    "Interpret decision boundaries and probabilistic outputs in logistic regression"
+  ],
+  "introduction": "Logistic regression is a fundamental classification algorithm in machine learning that bridges the gap between linear models and probabilistic classification. Unlike linear regression, which predicts continuous values, logistic regression predicts the probability of class membership, making it particularly suitable for binary and multi-class classification problems. The algorithm uses the logistic (sigmoid) function to map any real-valued input to a probability between 0 and 1, providing both a classification decision and a measure of confidence in that decision.\n\nThe power of logistic regression lies in its mathematical elegance and interpretability. By modeling the log-odds of the probability as a linear combination of input features, logistic regression provides clear insights into how each feature influences the classification decision. This makes it not only a practical classification tool but also a valuable method for understanding relationships between variables in many fields, including medicine, social sciences, and business analytics.",
+  "main_sections": [
+    {
+      "title": "Mathematical Foundation of Logistic Regression",
+      "content": "Logistic regression is built upon the concept of modeling probabilities using the sigmoid function, which maps any real-valued number to the range [0,1]. The hypothesis function for logistic regression is defined as:\n\n$$h\\theta(x) = \\frac{1}{1 + e^{-\\theta^T x}}$$\n\nwhere $\\theta$ represents the parameter vector and $x$ is the input feature vector. This function is also known as the sigmoid or logistic function, and it has several important properties: it is continuous, differentiable everywhere, and asymptotically approaches 0 as the input approaches negative infinity and 1 as the input approaches positive infinity.\n\nThe probabilistic interpretation of logistic regression is straightforward: the hypothesis function gives the probability that $y = 1$ given $x$ and parameterized by $\\theta$. Specifically:\n\n$$P(y = 1 | x; \\theta) = h\\theta(x)$$\n$$P(y = 0 | x; \\theta) = 1 - h_\\theta(x)$$\n\nThis formulation allows us to interpret the output of logistic regression as a probability, which is particularly useful when we need to understand the confidence of our predictions or when we need to set different classification thresholds based on the cost of different types of errors."
+    },
+    {
+      "title": "Maximum Likelihood Estimation",
+      "content": "The parameters of logistic regression are typically learned by maximizing the likelihood of the observed data. For a dataset with N examples, the likelihood function is:\n\n$$L(w) = \\prod{i} [g(w^TXi)]^{yi}[1-g(w^TXi)]^{1-yi}$$\n\nwhere $g(w^TXi)$ is the sigmoid function applied to the linear combination of features. To make optimization easier, we typically work with the log-likelihood function:\n\n$$LL(w) = \\sum{i=1}^{N} \\left[yi \\ln(g(w^TXi)) + (1-yi)\\ln(1-g(w^TXi))\\right]$$\n\nThe log-likelihood is a concave function, which means it has a single global maximum, making optimization more reliable. To find the optimal parameters, we can use gradient ascent to iteratively update the weights:\n\n$$wj \\leftarrow wj + \\epsilon \\sum{i=1}^{N} X{ij}(yi - g(w^TX_i))$$\n\nwhere $\\epsilon$ is the learning rate. This update rule shows that the weight for each feature is adjusted based on the difference between the actual label and the predicted probability, scaled by the feature value."
+    },
+    {
+      "title": "Multi-class Logistic Regression",
+      "content": "Logistic regression can be extended to handle multi-class classification problems through a technique called softmax regression or multinomial logistic regression. For k classes, the probability for classes i < k is given by:\n\n$$p(y=i|X;w) = gi(X;w) = \\frac{e^{wi^TX}}{\\sum{j=1}^{k} e^{wj^TX}}$$\n\nFor the k-th class, the probability is:\n\n$$p(y=k|X;w) = 1 - \\sum{i=1}^{k-1} p(y=i|X;w)$$\n\nThe gradient for multi-class logistic regression is:\n\n$$\\frac{\\partial LL(w)}{\\partial wj} = \\sum{i=1}^{N} Xi(\\delta(yi=j) - p(y=j|Xi;w))$$\n\nwhere $\\delta(yi=j) = 1$ if $yi=j$ and $0$ otherwise. The update rule becomes:\n\n$$wj \\leftarrow wj + \\epsilon \\sum{i=1}^{N} Xi(\\delta(yi=j) - p(y=j|Xi;w))$$\n\nThis formulation allows logistic regression to handle any number of classes while maintaining the probabilistic interpretation of the outputs."
+    },
+    {
+      "title": "Regularization in Logistic Regression",
+      "content": "Regularization is crucial in logistic regression to prevent overfitting, especially when dealing with high-dimensional data or when the number of features is large relative to the number of training examples. L2 regularization (also known as ridge regularization) adds a penalty term to the log-likelihood function:\n\n$$LL(w) = \\sum{i=1}^{N} \\left[yi \\ln(g(w^TXi)) + (1-yi)\\ln(1-g(w^TXi))\\right] - \\frac{1}{2\\sigma^2}\\sum{j} wj^2$$\n\nThe regularized update rule becomes:\n\n$$wj \\leftarrow wj + \\epsilon \\left[\\sum{i=1}^{N} X{ij}(yi - g(w^TXi)) - \\frac{wj}{\\sigma^2}\\right]$$\n\nThe regularization term $\\frac{w_j}{\\sigma^2}$ shrinks the weights toward zero, which helps prevent overfitting by discouraging overly complex models. The parameter $\\sigma^2$ controls the strength of regularization, with smaller values leading to stronger regularization."
+    },
+    {
+      "title": "Decision Boundaries and Model Interpretation",
+      "content": "The decision boundary in logistic regression is defined by the set of points where the predicted probability equals 0.5, which occurs when $\\theta^T x = 0$. This boundary is linear in the input features, which is a key characteristic of logistic regression. The decision boundary can be adjusted by changing the classification threshold; for example, using a threshold of 0.7 instead of 0.5 would classify fewer examples as positive, potentially reducing false positives at the cost of increasing false negatives.\n\nThe coefficients in logistic regression have a clear interpretation in terms of odds ratios. Specifically, the odds of an event occurring are defined as $\\frac{p}{1-p}$, and the log-odds (logit) is $\\log\\left(\\frac{p}{1-p}\\right) = \\theta^T x$. Therefore, a one-unit increase in feature $xj$ changes the log-odds by $\\thetaj$, which corresponds to multiplying the odds by $e^{\\theta_j}$. This interpretation makes logistic regression particularly valuable for understanding the relationship between features and outcomes."
+    }
+  ],
+  "mathematical_derivations": "Step 1: Starting with the sigmoid function definition:\n$$g(h) = \\frac{1}{1+e^{-h}}$$\n\nStep 2: For binary classification, we can express the probabilities as:\n$$p(y=0|X;w) = g(w^TX) = \\frac{1}{1+e^{w^TX}}$$\n$$p(y=1|X;w) = 1 - g(w^TX) = \\frac{e^{w^TX}}{1+e^{w^TX}}$$\n\nStep 3: The likelihood of the data given the model parameters is:\n$$L(w) = \\prod_{i} [g(w^TX_i)]^{y_i}[1-g(w^TX_i)]^{1-y_i}$$\n\nStep 4: Taking the logarithm:\n$$LL(w) = \\sum_{i=1}^{N} \\left[y_i \\ln(g(w^TX_i)) + (1-y_i)\\ln(1-g(w^TX_i))\\right]$$\n\nStep 5: To find the gradient, we compute the partial derivative:\n$$\\frac{\\partial LL(w)}{\\partial w_j} = \\sum_{i=1}^{N} X_{ij}(y_i - g(w^TX_i))$$\n\nStep 6: This leads to the gradient ascent update rule:\n$$w_j \\leftarrow w_j + \\epsilon \\sum_{i=1}^{N} X_{ij}(y_i - g(w^TX_i))$$",
+  "real_world_examples": [
+    {
+      "title": "Medical Diagnosis",
+      "body": "A hospital uses logistic regression to predict whether patients have a particular disease based on symptoms, test results, and demographic information. The model outputs a probability score between 0 and 1, where 1 indicates high confidence that the patient has the disease. Doctors can use this probability to decide whether to order additional tests or begin treatment immediately.",
+      "bullets": []
+    },
+    {
+      "title": "Credit Scoring",
+      "body": "A bank employs logistic regression to determine whether to approve loan applications. The model considers factors such as credit history, income, employment status, and debt-to-income ratio. Each factor's coefficient indicates how strongly it influences the probability of default, allowing the bank to understand which factors are most important in their lending decisions.",
+      "bullets": []
+    },
+    {
+      "title": "Customer Churn Prediction",
+      "body": "An online subscription service uses logistic regression to predict which customers are likely to cancel their subscriptions. The model analyzes usage patterns, customer service interactions, and demographic data to calculate the probability of churn. This allows the company to target retention efforts toward customers most at risk of leaving.",
+      "bullets": []
+    }
+  ],
+  "misconceptions": [],
+  "summary": "Logistic regression is a powerful classification algorithm that models the probability of class membership using the sigmoid function. The hypothesis function $h\\theta(x) = \\frac{1}{1 + e^{-\\theta^T x}}$ maps linear combinations of features to probabilities between 0 and 1. Parameters are learned through maximum likelihood estimation, with the log-likelihood function:\n\n$$LL(w) = \\sum{i=1}^{N} \\left[yi \\ln(g(w^TXi)) + (1-yi)\\ln(1-g(w^TXi))\\right]$$\n\nThe algorithm can be extended to multi-class problems using the softmax function and regularized using L2 regularization to prevent overfitting. The decision boundary is linear in the feature space, and coefficients have clear interpretations in terms of odds ratios.",
+  "review_questions": [
+    "What is the mathematical form of the sigmoid function used in logistic regression, and why is it appropriate for modeling probabilities?",
+    "Derive the gradient of the log-likelihood function with respect to the weight vector in logistic regression.",
+    "How does logistic regression differ from linear regression in terms of the target variable and the loss function?",
+    "Explain how multi-class logistic regression extends the binary case using the softmax function.",
+    "What is the role of regularization in logistic regression, and how does it affect the weight update rule?",
+    "How can you interpret the coefficients of logistic regression in terms of odds ratios?",
+    "What is the mathematical definition of the decision boundary in logistic regression, and why is it linear?"
+  ]
+}
