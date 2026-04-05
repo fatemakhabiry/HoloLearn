@@ -4,9 +4,6 @@ import 'package:provider/provider.dart';
 import '../state/providers/app_state_provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
-import 'login_screen.dart';
-import 'teacher_dashboard_screen.dart';
-import 'student_dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

@@ -12,7 +12,7 @@ import '../widgets/app_bar_widget.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../constants/app_fonts.dart';
-import '../widgets/avatar_option_widget.dart';
+// import '../widgets/avatar_option_widget.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/text_form_widget.dart';
 import '../widgets/file_upload_widget.dart';
@@ -30,7 +30,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // Input Type Selection
-  String selectedInputType = 'document'; // Default to document
+  // String selectedInputType = 'document'; // Default to document
 
   // Form fields
   String? lectureTitle;
@@ -119,8 +119,18 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     _formKey.currentState!.save();
 
     // Validate file is selected (for document type)
-    if (selectedInputType == 'document' && selectedFilePath == null) {
-      error_message = "Please select a lecture file";
+    // if (selectedInputType == 'document' && selectedFilePath == null) {
+    //   error_message = "Please select a lecture file";
+    //   CustomErrorHandler.show(
+    //     context,
+    //     message: error_message!,
+    //     type: ErrorType.fail,
+    //   );
+    //   return;
+    // }
+    if (selectedFilePath == null &&
+        (lectureUrl == null || lectureUrl!.isEmpty)) {
+      error_message = "Please provide a lecture file or a URL";
       CustomErrorHandler.show(
         context,
         message: error_message!,
@@ -215,6 +225,50 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Input Type Selection Container
+                    // Container(
+                    //   padding: const EdgeInsets.all(AppStyles.spacingL),
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.white,
+                    //     borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                    //     boxShadow: AppStyles.cardShadow,
+                    //   ),
+                    //   child: RadioOptionsGroup(
+                    //     sectionTitle: 'LECTURE CONTENT INPUT TYPE',
+                    //     selectedId: selectedInputType,
+                    //     options: LectureInputOptions.options,
+                    //     onOptionSelected: (id) {
+                    //       setState(() {
+                    //         selectedInputType = id;
+                    //       });
+                    //       print('Selected input type: $id');
+                    //     },
+                    //   ),
+                    // ),
+                    const SizedBox(height: AppStyles.spacingL),
+
+                    // Conditional Input - Document Upload or URL
+                    // if (selectedInputType == 'document')
+                    FileUploadWidget(
+                      label: 'Lecture Content',
+                      supportedFormats: const ['pdf', 'pptx', 'txt'],
+                      isRequired: true,
+                      headerText: 'DRAG & DROP OR BROWSE FILES',
+                      subheaderText: 'Supported: PDF, PPTX, TXT',
+                      onFilesSelected: (files) {
+                        if (files.isNotEmpty) {
+                          setState(() {
+                            selectedFilePath = files.first.path;
+                            selectedFileName = files.first.name;
+                          });
+                          print('File selected: ${files.first.name}');
+                          print('File path: ${files.first.path}');
+                        }
+                      },
+                    ),
+
+                    const SizedBox(height: AppStyles.spacingL),
+
+                    // if (selectedInputType == 'url')
                     Container(
                       padding: const EdgeInsets.all(AppStyles.spacingL),
                       decoration: BoxDecoration(
@@ -222,85 +276,38 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                         boxShadow: AppStyles.cardShadow,
                       ),
-                      child: RadioOptionsGroup(
-                        sectionTitle: 'LECTURE CONTENT INPUT TYPE',
-                        selectedId: selectedInputType,
-                        options: LectureInputOptions.options,
-                        onOptionSelected: (id) {
-                          setState(() {
-                            selectedInputType = id;
-                          });
-                          print('Selected input type: $id');
-                        },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LECTURE CONTENT URL',
+                            style: AppStyles.labelStyle.copyWith(
+                              fontWeight: AppFonts.bold,
+                              fontSize: AppFonts.fontSizeXS,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: AppStyles.spacingM),
+                          CustomTextFormField(
+                            hintText: 'https://example.com/lecture-content',
+                            label: 'Content URL',
+                            keyboardType: TextInputType.url,
+                            prefixIcon: const Icon(Icons.link),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'URL is required';
+                              }
+                              if (!value.startsWith('http://') &&
+                                  !value.startsWith('https://')) {
+                                return 'Please enter a valid URL';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => lectureUrl = value,
+                          ),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: AppStyles.spacingL),
-
-                    // Conditional Input - Document Upload or URL
-                    if (selectedInputType == 'document')
-                      FileUploadWidget(
-                        label: 'Lecture Content',
-                        supportedFormats: const ['pdf', 'pptx', 'txt'],
-                        isRequired: true,
-                        headerText: 'DRAG & DROP OR BROWSE FILES',
-                        subheaderText: 'Supported: PDF, PPTX, TXT',
-                        onFilesSelected: (files) {
-                          if (files.isNotEmpty) {
-                            setState(() {
-                              selectedFilePath = files.first.path;
-                              selectedFileName = files.first.name;
-                            });
-                            print('File selected: ${files.first.name}');
-                            print('File path: ${files.first.path}');
-                          }
-                        },
-                      ),
-
-                    const SizedBox(height: AppStyles.spacingL),
-
-                    if (selectedInputType == 'url')
-                      Container(
-                        padding: const EdgeInsets.all(AppStyles.spacingL),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(
-                            AppStyles.radiusXL,
-                          ),
-                          boxShadow: AppStyles.cardShadow,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'LECTURE CONTENT URL',
-                              style: AppStyles.labelStyle.copyWith(
-                                fontWeight: AppFonts.bold,
-                                fontSize: AppFonts.fontSizeXS,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: AppStyles.spacingM),
-                            CustomTextFormField(
-                              hintText: 'https://example.com/lecture-content',
-                              label: 'Content URL',
-                              keyboardType: TextInputType.url,
-                              prefixIcon: const Icon(Icons.link),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'URL is required';
-                                }
-                                if (!value.startsWith('http://') &&
-                                    !value.startsWith('https://')) {
-                                  return 'Please enter a valid URL';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) => lectureUrl = value,
-                            ),
-                          ],
-                        ),
-                      ),
 
                     const SizedBox(height: AppStyles.spacingL),
 

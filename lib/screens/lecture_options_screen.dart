@@ -18,7 +18,6 @@ import '../services/availability_service.dart';
 import '../services/lecture_service.dart';
 import '../state/providers/app_state_provider.dart';
 import '../state/providers/lecture_state_provider.dart';
-import 'teacher_dashboard_screen.dart';
 
 class LectureSetupScreen extends StatefulWidget {
   const LectureSetupScreen({super.key});
