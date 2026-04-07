@@ -508,7 +508,8 @@
 # app/api/v1/endpoints/lecture.py
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
-from sqlmodel import Session, select
+from pydantic import BaseModel
+from sqlmodel import SQLModel, Session, select
 from typing import Optional, List
 from datetime import time, date, datetime
 from pathlib import Path
@@ -539,6 +540,109 @@ from app.schemas.schedule_schemas import (
 from app.services.google_drive import drive_service
 
 router = APIRouter()
+
+
+# ============================================
+# 0: Create GENERATED Lecture (pipeline flow)
+# ============================================
+
+class GeneratedLectureCreate(BaseModel):
+    """Request body for creating a pipeline-generated lecture."""
+    title: str
+    course_code: str
+    script_path: Optional[str] = None   # can be set now or later via set-script-path
+
+
+@router.post(
+    "/create-generated",
+    response_model=LecturePublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_generated_lecture(
+    body: GeneratedLectureCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a GENERATED lecture draft for the avatar pipeline.
+
+    No file upload, no Google Drive — just creates the DB row.
+    Upstream module (or test client) can set script_path here or later via
+    PATCH /{lecture_id}/set-script-path.
+
+    Requires: logged-in teacher who owns the course.
+    """
+    if current_user.role != "teacher":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can create lectures",
+        )
+
+    course = session.get(Course, body.course_code)
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Course '{body.course_code}' not found",
+        )
+    if course.teacher_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only create lectures for your own courses",
+        )
+
+    lecture = Lecture(
+        title=body.title,
+        teacher_id=current_user.user_id,
+        course_code=body.course_code,
+        lecture_type=LectureType.GENERATED,
+        status=LectureStatus.DRAFT,
+        script_path=body.script_path,
+    )
+    session.add(lecture)
+    session.commit()
+    session.refresh(lecture)
+    return lecture
+
+
+# ── Set / update script_path ───────────────────────────────────────────────────
+
+class SetScriptPathRequest(BaseModel):
+    script_path: str
+
+
+@router.patch(
+    "/{lecture_id}/set-script-path",
+    response_model=LecturePublic,
+)
+async def set_lecture_script_path(
+    lecture_id: int,
+    body: SetScriptPathRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Set (or update) the script_path on a GENERATED lecture.
+
+    Called by the upstream extraction/LLM module after it writes the .txt
+    script to disk.  Also useful for manual testing.
+    """
+    lecture = session.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lecture not found")
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your lecture")
+
+    if not Path(body.script_path).exists():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Script file not found on disk: {body.script_path}",
+        )
+
+    lecture.script_path = body.script_path
+    session.add(lecture)
+    session.commit()
+    session.refresh(lecture)
+    return lecture
 
 
 # ============================================

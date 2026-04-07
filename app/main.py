@@ -8,7 +8,7 @@
 # from app.api.v1.router import api_router
 
 
-# # create_db_and_tables()
+# create_db_and_tables()
 
 # app = FastAPI(
 #     title=settings.APP_NAME,

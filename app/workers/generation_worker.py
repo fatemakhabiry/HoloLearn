@@ -7,8 +7,17 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.database import engine
-from app.models.lecture import Lecture, LectureStatus
+
+# Import ALL models so SQLAlchemy can resolve every FK / relationship
+# before the mapper is configured. Missing any model that participates
+# in a relationship causes NoReferencedTableError at query time.
+from app.models.user import User           # teachers.user_id → users.user_id
 from app.models.teacher import Teacher
+from app.models.lecture import Lecture, LectureStatus
+from app.models.course import Course       # lectures.course_code → courses.course_code
+from app.models.schedule import Schedule   # lectures → schedules
+from app.models.resource import Resource   # lectures → resources
+from app.models.enrollment import Enrollment  # courses → enrollments
 
 logger = logging.getLogger(__name__)
 

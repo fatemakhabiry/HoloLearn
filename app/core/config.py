@@ -89,6 +89,9 @@ class Settings(BaseSettings):
     UPLOADS_DIR: Optional[str] = None          # teacher photos + voice files
     OUTPUTS_DIR: Optional[str] = None          # generated MP4 output files
 
+    # ── Redis / ARQ ──────────────────────────────────────────────────
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     # ── Worker Concurrency ─────────────────────────────────────────
     MAX_GENERATION_WORKERS: int = 1            # MUST stay 1 — single GPU
     MAX_ONBOARDING_WORKERS: int = 2            # CPU task, safe to parallelize

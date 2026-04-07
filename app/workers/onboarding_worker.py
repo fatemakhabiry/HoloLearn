@@ -40,19 +40,23 @@ def run_onboarding(teacher_id: int, raw_image_path: str) -> None:
         _set_status(teacher_id, "failed", preprocessed_path=None)
         return
 
-    # ── Resolve output directory ───────────────────────────────────
-    # preprocess_image.py writes its output into the same folder as the input.
-    # e.g. uploads/instructors/12/raw_preprocessed.png
-    output_dir = Path(raw_image_path).parent
+    # ── Resolve output paths ──────────────────────────────────────
+    # preprocess_image.py uses --output <file>, not --output-dir.
+    # We write <stem>_preprocessed.png next to the raw image so the
+    # glob("*_preprocessed.png") below can always find it.
+    # e.g. uploads/instructors/12/raw.jpg  →  raw_preprocessed.png
+    input_path = Path(raw_image_path)
+    output_dir = input_path.parent
+    output_file = output_dir / (input_path.stem + "_preprocessed.png")
 
     # ── Build subprocess command ───────────────────────────────────
-    # We call the longcat-video conda Python directly so we get that
+    # We call the longcat-video venv Python directly so we get that
     # environment's dependencies (PyTorch, face detection models, etc.)
     cmd = [
-        settings.LONGCAT_ENV_PYTHON,       # e.g. C:/miniconda3/envs/longcat-video/python.exe
-        settings.PREPROCESS_SCRIPT,        # e.g. D:/HoloLearn/long cat/LongCat-Video/preprocess_image.py
-        "--input",      raw_image_path,    # absolute path to raw.jpg
-        "--output-dir", str(output_dir),   # write preprocessed image here
+        settings.LONGCAT_ENV_PYTHON,       # D:/Hololearn/long cat/LongCat-Video/venv/Scripts/python.exe
+        settings.PREPROCESS_SCRIPT,        # D:/Hololearn/long cat/LongCat-Video/preprocess_image.py
+        "--input",  raw_image_path,        # absolute path to raw.jpg
+        "--output", str(output_file),      # absolute path for the output PNG
     ]
 
     logger.info(f"[Onboarding:{teacher_id}] Starting preprocessing → {raw_image_path}")
