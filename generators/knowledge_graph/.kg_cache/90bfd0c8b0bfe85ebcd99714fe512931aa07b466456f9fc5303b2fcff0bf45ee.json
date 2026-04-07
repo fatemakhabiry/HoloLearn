@@ -1,0 +1,51 @@
+{
+  "title": "Introduction to Information Security",
+  "subject": "Information Security",
+  "summary": "This module introduces information security, covering its history from early mainframes through the development of ARPANET and the Internet, key concepts like the CIA triad, critical characteristics of information, and organizational roles in implementing security.",
+  "clusters": [
+    {"id":"C1","name":"History & Evolution","color":"#3873ff"},
+    {"id":"C2","name":"Core Concepts","color":"#00c9a7"},
+    {"id":"C3","name":"Organizational Structure","color":"#ff5757"},
+    {"id":"C4","name":"Implementation Approaches","color":"#ffac30"}
+  ],
+  "nodes": [
+    {"id":"n1","c":"C1","label":"Information Security","type":"concept","desc":"The protection of information and its critical elements, including systems and hardware that use, store, and transmit that information."},
+    {"id":"n2","c":"C1","label":"History of Information Security","type":"process","desc":"Evolution from early mainframe physical security through ARPANET development, addressing vulnerabilities in password structures and remote access controls."},
+    {"id":"n3","c":"C1","label":"ARPANET","type":"system","desc":"The precursor to the Internet, developed by ARPA, which grew in popularity and revealed fundamental security problems requiring improved controls."},
+    {"id":"n4","c":"C2","label":"CIA Triad","type":"concept","desc":"The standard security model consisting of Confidentiality, Integrity, and Availability as the three key security objectives."},
+    {"id":"n5","c":"C2","label":"Critical Characteristics of Information","type":"concept","desc":"Key attributes including confidentiality, integrity, availability, accuracy, authenticity, utility, and possession that determine information's value."},
+    {"id":"n6","c":"C2","label":"Key Security Concepts","type":"concept","desc":"Fundamental terms including access, asset, attack, control, exploit, exposure, loss, risk, threat, vulnerability, and subjects/objects."},
+    {"id":"n7","c":"C3","label":"CISO","type":"person","desc":"Chief Information Security Officer with primary responsibility for assessment, management, and implementation of information security in the organization."},
+    {"id":"n8","c":"C3","label":"Information Security Project Team","type":"system","desc":"A functional team including champion, team leader, policy developers, risk specialists, security professionals, administrators, and end users."},
+    {"id":"n9","c":"C3","label":"Data Responsibilities","type":"concept","desc":"Roles including data owners (senior management), data custodians (infrastructure guardians), data trustees (appointed overseers), and data users (access holders)."},
+    {"id":"n10","c":"C4","label":"Top-Down Approach","type":"method","desc":"Security implementation initiated by upper management with policies, procedures, and formal development strategies like SDLC."},
+    {"id":"n11","c":"C4","label":"Bottom-Up Approach","type":"method","desc":"Grassroots security efforts by systems administrators working to improve system security without formal organizational support."},
+    {"id":"n12","c":"C1","label":"MULTICS","type":"system","desc":"Early operating system developed with security integrated into core functions, influencing the creation of UNIX and modern security concepts."},
+    {"id":"n13","c":"C2","label":"CNSS Security Model","type":"system","desc":"Committee on National Security Systems three-dimensional model with confidentiality, integrity, and availability as key security objectives."},
+    {"id":"n14","c":"C4","label":"Balancing Security and Access","type":"concept","desc":"Security as a balance between protection and availability, recognizing that perfect security is impossible and access must be reasonable."},
+    {"id":"n15","c":"C3","label":"Communities of Interest","type":"concept","desc":"Groups within organizations united by similar interests including information security management, IT professionals, and organizational management."},
+    {"id":"n16","c":"C1","label":"Key Dates in Information Security","type":"concept","desc":"Important historical documents and developments from 1968-1992 including RAND Report R-609, TCSEC, and IPSEC protocols."},
+    {"id":"n17","c":"C2","label":"Information System Components","type":"system","desc":"The complete set of hardware, software, data, people, procedures, and networks that enable business information use."},
+    {"id":"n18","c":"C4","label":"Security as Art vs Science","type":"concept","desc":"Debate over whether security implementation is an art (no universal solutions) or science (technology-based with specific conditions)."}
+  ],
+  "edges": [
+    {"s":"n1","t":"n2","r":"defines"},
+    {"s":"n2","t":"n3","r":"includes"},
+    {"s":"n3","t":"n16","r":"led to"},
+    {"s":"n1","t":"n4","r":"uses"},
+    {"s":"n4","t":"n5","r":"expands to"},
+    {"s":"n1","t":"n6","r":"defines"},
+    {"s":"n1","t":"n7","r":"requires"},
+    {"s":"n7","t":"n8","r":"leads"},
+    {"s":"n8","t":"n9","r":"includes"},
+    {"s":"n7","t":"n10","r":"uses"},
+    {"s":"n10","t":"n11","r":"contrasts with"},
+    {"s":"n2","t":"n12","r":"includes"},
+    {"s":"n4","t":"n13","r":"standardizes"},
+    {"s":"n10","t":"n14","r":"balances"},
+    {"s":"n8","t":"n15","r":"involves"},
+    {"s":"n2","t":"n16","r":"documents"},
+    {"s":"n1","t":"n17","r":"protects"},
+    {"s":"n10","t":"n18","r":"debates"}
+  ]
+}

@@ -104,10 +104,28 @@ RETURN VALID JSON:
 }}"""
     
     def _parse_json(self, text: str) -> dict:
-        import re
-        text = re.sub(r'```json\s*', '', text)
-        text = re.sub(r'```\s*', '', text)
-        return json.loads(text.strip())
+        import re, json
+        text = re.sub(r'```(?:json)?', '', text)
+        text = text.replace('```', '').strip()
+        text = text.replace('\u201c', '"').replace('\u201d', '"')
+    
+        start = text.find('{')
+        if start == -1:
+            raise ValueError("No JSON found")
+        depth, end = 0, None
+        for i in range(start, len(text)):
+            if text[i] == '{': depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        if end is None:
+            raise ValueError("Unbalanced JSON")
+        json_str = text[start:end]
+        json_str = re.sub(r',\s*}', '}', json_str)
+        json_str = re.sub(r',\s*]', ']', json_str)
+        return json.loads(json_str)
     
     def generate_pdfs(
         self,

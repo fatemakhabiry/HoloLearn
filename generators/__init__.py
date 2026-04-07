@@ -2,8 +2,9 @@ from .quiz_generator import QuizGenerator
 from .script_generator import HologramScriptGenerator
 from .summary_generator import SummaryGenerator
 from .worksheet_generator import WorksheetGenerator
-from .knowledge_graph_generator import FlowchartGenerator
+from .Flow_Chart_generator import FlowchartGenerator
 from .generate_lecture import LectureGenerator
+from .mind_map_generator import MindMapGenerator
 
 __all__ = [
     "QuizGenerator",
@@ -12,4 +13,5 @@ __all__ = [
     "WorksheetGenerator",
     "FlowchartGenerator",
     "LectureGenerator",
+    "MindMapGenerator"
 ]

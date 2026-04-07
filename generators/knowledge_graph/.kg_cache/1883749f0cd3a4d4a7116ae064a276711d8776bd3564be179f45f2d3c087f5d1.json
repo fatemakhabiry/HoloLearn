@@ -1,0 +1,43 @@
+{
+  "title": "Information Security Overview",
+  "subject": "Cybersecurity",
+  "summary": "Information security combines art and science to protect information assets through policies, education, and technology. It involves multiple stakeholders and addresses both technical and human factors in organizational systems.",
+  "clusters": [
+    {"id":"C1","name":"Foundations","color":"#3873ff"},
+    {"id":"C2","name":"Management","color":"#00c9a7"},
+    {"id":"C3","name":"Social Aspects","color":"#ff5757"},
+    {"id":"C4","name":"Stakeholders","color":"#ffac30"}
+  ],
+  "nodes": [
+    {"id":"n1","c":"C1","label":"Information Security","type":"concept","desc":"Protection of information assets using policy, education, and technology to maintain confidentiality, integrity, and availability"},
+    {"id":"n2","c":"C1","label":"CIA Triad","type":"concept","desc":"Core security principles: Confidentiality, Integrity, and Availability that must be protected at all times"},
+    {"id":"n3","c":"C1","label":"Information Systems","type":"system","desc":"Composed of hardware, software, data, people, procedures, and networks that process information"},
+    {"id":"n4","c":"C2","label":"Top-Down Security","type":"method","desc":"Security implementation driven by upper management as opposed to grassroots efforts"},
+    {"id":"n5","c":"C2","label":"Communities of Interest","type":"concept","desc":"Groups united by similar interests within organizations, including management and IT professionals"},
+    {"id":"n6","c":"C3","label":"Security as Art","type":"concept","desc":"Security implementation without hard rules or universal solutions, relying on individual perception and experience"},
+    {"id":"n7","c":"C3","label":"Security as Science","type":"concept","desc":"Security based on specific conditions and interactions of hardware/software that can be systematically resolved"},
+    {"id":"n8","c":"C3","label":"Social Science in Security","type":"concept","desc":"Examines human behavior and interactions with systems as critical factors in security effectiveness"},
+    {"id":"n9","c":"C4","label":"Data Owners","type":"role","desc":"Responsible for security and use of specific information sets within the organization"},
+    {"id":"n10","c":"C4","label":"Data Custodians","type":"role","desc":"Responsible for storage, maintenance, and protection of information assets"},
+    {"id":"n11","c":"C4","label":"Data Trustees","type":"role","desc":"Appointed to oversee information management and coordinate with custodians for storage and protection"},
+    {"id":"n12","c":"C4","label":"Data Users","type":"role","desc":"Work with information to perform daily jobs and support organizational mission"}
+  ],
+  "edges": [
+    {"s":"n1","t":"n2","r":"protects using"},
+    {"s":"n1","t":"n3","r":"secures components of"},
+    {"s":"n1","t":"n4","r":"implemented through"},
+    {"s":"n1","t":"n5","r":"involves multiple"},
+    {"s":"n1","t":"n6","r":"combines aspects of"},
+    {"s":"n1","t":"n7","r":"combines aspects of"},
+    {"s":"n1","t":"n8","r":"includes principles of"},
+    {"s":"n2","t":"n3","r":"applies to"},
+    {"s":"n4","t":"n5","r":"drives implementation for"},
+    {"s":"n6","t":"n7","r":"versus"},
+    {"s":"n8","t":"n5","r":"affects behavior of"},
+    {"s":"n9","t":"n10","r":"coordinates with"},
+    {"s":"n9","t":"n11","r":"appoints"},
+    {"s":"n10","t":"n12","r":"provides access to"},
+    {"s":"n11","t":"n10","r":"oversees coordination with"},
+    {"s":"n12","t":"n3","r":"uses components of"}
+  ]
+}

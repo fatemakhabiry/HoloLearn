@@ -2,7 +2,7 @@ from generators.quiz_generator import QuizGenerator
 from generators.script_generator import HologramScriptGenerator
 from generators.summary_generator import SummaryGenerator
 from generators.worksheet_generator import WorksheetGenerator
-from generators.knowledge_graph_generator import FlowchartGenerator
+from generators.Flow_Chart_generator import FlowchartGenerator
 from generators.generate_lecture import LectureGenerator , generate_lecture_sync
 import os
 from pathlib import Path

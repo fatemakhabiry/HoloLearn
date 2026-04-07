@@ -364,7 +364,7 @@ class Pipeline:
 
     @staticmethod
     def _run_flowchart(content, session_dir, course_code, title, api_key):
-        from generators.knowledge_graph_generator import FlowchartGenerator
+        from generators.Flow_Chart_generator import FlowchartGenerator
 
         gen = FlowchartGenerator(api_key=api_key)
         html_path = str(session_dir / "flowchart.html")

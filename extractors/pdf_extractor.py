@@ -346,54 +346,54 @@ class PDFExtractor:
 
 
 # Example usage and testing
-# if __name__ == "__main__":
-#     from utils.file_picker import FilePicker
+if __name__ == "__main__":
+    from utils.file_picker import FilePicker
     
-#     print("=== Testing PDF Extractor ===\n")
+    print("=== Testing PDF Extractor ===\n")
     
-#     # Initialize extractor
-#     extractor = PDFExtractor()
+    # Initialize extractor
+    extractor = PDFExtractor()
     
-#     # Use file picker to select PDF
-#     picker = FilePicker()
-#     print("Please select a PDF file...")
-#     test_pdf = picker.pick_pdf()
-#     picker.close()
+    # Use file picker to select PDF
+    picker = FilePicker()
+    print("Please select a PDF file...")
+    test_pdf = picker.pick_pdf()
+    picker.close()
     
-#     if test_pdf:
-#         print(f"\n✓ Selected: {Path(test_pdf).name}\n")
+    if test_pdf:
+        print(f"\n✓ Selected: {Path(test_pdf).name}\n")
         
-#         print("1. Extracting metadata only...")
-#         metadata = extractor.extract_metadata_only(test_pdf)
-#         print(f"   Resource name: {metadata.get('resource_name', 'N/A')}")
-#         print(f"   Pages: {metadata.get('page_count', 'N/A')}")
-#         print(f"   Size: {metadata.get('file_size_mb', 'N/A')} MB")
-#         print(f"   Encrypted: {metadata.get('is_encrypted', 'N/A')}\n")
+        print("1. Extracting metadata only...")
+        metadata = extractor.extract_metadata_only(test_pdf)
+        print(f"   Resource name: {metadata.get('resource_name', 'N/A')}")
+        print(f"   Pages: {metadata.get('page_count', 'N/A')}")
+        print(f"   Size: {metadata.get('file_size_mb', 'N/A')} MB")
+        print(f"   Encrypted: {metadata.get('is_encrypted', 'N/A')}\n")
         
-#         print("2. Full extraction...")
-#         result = extractor.extract(
-#             pdf_path=test_pdf,
-#             clean_text=True
-#         )
+        print("2. Full extraction...")
+        result = extractor.extract(
+            pdf_path=test_pdf,
+            clean_text=True
+        )
         
-#         if result['success']:
-#             print(f"   ✓ Success!")
-#             print(f"   Resource name: {result['resource_name']}")
-#             print(f"   Output directory: {result['output_dir']}")
-#             print(f"   Logs directory: {result['logs_dir']}")
-#             print(f"   Text file: {result['text_file']}")
-#             print(f"   Metadata file: {result['metadata_file']}")
-#             print(f"   Pages: {result['metadata']['page_count']}")
-#             print(f"   Characters: {result['metadata']['character_count']}")
-#             print(f"   Processing time: {result['metadata']['processing_time_seconds']}s")
+        if result['success']:
+            print(f"   ✓ Success!")
+            print(f"   Resource name: {result['resource_name']}")
+            print(f"   Output directory: {result['output_dir']}")
+            print(f"   Logs directory: {result['logs_dir']}")
+            print(f"   Text file: {result['text_file']}")
+            print(f"   Metadata file: {result['metadata_file']}")
+            print(f"   Pages: {result['metadata']['page_count']}")
+            print(f"   Characters: {result['metadata']['character_count']}")
+            print(f"   Processing time: {result['metadata']['processing_time_seconds']}s")
             
-#             print(f"\n   Preview (first 300 chars):")
-#             print("   " + "-" * 50)
-#             preview = result['extracted_text'][:300]
-#             print(f"   {preview}...")
-#             print("   " + "-" * 50)
-#         else:
-#             print(f"   ✗ Failed: {result['error']}")
-#     else:
-#         print("❌ No file selected")
-#         print("   The extractor is ready to use!")
+            print(f"\n   Preview (first 300 chars):")
+            print("   " + "-" * 50)
+            preview = result['extracted_text'][:300]
+            print(f"   {preview}...")
+            print("   " + "-" * 50)
+        else:
+            print(f"   ✗ Failed: {result['error']}")
+    else:
+        print("❌ No file selected")
+        print("   The extractor is ready to use!")
