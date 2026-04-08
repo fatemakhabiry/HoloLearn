@@ -282,7 +282,7 @@ class SimpleGeneratorWrapper:
         except Exception as e:
             print(f"   ❌ Failed: {e}")
             return {"txt": None}
-    
+        
     # ============================================
     # WORKSHEET GENERATOR
     # ============================================
@@ -292,7 +292,10 @@ class SimpleGeneratorWrapper:
         content: str,
         output_dir: Path,
         course_code: str = "",
-        title: str = ""
+        title: str = "",
+        num_mcq: int = 20,
+        num_tf: int = 10,
+        num_written: int = 10,
     ) -> Dict[str, str]:
         """
         Generate worksheet (MCQ, T/F, Written)
@@ -300,38 +303,46 @@ class SimpleGeneratorWrapper:
         Returns:
             {"questions_pdf": "path", "answers_pdf": "path", "json": "path"}
         """
-        print("\n📋 Generating worksheet...")
+        print("\nGenerating worksheet...")
         
         try:       
             api_key=os.getenv("GROQ_API_KEY_WORKSHEET")     
             output_dir.mkdir(exist_ok=True, parents=True)
             questions_path = output_dir / f"{course_code}_worksheet.pdf"
             answers_path = output_dir / f"{course_code}_worksheet_answers.pdf"
+            json_path = output_dir / f"{course_code}_worksheet.json"
             
             gen = WorksheetGenerator(api_key=api_key)
-            gen.generate_pdfs(
+            worksheet = gen.generate(
                 content=content,
-                questions_path=str(questions_path),
-                answers_path=str(answers_path),
                 course_code=course_code,
-                title=title
+                title=title,
+                num_mcq=num_mcq,
+                num_tf=num_tf,
+                num_written=num_written,
             )
-            
-            json_path = str(questions_path).replace('.pdf', '.json')
-            
-            print(f"   ✅ Questions: {questions_path}")
-            print(f"   ✅ Answers: {answers_path}")
+ 
+            gen._create_questions_pdf(worksheet, str(questions_path), course_code, title)
+            gen._create_answers_pdf(worksheet, str(answers_path), course_code, title)
+ 
+            import json as _json
+            with open(json_path, "w", encoding="utf-8") as jf:
+                _json.dump(worksheet, jf, indent=2, ensure_ascii=False)
+ 
+            print(f"Questions: {questions_path}")
+            print(f"Answers: {answers_path}")
+            print(f"JSON: {json_path}")
             
             return {
                 "questions_pdf": str(questions_path),
                 "answers_pdf": str(answers_path),
-                "json": json_path
+                "json": str(json_path),
             }
         
         except Exception as e:
-            print(f"   ❌ Failed: {e}")
+            print(f"Failed: {e}")
             return {"questions_pdf": None, "answers_pdf": None, "json": None}
-    
+
     # ============================================
     # QUIZ GENERATOR
     # ============================================
