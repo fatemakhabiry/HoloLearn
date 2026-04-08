@@ -2,11 +2,11 @@ from generators.quiz_generator import QuizGenerator
 from generators.script_generator import HologramScriptGenerator
 from generators.summary_generator import SummaryGenerator
 from generators.worksheet_generator import WorksheetGenerator
-from generators.Flow_Chart_generator import FlowchartGenerator
-from generators.generate_lecture import LectureGenerator , generate_lecture_sync
+from generators.knowledge_graph.kg_generator import generate as kg_generate
+from generators.Lecture_Generator.Lecture_api import generate_lecture as lecture_api_generate
 import os
 from pathlib import Path
-from typing import Optional, Dict
+from typing import List, Optional, Dict
 
 
 class SimpleExtractorWrapper:
@@ -143,77 +143,102 @@ class SimpleGeneratorWrapper:
 
     def __init__(self):
         pass
-    
+   
     # ============================================
-    # LECTURE GENERATOR (Your Teammate's)
+    # LECTURE API
     # ============================================
-    
-    def generate_lecture(
+ 
+    def generate_lecture_api(
         self,
         lecture_topic: str,
         output_dir: Path,
         course_code: str = "",
-        # Source materials
-        website_text: Optional[str] = None,
-        website_query: Optional[str] = None,
-        video_text: Optional[str] = None,
-        video_query: Optional[str] = None,
-        pptx_text: Optional[str] = None,
-        pptx_query: Optional[str] = None,
-        audio_text: Optional[str] = None,
-        audio_query: Optional[str] = None,
-        pdf_text: Optional[str] = None,
+        openrouter_api_key: Optional[str] = None,
+        # text-based source pairs
+        pdf_path: Optional[str] = None,
         pdf_query: Optional[str] = None,
-        docx_text: Optional[str] = None,
-        docx_query: Optional[str] = None
-    ) -> Dict[str, str]:
+        docx_path: Optional[str] = None,
+        docx_query: Optional[str] = None,
+        pptx_path: Optional[str] = None,
+        pptx_query: Optional[str] = None,
+        txt_path: Optional[str] = None,
+        txt_query: Optional[str] = None,
+        url_path: Optional[str] = None,
+        url_query: Optional[str] = None,
+        # images: flat list [path1, caption1, path2, caption2, ...]
+        images: Optional[List[str]] = None,
+    ) -> Dict[str, Optional[str]]:
         """
-        Generate comprehensive lecture PDF
-        
+        Generate a lecture PDF, TXT, and JSON using the OpenRouter-based Lecture_api.
+ 
         Returns:
-            {"pdf": "path", "txt": "path"}
+            {"pdf": "path", "txt": "path", "json": "path"}
         """
-        print("\n📚 Generating lecture...")
-        
+        print(f"\nGenerating lecture (Lecture API): {lecture_topic}")
+ 
         try:
-            api_key=os.getenv("GROQ_API_KEY_LECTURE")
-            generator=LectureGenerator(groq_api_key=api_key)            
-            output_dir.mkdir(exist_ok=True, parents=True)
+            api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY")
+            if not api_key:
+                raise EnvironmentError(
+                    "No OpenRouter API key provided. Pass openrouter_api_key= or "
+                    "set the OPENROUTER_API_KEY environment variable."
+                )
+ 
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+ 
             filename = f"{course_code}_lecture" if course_code else "lecture"
-            pdf_path = output_dir / f"{filename}.pdf"
-        
-            
-            generate_lecture_sync(
+            pdf_output = str(output_dir / f"{filename}.pdf")
+ 
+            # Build the sources dict expected by Lecture_api
+            sources: Dict[str, List[str]] = {}
+ 
+            _text_sources = [
+                ("pdf",  pdf_path,  pdf_query),
+                ("docx", docx_path, docx_query),
+                ("pptx", pptx_path, pptx_query),
+                ("txt",  txt_path,  txt_query),
+                ("url",  url_path,  url_query),
+            ]
+            for key, path, query in _text_sources:
+                if path and query:
+                    sources[key] = [path, query]
+                elif path and not query:
+                    print(f"{key}_path provided but {key}_query is missing — skipping.")
+                elif query and not path:
+                    print(f"{key}_query provided but {key}_path is missing — skipping.")
+ 
+            if images:
+                sources["image"] = images
+ 
+            if not sources:
+                raise ValueError(
+                    "No valid sources provided. Supply at least one (path, query) pair."
+                )
+ 
+            pdf_path_out = lecture_api_generate(
                 lecture_topic=lecture_topic,
-                output_pdf_path=str(pdf_path),
-                groq_api_key=api_key,
-                website_text=website_text,
-                website_query=website_query,
-                video_text=video_text,
-                video_query=video_query,
-                pptx_text=pptx_text,
-                pptx_query=pptx_query,
-                audio_text=audio_text,
-                audio_query=audio_query,
-                pdf_text=pdf_text,
-                pdf_query=pdf_query,
-                docx_text=docx_text,
-                docx_query=docx_query
+                output_pdf_path=pdf_output,
+                openrouter_api_key=api_key,
+                sources=sources,
             )
-            
-            txt_path = str(pdf_path).replace('.pdf', '.txt')
-            
-            print(f"   ✅ PDF: {pdf_path}")
-            print(f"   ✅ Text: {txt_path}")
-            
+ 
+            txt_path_out  = pdf_path_out.rsplit(".", 1)[0] + ".txt"
+            json_path_out = pdf_path_out.rsplit(".", 1)[0] + ".json"
+ 
+            print(f"PDF:  {pdf_path_out}")
+            print(f"Text: {txt_path_out}")
+            print(f"JSON: {json_path_out}")
+ 
             return {
-                "pdf": str(pdf_path),
-                "txt": txt_path
+                "pdf":  pdf_path_out,
+                "txt":  txt_path_out,
+                "json": json_path_out,
             }
-        
+ 
         except Exception as e:
-            print(f"   ❌ Failed: {e}")
-            return {"pdf": None, "txt": None}
+            print(f"Failed: {e}")
+            return {"pdf": None, "txt": None, "json": None}
     
     # ============================================
     # SCRIPT GENERATOR (Hologram)
@@ -401,51 +426,43 @@ class SimpleGeneratorWrapper:
         except Exception as e:
             print(f"   ❌ Failed: {e}")
             return {"pdf": None, "txt": None}
-    
+
     # ============================================
-    # FLOWCHART GENERATOR
+    # KNOWLEDGE GRAPH GENERATOR
     # ============================================
-    
-    def generate_flowchart(
+ 
+    def generate_knowledge_graph(
         self,
-        content: str,
+        txt_path: str,
         output_dir: Path,
         course_code: str = "",
-        title: str = ""
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Optional[str]]:
         """
-        Generate flowchart
-        
+        Generate an interactive knowledge-graph HTML from a plain-text file.
+ 
         Returns:
-            {"html": "path", "mmd": "path"}
+            {"html": "path"}
         """
-        print("\n📊 Generating flowchart...")
-        
-        try:    
-            api_key=os.getenv("GROQ_API_KEY_FLOWCHART")        
-            output_dir.mkdir(exist_ok=True, parents=True)
-            flowchart_path = output_dir / f"{course_code}_flowchart.html"
-            
-            gen = FlowchartGenerator(api_key=api_key)
-            gen.generate_html(
-                content=content,
-                output_path=str(flowchart_path),
+        print(f"\nGenerating knowledge graph...")
+ 
+        try:
+            output_dir = Path(output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+ 
+            filename = f"{course_code}_knowledge_graph" if course_code else "knowledge_graph"
+            html_output = str(output_dir / f"{filename}.html")
+ 
+            html_path_out = kg_generate(
+                txt_path=txt_path,
                 course_code=course_code,
-                title=title
+                output_path=html_output,
             )
-            
-            mmd_path = str(flowchart_path).replace('.html', '.mmd')
-            
-            print(f"   ✅ HTML: {flowchart_path}")
-            print(f"   ✅ Mermaid: {mmd_path}")
-            
-            return {
-                "html": str(flowchart_path),
-                "mmd": mmd_path
-            }
-        
+ 
+            print(f"HTML: {html_path_out}")
+ 
+            return {"html": html_path_out}
+ 
         except Exception as e:
-            print(f"   ❌ Failed: {e}")
-            return {"html": None, "mmd": None}
-  
+            print(f"Failed: {e}")
+            return {"html": None}  
     
