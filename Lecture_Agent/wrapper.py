@@ -1,3 +1,18 @@
+import sys
+from pathlib import Path
+
+# ── Add all generator sub-package dirs to sys.path ───────────────────────────
+# Each generator sub-package uses bare imports (from Config import ...)
+# that only resolve when that package's own directory is on sys.path.
+# We add every sub-directory of generators/ that contains Python files.
+_GENERATORS_ROOT = Path(__file__).parent.parent / "generators"
+
+for _subdir in _GENERATORS_ROOT.rglob("*.py"):
+    _dir = str(_subdir.parent)
+    if _dir not in sys.path:
+        sys.path.insert(0, _dir)
+# ─────────────────────────────────────────────────────────────────────────────
+
 from generators.quiz_generator import QuizGenerator
 from generators.script_generator import HologramScriptGenerator
 from generators.summary_generator import SummaryGenerator
@@ -177,7 +192,7 @@ class SimpleGeneratorWrapper:
         print(f"\nGenerating lecture (Lecture API): {lecture_topic}")
  
         try:
-            api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY")
+            api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY_LECTURE")
             if not api_key:
                 raise EnvironmentError(
                     "No OpenRouter API key provided. Pass openrouter_api_key= or "
@@ -202,6 +217,12 @@ class SimpleGeneratorWrapper:
             ]
             for key, path, query in _text_sources:
                 if path and query:
+                    # If path is raw text content (not an existing file), write it to a temp file
+                    if not Path(path).exists():
+                        tmp_file = output_dir / f"_tmp_{key}_source.txt"
+                        tmp_file.write_text(path, encoding="utf-8")
+                        path = str(tmp_file)
+                        print(f"[generate_lecture_api] {key}: wrote raw text to temp file {tmp_file.name}")
                     sources[key] = [path, query]
                 elif path and not query:
                     print(f"{key}_path provided but {key}_query is missing — skipping.")
@@ -306,7 +327,7 @@ class SimpleGeneratorWrapper:
         print("\nGenerating worksheet...")
         
         try:       
-            api_key=os.getenv("GROQ_API_KEY_WORKSHEET")     
+            api_key=os.getenv("OPENROUTER_API_KEY_WORKSHEET")     
             output_dir.mkdir(exist_ok=True, parents=True)
             questions_path = output_dir / f"{course_code}_worksheet.pdf"
             answers_path = output_dir / f"{course_code}_worksheet_answers.pdf"
@@ -364,7 +385,7 @@ class SimpleGeneratorWrapper:
         print("\n📝 Generating quiz...")
         
         try:   
-            api_key=os.getenv("GROQ_API_KEY_QUIZ")         
+            api_key=os.getenv("OPENROUTER_API_KEY_QUIZ")         
             output_dir.mkdir(exist_ok=True, parents=True)
             quiz_path = output_dir / f"{course_code}_quiz.pdf"
             answers_path = output_dir / f"{course_code}_quiz_answers.pdf"
@@ -412,7 +433,7 @@ class SimpleGeneratorWrapper:
         print("\n📚 Generating summary...")
         
         try:  
-            api_key=os.getenv("GROQ_API_KEY_SUMMARY")          
+            api_key=os.getenv("OPENROUTER_API_KEY_SUMMARY")          
             output_dir.mkdir(exist_ok=True, parents=True)
             summary_path = output_dir / f"{course_code}_summary.pdf"
             
