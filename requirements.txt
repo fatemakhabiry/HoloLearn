@@ -62,3 +62,11 @@ pix2tex[mfr]>=0.1.2              # LaTeX OCR, handles math equations
  pytest>=7.4.0                  # Testing
  black>=23.0.0                  # Code formatting
  flake8>=6.0.0                  # Code linting
+
+
+
+ langgraph-checkpoint-postgres
+ fastapi
+ uvicorn
+ psycopg[binary]
+
