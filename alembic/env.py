@@ -2,7 +2,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
-
+import sqlmodel  # ← add this once, prevents NameError in all future migrations
 # Import your SQLModel metadata and engine
 from app.core.database import engine  # Your database engine
 from sqlmodel import SQLModel
@@ -15,7 +15,7 @@ from app.models.enrollment import Enrollment
 from app.models.schedule import Schedule
 from app.models.lecture import Lecture  # NEW
 from app.models.resource import Resource  # NEW
-
+from app.models.lecture_pipeline import LecturePipeline
 # this is the Alembic Config object
 config = context.config
 
