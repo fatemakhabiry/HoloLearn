@@ -90,7 +90,7 @@ async def _build_agent_state(
     thread_id:  str,
 ) -> dict:
     """Build the AgentState dict the LangGraph graph expects."""
-    output_dir = str(Path(settings.OUTPUTS_DIR) / str(lecture.lecture_id))
+    output_dir = str(Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id))
 
     source: dict = {
         "type":          "generated_lecture",
@@ -583,7 +583,7 @@ async def start_prepared_session(
     db.commit()
     db.refresh(agent_session)
 
-    output_dir    = str(Path(settings.OUTPUTS_DIR) / str(lecture.lecture_id))
+    output_dir    = str(Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id))
     initial_state = {
         "meta": {
             "session_id":  str(agent_session.id),
@@ -725,6 +725,14 @@ async def approve_lecture(
     db.commit()
 
     await resume_agent(agent_session.thread_id, status="approved")
+
+    if (
+        version
+        and version.pdf_path
+        and not lecture.final_content
+    ):
+        filename = f"{lecture.course_code}_{lecture.title}_approved.pdf"
+        await _upload_to_drive(version.pdf_path, filename, lecture, db)
 
     return {"status": "approved", "session_id": session_id}
 

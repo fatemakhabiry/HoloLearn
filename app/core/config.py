@@ -43,8 +43,11 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    POSTGRES_URL : str
     APP_NAME: str = "HoloLearn"
     DEBUG: bool = True
+    AI_SERVICE_URL : str
+    OUTPUTS_DIR_AGENT : str
 
     # Security
     SECRET_KEY: str
@@ -99,6 +102,7 @@ class Settings(BaseSettings):
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
 settings = Settings()

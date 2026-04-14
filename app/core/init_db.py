@@ -9,6 +9,8 @@ from app.models.course import Course
 from app.models.enrollment import Enrollment 
 from app.models.lecture import Lecture
 from app.models.resource import Resource
+from app.models.agent_session import AgentSession
+from app.models.lecture_pipeline import LecturePipeline
 
 
 def create_db_and_tables():
