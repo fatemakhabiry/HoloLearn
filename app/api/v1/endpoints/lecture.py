@@ -10,7 +10,7 @@ from arq.connections import RedisSettings
 import os
 
 from app.core.database import get_session
-from app.models.lecture import Lecture, LectureType, LectureStatus , LecturePublic
+from app.models.lecture import Lecture, LectureType, LectureStatus , LecturePublic , LecturePipelineTriggerResponse 
 from app.models.schedule import Schedule, SchedulePublic, ScheduleCreate
 from app.models.user import User, UserRole
 from app.models.course import Course

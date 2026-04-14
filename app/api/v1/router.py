@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, users, teachers, password_reset, courses, schedules, lecture, student, admin
+from app.api.v1.endpoints import auth, users, teachers, password_reset, courses, schedules, lecture, student, admin, sessions
 
 
 api_router = APIRouter()

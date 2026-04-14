@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m alembic revision --autogenerate -m \"add_is_active_to_user\")",
+      "Bash(alembic revision:*)",
+      "Bash(where alembic:*)",
+      "Bash(python -c \"import alembic; print\\(alembic.__file__\\)\")",
+      "Bash(pip show:*)"
+    ]
+  }
+}
