@@ -39,10 +39,11 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     __tablename__ = "users"
-    
+
     user_id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
-    
+    is_active: bool = Field(default=True)
+
     # Relationships
     teacher: Optional["Teacher"] = Relationship(back_populates="user")
     
