@@ -18,6 +18,7 @@ import '../widgets/text_form_widget.dart';
 import '../widgets/file_upload_widget.dart';
 import '../widgets/message_handler_widget.dart';
 import '../widgets/error_handler_widget.dart';
+import '../widgets/avatar_option_widget.dart';
 
 class CreateNewLectureScreen extends StatefulWidget {
   const CreateNewLectureScreen({super.key});
@@ -40,7 +41,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   // File handling
   String? selectedFilePath;
   String? selectedFileName;
-
+  String selectedInputType = 'document'; // Default to document
   bool isLoading = false;
   bool isFetchingCourses = true;
   String message = "";
@@ -225,29 +226,29 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Input Type Selection Container
-                    // Container(
-                    //   padding: const EdgeInsets.all(AppStyles.spacingL),
-                    //   decoration: BoxDecoration(
-                    //     color: AppColors.white,
-                    //     borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                    //     boxShadow: AppStyles.cardShadow,
-                    //   ),
-                    //   child: RadioOptionsGroup(
-                    //     sectionTitle: 'LECTURE CONTENT INPUT TYPE',
-                    //     selectedId: selectedInputType,
-                    //     options: LectureInputOptions.options,
-                    //     onOptionSelected: (id) {
-                    //       setState(() {
-                    //         selectedInputType = id;
-                    //       });
-                    //       print('Selected input type: $id');
-                    //     },
-                    //   ),
-                    // ),
+                    Container(
+                      padding: const EdgeInsets.all(AppStyles.spacingL),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                        boxShadow: AppStyles.cardShadow,
+                      ),
+                      child: RadioOptionsGroup(
+                        sectionTitle: 'LECTURE CONTENT INPUT TYPE',
+                        selectedId: selectedInputType,
+                        options: LectureInputOptions.options,
+                        onOptionSelected: (id) {
+                          setState(() {
+                            selectedInputType = id;
+                          });
+                          print('Selected input type: $id');
+                        },
+                      ),
+                    ),
                     const SizedBox(height: AppStyles.spacingL),
 
                     // Conditional Input - Document Upload or URL
-                    // if (selectedInputType == 'document')
+                    // if (selectedInputType == 'document')[
                     FileUploadWidget(
                       label: 'Lecture Content',
                       supportedFormats: const ['pdf', 'pptx', 'txt'],
@@ -268,7 +269,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
 
                     const SizedBox(height: AppStyles.spacingL),
 
-                    // if (selectedInputType == 'url')
+                    if (selectedInputType == 'url') ...[
                     Container(
                       padding: const EdgeInsets.all(AppStyles.spacingL),
                       decoration: BoxDecoration(
@@ -308,7 +309,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                         ],
                       ),
                     ),
-
+                    ],
                     const SizedBox(height: AppStyles.spacingL),
 
                     // Lecture Details Container
