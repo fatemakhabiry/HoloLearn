@@ -55,25 +55,34 @@ async def upload_teacher_photo(
     # Save new photo → returns absolute path to uploads/instructors/{id}/raw.jpg
     photo_path = await save_teacher_file(photo, current_user.user_id, "photo")
 
+    from app.core.config import settings as app_settings
+
+    pipeline_ready = bool(app_settings.PREPROCESS_SCRIPT and app_settings.LONGCAT_ENV_PYTHON)
+
     # ── Reset onboarding state ─────────────────────────────────────
-    # If teacher is re-uploading, the old preprocessed file is now stale.
-    # Clear it so the worker writes a fresh one.
     teacher.photo = photo_path
-    teacher.onboarding_status = "processing"        # ← NEW
-    teacher.preprocessed_image_path = None          # ← NEW: clear stale path
+    teacher.preprocessed_image_path = None          # clear any stale path
+
+    if pipeline_ready:
+        # Pipeline is configured → kick off preprocessing immediately
+        teacher.onboarding_status = "processing"
+    else:
+        # Pipeline not configured on this machine (e.g. dev/staging).
+        # Photo is saved successfully; preprocessing will run once pipeline
+        # paths are added to .env and the teacher re-uploads.
+        teacher.onboarding_status = "pending"
 
     session.add(teacher)
     session.commit()
     session.refresh(teacher)
 
-    # ── Dispatch background preprocessing ─────────────────────────
-    # run_onboarding opens its own DB session internally.
-    # We only pass IDs and paths — never the request session.
-    background_tasks.add_task(                      # ← NEW
-        run_onboarding,
-        teacher_id=teacher.user_id,
-        raw_image_path=photo_path,
-    )
+    # ── Dispatch background preprocessing (only if pipeline exists) ─
+    if pipeline_ready:
+        background_tasks.add_task(
+            run_onboarding,
+            teacher_id=teacher.user_id,
+            raw_image_path=photo_path,
+        )
 
     return teacher
 

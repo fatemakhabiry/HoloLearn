@@ -8,13 +8,16 @@ from pathlib import Path
 from arq import create_pool
 from arq.connections import RedisSettings
 import os
-
+from app.services.google_drive import drive_service
+from app.core.config import settings
 from app.core.database import get_session
-from app.models.lecture import Lecture, LectureType, LectureStatus , LecturePublic , LecturePipelineTriggerResponse 
+from app.models.lecture import Lecture, LectureType, LectureStatus, LecturePublic, LecturePipelineTriggerResponse
 from app.models.schedule import Schedule, SchedulePublic, ScheduleCreate
 from app.models.user import User, UserRole
 from app.models.course import Course
+from app.models.teacher import Teacher
 from app.models.lecture_pipeline import LecturePipeline, PipelineStatus
+from app.models.generated_content import GeneratedContent, ContentType
 from app.api.deps import get_current_user, get_current_teacher
 from app.schemas.schedule_schemas import (
     ConfirmPublishResponse,
@@ -505,10 +508,132 @@ async def delete_lecture(
     # Delete lecture
     session.delete(lecture)
     session.commit()
-    
+
     return DeleteLectureResponse(
         message="Lecture deleted successfully"
     )
+
+
+# ============================================
+# 7: Prepare Pipeline
+# ============================================
+
+from pydantic import BaseModel
+
+class PreparePipelineRequest(BaseModel):
+    """All fields optional — defaults from LecturePipeline model are used if omitted."""
+    num_steps:      Optional[int]   = None
+    audio_cfg:      Optional[float] = None
+    text_cfg:       Optional[float] = None
+    seed:           Optional[int]   = None
+    preset:         Optional[str]   = None
+    avatar_backend: Optional[str]   = None
+
+
+class PreparePipelineResponse(BaseModel):
+    lecture_id:     int
+    script_path:    str
+    status:         str
+    avatar_backend: str
+    message:        str
+
+
+@router.post(
+    "/{lecture_id}/prepare-pipeline",
+    response_model=PreparePipelineResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Bridge: reads script from generated_content → creates/updates LecturePipeline",
+)
+def prepare_pipeline(
+    lecture_id: int,
+    body: PreparePipelineRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_teacher),
+):
+    """
+    Connects the agent session output to the avatar pipeline.
+
+    Prerequisites (must be done first):
+      1. POST /session/start           → agent generates content
+      2. POST /session/{id}/approve    → lecture approved
+      → agent saves script to generated_content table
+
+    What this endpoint does:
+      - Reads GeneratedContent where content_type = 'script' for this lecture
+      - Creates or updates a LecturePipeline record with script_path set
+      - Returns confirmation so teacher can call trigger-pipeline next
+    """
+
+    # ── 1. Verify lecture exists and belongs to this teacher ──────────────
+    lecture = session.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(status_code=404, detail=f"Lecture {lecture_id} not found.")
+
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="You can only prepare your own lectures.")
+
+    if lecture.lecture_type != LectureType.GENERATED:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Only GENERATED lectures use the avatar pipeline. "
+                   f"This lecture is type '{lecture.lecture_type.value}'.",
+        )
+
+    # ── 2. Read script from generated_content ────────────────────────────
+    script = session.exec(
+        select(GeneratedContent).where(
+            GeneratedContent.lecture_id   == lecture_id,
+            GeneratedContent.content_type == ContentType.SCRIPT,
+        )
+    ).first()
+
+    if not script:
+        raise HTTPException(
+            status_code=404,
+            detail="Script not found in generated_content. "
+                   "Run the agent session and approve the lecture first.",
+        )
+
+    if not Path(script.file_path).exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Script file not found on disk: {script.file_path}. "
+                   "The agent may need to re-run.",
+        )
+
+    # ── 3. Create or update LecturePipeline ──────────────────────────────
+    pipeline = session.get(LecturePipeline, lecture_id)
+
+    if not pipeline:
+        pipeline = LecturePipeline(lecture_id=lecture_id)
+
+    pipeline.script_path = script.file_path
+    pipeline.status      = PipelineStatus.QUEUED
+
+    # Apply optional overrides — keep model defaults if not provided
+    if body.num_steps      is not None: pipeline.num_steps      = body.num_steps
+    if body.audio_cfg      is not None: pipeline.audio_cfg      = body.audio_cfg
+    if body.text_cfg       is not None: pipeline.text_cfg       = body.text_cfg
+    if body.seed           is not None: pipeline.seed           = body.seed
+    if body.preset         is not None: pipeline.preset         = body.preset
+    if body.avatar_backend is not None: pipeline.avatar_backend = body.avatar_backend
+
+    session.add(pipeline)
+    session.commit()
+    session.refresh(pipeline)
+
+    return PreparePipelineResponse(
+        lecture_id=lecture_id,
+        script_path=script.file_path,
+        status=pipeline.status.value,
+        avatar_backend=pipeline.avatar_backend,
+        message=f"Pipeline ready. Call POST /lecture/{lecture_id}/trigger-pipeline to start video generation.",
+    )
+
+
+# ============================================
+# 8: Trigger Pipeline (already exists below)
+# ============================================
 
 # # app/api/v1/endpoints/lecture.py
 # from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status

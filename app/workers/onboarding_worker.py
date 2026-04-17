@@ -31,13 +31,15 @@ def run_onboarding(teacher_id: int, raw_image_path: str) -> None:
 
     # ── Guard: pipeline must be configured ────────────────────────
     # If config paths are missing (dev machine without pipeline installed),
-    # mark as failed immediately rather than crashing with a confusing error.
+    # leave status as 'pending' — the photo is saved and can be preprocessed
+    # once the pipeline is set up. This is NOT a teacher failure.
     if not settings.PREPROCESS_SCRIPT or not settings.LONGCAT_ENV_PYTHON:
-        logger.error(
-            f"[Onboarding:{teacher_id}] Pipeline not configured. "
-            "Set PREPROCESS_SCRIPT and LONGCAT_ENV_PYTHON in .env"
+        logger.warning(
+            f"[Onboarding:{teacher_id}] Pipeline not configured — skipping preprocessing. "
+            "Set PREPROCESS_SCRIPT and LONGCAT_ENV_PYTHON in .env to enable it. "
+            "Photo has been saved successfully."
         )
-        _set_status(teacher_id, "failed", preprocessed_path=None)
+        _set_status(teacher_id, "pending", preprocessed_path=None)
         return
 
     # ── Resolve output paths ──────────────────────────────────────

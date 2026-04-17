@@ -92,6 +92,14 @@ class Settings(BaseSettings):
     UPLOADS_DIR: Optional[str] = None          # teacher photos + voice files
     OUTPUTS_DIR: Optional[str] = None          # generated MP4 output files
 
+    # ── Distributed Pipeline (internet-separated machines) ────────
+    # Your laptop (this machine) public HTTPS URL via ngrok
+    BACKEND_PUBLIC_URL: Optional[str] = None     # e.g. https://abc123.ngrok-free.app
+    # AI server public HTTPS URL via ngrok (friend's PC)
+    AI_SERVER_URL: Optional[str] = None          # e.g. https://xyz456.ngrok-free.app
+    # Shared secret — both machines must have the same value in .env
+    INTERNAL_API_TOKEN: Optional[str] = None     # e.g. a long random hex string
+
     # ── Redis / ARQ ──────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 
