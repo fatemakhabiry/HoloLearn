@@ -1,7 +1,0 @@
-langchain
-reportlab
-openai
-python-dotenv
-langchain-text-splitters
-matplotlib
-Pillow
