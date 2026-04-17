@@ -119,6 +119,77 @@
 
 # ai/agent/graph.py
 
+# from langgraph.graph import StateGraph, START, END
+# from langgraph.checkpoint.memory import MemorySaver
+
+# from state import AgentState
+# from nodes import (
+#     route_input,
+#     _route_input_edge,
+#     set_lecture,
+#     generate_lecture,
+#     interrupt_for_approval,
+#     _approval_edge,
+#     generate_all_content,
+#     save_results,
+# )
+
+
+# def build_graph(checkpointer=None):
+#     if checkpointer is None:
+#         checkpointer = MemorySaver()
+
+#     builder = StateGraph(AgentState)
+
+#     # Register nodes — no route_input node needed
+#     builder.add_node("route_input",     route_input)
+
+#     builder.add_node("set_lecture",            set_lecture)
+#     builder.add_node("generate_lecture",       generate_lecture)
+#     builder.add_node("interrupt_for_approval", interrupt_for_approval)
+#     builder.add_node("generate_all_content",   generate_all_content)
+#     builder.add_node("save_results",           save_results)
+
+#     # START → conditional split (no intermediate node)
+#     builder.add_edge(START, "route_input")
+
+
+#     builder.add_conditional_edges(
+#         "route_input",
+#         _route_input_edge,
+#         {
+#             "set_lecture":      "set_lecture",
+#             "generate_lecture": "generate_lecture",
+#         },
+#     )
+
+#     # Path A: straight to content
+#     builder.add_edge("set_lecture", "generate_all_content")
+
+#     # Path B: generate → HITL → decision
+#     builder.add_edge("generate_lecture", "interrupt_for_approval")
+
+#     builder.add_conditional_edges(
+#         "interrupt_for_approval",
+#         _approval_edge,
+#         {
+#             "generate_lecture":     "generate_lecture",
+#             "generate_all_content": "generate_all_content",
+#         },
+#     )
+
+#     # Both paths converge
+#     builder.add_edge("generate_all_content", "save_results")
+#     builder.add_edge("save_results",         END)
+
+#     # No interrupt_before — interrupt() inside the node handles pausing
+#     return builder.compile(checkpointer=checkpointer )
+
+
+
+
+# graph.py — full updated file
+
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -126,9 +197,11 @@ from state import AgentState
 from nodes import (
     _route_input_edge,
     set_lecture,
+    set_generating_lecture_status,
     generate_lecture,
     interrupt_for_approval,
     _approval_edge,
+    set_generating_content_status,
     generate_all_content,
     save_results,
 )
@@ -140,41 +213,48 @@ def build_graph(checkpointer=None):
 
     builder = StateGraph(AgentState)
 
-    # Register nodes — no route_input node needed
-    builder.add_node("set_lecture",            set_lecture)
-    builder.add_node("generate_lecture",       generate_lecture)
-    builder.add_node("interrupt_for_approval", interrupt_for_approval)
-    builder.add_node("generate_all_content",   generate_all_content)
-    builder.add_node("save_results",           save_results)
+    # ── Register nodes ─────────────────────────────────────────────
+    builder.add_node("set_lecture",                    set_lecture)
+    builder.add_node("set_generating_lecture_status",  set_generating_lecture_status)
+    builder.add_node("generate_lecture",               generate_lecture)
+    builder.add_node("interrupt_for_approval",         interrupt_for_approval)
+    builder.add_node("set_generating_content_status",  set_generating_content_status)
+    builder.add_node("generate_all_content",           generate_all_content)
+    builder.add_node("save_results",                   save_results)
 
-    # START → conditional split (no intermediate node)
+    # ── Edges ──────────────────────────────────────────────────────
+
+    # START → split by source type
     builder.add_conditional_edges(
         START,
         _route_input_edge,
         {
-            "set_lecture":      "set_lecture",
-            "generate_lecture": "generate_lecture",
+            "set_lecture":                   "set_lecture",
+            "set_generating_lecture_status": "set_generating_lecture_status",
         },
     )
 
-    # Path A: straight to content
-    builder.add_edge("set_lecture", "generate_all_content")
+    # Path A — prepared lecture → straight to content
+    builder.add_edge("set_lecture",                   "set_generating_content_status")
 
-    # Path B: generate → HITL → decision
-    builder.add_edge("generate_lecture", "interrupt_for_approval")
+    # Path B — generated lecture
+    builder.add_edge("set_generating_lecture_status", "generate_lecture")
+    builder.add_edge("generate_lecture",              "interrupt_for_approval")
 
     builder.add_conditional_edges(
         "interrupt_for_approval",
         _approval_edge,
         {
-            "generate_lecture":     "generate_lecture",
-            "generate_all_content": "generate_all_content",
+            # Rejected → status node → regenerate
+            "set_generating_lecture_status": "set_generating_lecture_status",
+            # Approved → status node → generate content
+            "set_generating_content_status": "set_generating_content_status",
         },
     )
 
-    # Both paths converge
-    builder.add_edge("generate_all_content", "save_results")
-    builder.add_edge("save_results",         END)
+    # Both paths converge at content generation
+    builder.add_edge("set_generating_content_status", "generate_all_content")
+    builder.add_edge("generate_all_content",          "save_results")
+    builder.add_edge("save_results",                  END)
 
-    # No interrupt_before — interrupt() inside the node handles pausing
-    return builder.compile(checkpointer=checkpointer)
+    return builder.compile(checkpointer=checkpointer , interrupt_before=["interrupt_for_approval"])

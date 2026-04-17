@@ -384,7 +384,6 @@ _wrapper = SimpleGeneratorWrapper()
 
 
 
-
 def route_input(state: AgentState) -> AgentState:
     """
     Reads source.type and sets current_step so the conditional edge
@@ -397,19 +396,14 @@ def route_input(state: AgentState) -> AgentState:
         "current_step": "generating_lecture",
     }
 
-
 # ── PATH ROUTING ──────────────────────────────────────────────────────────────
 
 def _route_input_edge(state: AgentState) -> str:
-    """
-    Conditional edge directly from START.
-    No node needed — pure routing based on source.type.
-    """
     src = state["source"]["type"]
     print(f"[route] source.type = {src}")
     if src == "prepared_lecture":
         return "set_lecture"
-    return "generate_lecture"
+    return "set_generating_lecture_status"   # ← routes to status node first
 
 
 
@@ -444,129 +438,130 @@ def set_lecture(state: AgentState) -> AgentState:
 
 # ── PATH B: generated_lecture ─────────────────────────────────────────────────
 
-def generate_lecture(state: AgentState) -> AgentState:
+# nodes.py — replace generate_lecture with this
+
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+async def generate_lecture(state: AgentState) -> AgentState:
     """
-    PATH 2: Generate a lecture from uploaded resources using LectureAPIWrapper.
-    LLM-heavy node.
+    PATH B: Generate lecture from source materials via LLM.
+    - Versions the output directory (v1/, v2/, v3/) so each
+      generation attempt is preserved on disk.
+    - Runs the blocking LLM call in a thread executor so the
+      event loop stays free for LangGraph context and status polling.
     """
-    meta   = state["meta"]
-    source = state["source"]
-    approval = state.get("lecture_approval")
- 
-    iteration = approval["iteration"] if approval else 0
-    feedback  = approval.get("teacher_feedback") if approval else None
- 
+    meta     = state["meta"]
+    source   = state["source"]
+    approval = state.get("lecture_approval") or {}
+
+    # Increment iteration on every entry to this node
+    # First call: 0 + 1 = 1 → v1/
+    # Second call (after reject): 1 + 1 = 2 → v2/
+    iteration = approval.get("iteration", 0) + 1    # ← INCREMENT HERE
+    feedback  = approval.get("teacher_feedback")
+    max_iter  = approval.get("max_iterations", 3)
+
     print(f"[generate_lecture] iteration={iteration}"
-          + (f", feedback='{feedback}'" if feedback else ""))
- 
-    output_dir  = Path(meta["output_dir"])
+          + (f" feedback='{feedback}'" if feedback else ""))
+
+    # Version the output directory
+    base_dir   = Path(meta["output_dir"])
+    output_dir = base_dir / f"v{iteration}"          # v1/, v2/, v3/
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     course_code = meta.get("course_code", "")
-    title       = meta.get("title", meta.get("course_code", "Lecture"))
- 
-    # build source pairs from state
+    title       = meta.get("title", course_code or "Lecture")
+
+    # ── Extract source file references ────────────────────────────
     def _first(entries):
-        """Return (path, query) for the first SourceFile in a list, or (None, None)."""
         if entries:
             e = entries[0]
             return e.get("text"), e.get("query")
         return None, None
- 
-    pdf_path,  pdf_query  = _first(source.get("pdf"))
-    docx_path, docx_query = _first(source.get("docx"))
-    pptx_path, pptx_query = _first(source.get("pptx"))
+
+    pdf_path,   pdf_query   = _first(source.get("pdf"))
+    docx_path,  docx_query  = _first(source.get("docx"))
+    pptx_path,  pptx_query  = _first(source.get("pptx"))
     audio_path, audio_query = _first(source.get("audio"))
     video_path, video_query = _first(source.get("video"))
-    web_path,  web_query  = _first(source.get("website"))
- 
-    # Images are already dicts: [{"path": ..., "caption": ...}, ...]
-    raw_images = source.get("images") or []
+    web_path,   web_query   = _first(source.get("website"))
+
+    raw_images  = source.get("images") or []
     images_flat = []
     for img in raw_images:
         images_flat.extend([img.get("path", ""), img.get("caption", "")])
     images_flat = images_flat if images_flat else None
- 
-    # Append teacher feedback to topic if regenerating
+
+    # ── Append feedback to topic on regeneration ──────────────────
     lecture_topic = title
     if feedback:
         lecture_topic = f"{title}\n\n[Teacher feedback for revision]: {feedback}"
- 
-    paths = _wrapper.generate_lecture_api(
-        lecture_topic=lecture_topic,
-        output_dir=output_dir,
-        course_code=course_code,
-        pdf_path=pdf_path,   pdf_query=pdf_query,
-        docx_path=docx_path, docx_query=docx_query,
-        pptx_path=pptx_path, pptx_query=pptx_query,
-        txt_path=audio_path, txt_query=audio_query,   # audio pre-extracted to text
-        url_path=web_path,   url_query=web_query,
-        images=images_flat,
-    )
-    # DEBUG — print exactly what the wrapper returned
+
+    # ── Run blocking LLM call in thread executor ──────────────────
+    # Keeps the event loop free so LangGraph context is preserved
+    # and status polling works during the 30-minute generation.
+    def _run_generation():
+        return _wrapper.generate_lecture_api(
+            lecture_topic = lecture_topic,
+            output_dir    = output_dir,
+            course_code   = course_code,
+            pdf_path      = pdf_path,   pdf_query   = pdf_query,
+            docx_path     = docx_path,  docx_query  = docx_query,
+            pptx_path     = pptx_path,  pptx_query  = pptx_query,
+            txt_path      = audio_path, txt_query   = audio_query,
+            url_path      = web_path,   url_query   = web_query,
+            images        = images_flat,
+        )
+
+    loop  = asyncio.get_event_loop()
+    paths = await loop.run_in_executor(None, _run_generation)
+
+    # ── Debug ─────────────────────────────────────────────────────
     print(f"[generate_lecture] wrapper returned paths: {paths}")
     if paths.get("pdf"):
-        from pathlib import Path as _P
-        print(f"[generate_lecture] PDF exists on disk: {_P(paths['pdf']).exists()}")
- 
-    # Read generated txt so final_lecture is always populated
+        print(f"[generate_lecture] PDF exists on disk: {Path(paths['pdf']).exists()}")
+
+    # ── Read generated text ───────────────────────────────────────
     lecture_text = ""
     if paths.get("txt"):
         try:
             lecture_text = Path(paths["txt"]).read_text(encoding="utf-8")
-        except Exception:
-            pass
- 
-    new_approval = {
-        "status": "pending",
-        "teacher_feedback": None,
-        "iteration": iteration,
-        "max_iterations": (approval or {}).get("max_iterations", 3),
-    }
- 
+        except Exception as e:
+            print(f"[generate_lecture] could not read txt: {e}")
+
     return {
         **state,
         "final_lecture": lecture_text,
         "lecture_paths": LecturePaths(
-            pdf=paths.get("pdf"),
-            txt=paths.get("txt"),
-            json=paths.get("json"),
+            pdf  = paths.get("pdf"),
+            txt  = paths.get("txt"),
+            json = paths.get("json"),
         ),
-        "lecture_approval": new_approval,
+        "lecture_approval": {
+            "status":           "pending",
+            "teacher_feedback": None,
+            "iteration":        iteration,    # ← save incremented value
+            "max_iterations":   max_iter,
+        },
         "current_step": "awaiting_approval",
     }
-
 # ── HITL: interrupt ───────────────────────────────────────────────────────────
+# nodes.py — replace interrupt_for_approval with this
 
 def interrupt_for_approval(state: AgentState) -> AgentState:
     """
-    PATH B only. Pauses the graph so the teacher can review the lecture.
-
-    The interrupt() call suspends execution here. The graph will not
-    proceed until the backend calls:
-        graph.invoke(Command(resume={"status": "approved"|"rejected",
-                                      "feedback": "..."}), config)
-
-    The resume value is returned by interrupt() when the graph wakes up.
+    Runs AFTER the teacher approves or rejects.
+    LangGraph pauses BEFORE this node via interrupt_before.
+    Reads the decision from lecture_approval which was updated by aupdate_state.
     """
-    approval = state.get("lecture_approval", {})
+    approval  = state.get("lecture_approval", {})
+    status    = approval.get("status", "pending")
+    feedback  = approval.get("teacher_feedback", "")
     iteration = approval.get("iteration", 0)
     max_iter  = approval.get("max_iterations", 3)
 
-    print(f"[interrupt_for_approval] Pausing — iteration {iteration}/{max_iter}")
-
-    # Suspend here — backend writes approval, then resumes
-    teacher_response: dict[str, Any] = interrupt({
-        "lecture_pdf": state.get("lecture_paths", {}).get("pdf"),
-        "lecture_txt": state.get("lecture_paths", {}).get("txt"),
-        "iteration":   iteration,
-        "max_iter":    max_iter,
-        "message":     "Review the generated lecture. Approve or reject with feedback.",
-    })
-
-    # Execution resumes here after backend calls Command(resume=...)
-    status   = teacher_response.get("status", "approved")
-    feedback = teacher_response.get("feedback", "")
-
-    print(f"[interrupt_for_approval] Resumed — status={status}")
+    print(f"[interrupt_for_approval] Resumed — status={status}, iteration={iteration}/{max_iter}")
 
     return {
         **state,
@@ -580,26 +575,21 @@ def interrupt_for_approval(state: AgentState) -> AgentState:
 
 
 def _approval_edge(state: AgentState) -> str:
-    """
-    Conditional edge after interrupt_for_approval.
-    Iteration already incremented in generate_lecture, so just compare.
-    """
     approval  = state.get("lecture_approval", {})
     status    = approval.get("status", "approved")
     iteration = approval.get("iteration", 0)
     max_iter  = approval.get("max_iterations", 3)
 
     if status == "approved":
-        print("[approval_edge] approved → generate_all_content")
-        return "generate_all_content"
+        print("[approval_edge] approved → set_generating_content_status")
+        return "set_generating_content_status"   # ← status node first
 
     if iteration < max_iter:
-        print(f"[approval_edge] rejected ({iteration}/{max_iter}) → generate_lecture")
-        return "generate_lecture"
+        print(f"[approval_edge] rejected ({iteration}/{max_iter}) → set_generating_lecture_status")
+        return "set_generating_lecture_status"   # ← status node first
 
-    # Hit cap — force proceed rather than loop forever
-    print(f"[approval_edge] max iterations reached → force generate_all_content")
-    return "generate_all_content"
+    print("[approval_edge] max iterations reached → set_generating_content_status")
+    return "set_generating_content_status"
 
 
 # ── CONTENT GENERATION (both paths converge here) ─────────────────────────────
@@ -729,3 +719,22 @@ def save_results(state: AgentState) -> AgentState:
     # await db.sessions.upsert(manifest)
 
     return {**state, "current_step": "done"}
+
+# nodes.py — add these two functions
+
+def set_generating_lecture_status(state: AgentState) -> AgentState:
+    """
+    Lightweight node — just sets current_step to generating_lecture.
+    LangGraph writes checkpoint after this returns so polling sees it immediately.
+    """
+    print("[set_generating_lecture_status] Status → generating_lecture")
+    return {**state, "current_step": "generating_lecture"}
+
+
+def set_generating_content_status(state: AgentState) -> AgentState:
+    """
+    Lightweight node — just sets current_step to generating_content.
+    LangGraph writes checkpoint after this returns so polling sees it immediately.
+    """
+    print("[set_generating_content_status] Status → generating_content")
+    return {**state, "current_step": "generating_content"}

@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+import contextvars
 
 # ── Path setup — same as test scripts ────────────────────────────────────────
 _AI_DIR      = Path(__file__).parent
@@ -66,6 +67,13 @@ class ResumeRequest(BaseModel):
     feedback:  str = ""
 
 
+
+import contextvars
+import threading
+
+def _run_in_background(coro):
+    return asyncio.create_task(coro)
+
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @app.post("/invoke")
@@ -89,19 +97,74 @@ async def invoke(body: InvokeRequest):
     return {"status": "started"}
 
 
+# @app.post("/resume")
+# async def resume(body: ResumeRequest):
+#     config = {"configurable": {"thread_id": body.thread_id}}
+
+#     # Read current state to get iteration
+#     snapshot = await _graph.aget_state(config)
+#     current_approval = {}
+#     if snapshot and snapshot.values:
+#         current_approval = snapshot.values.get("lecture_approval") or {}
+
+#     # Update state with teacher's decision
+#     await _graph.aupdate_state(
+#         config,
+#         {
+#             "lecture_approval": {
+#                 "status":           body.status,
+#                 "teacher_feedback": body.feedback if body.status == "rejected" else None,
+#                 "iteration":        current_approval.get("iteration", 0),
+#                 "max_iterations":   current_approval.get("max_iterations", 3),
+#             }
+#         },
+#     )
+
+#     # Resume graph
+#     asyncio.create_task(
+#         _graph.ainvoke(None, config)
+#     )
+
+#     return {"status": "resumed"}
+
+
 @app.post("/resume")
 async def resume(body: ResumeRequest):
-    """
-    Resume a paused graph after teacher approve or reject.
-    Returns immediately — graph runs in background.
-    """
     config = {"configurable": {"thread_id": body.thread_id}}
-    asyncio.create_task(
-        _graph.ainvoke(
-            Command(resume={"status": body.status, "feedback": body.feedback}),
-            config,
-        )
+
+    # Read current state
+    snapshot = await _graph.aget_state(config)
+    print(f"[resume] next nodes: {snapshot.next}")
+
+    current_approval = {}
+    if snapshot and snapshot.values:
+        current_approval = snapshot.values.get("lecture_approval") or {}
+
+    iteration   = current_approval.get("iteration", 0)
+    max_iter    = current_approval.get("max_iterations", 3)
+
+    print(f"[resume] status={body.status} iteration={iteration} feedback={body.feedback}")
+
+    # Update state with teacher decision
+    await _graph.aupdate_state(
+        config,
+        {
+            "lecture_approval": {
+                "status":           body.status,
+                "teacher_feedback": body.feedback if body.status == "rejected" else None,
+                "iteration":        iteration,
+                "max_iterations":   max_iter,
+            }
+        },
+        as_node="interrupt_for_approval",   # ← tells LangGraph this IS the node result
     )
+
+    snapshot_after = await _graph.aget_state(config)
+    print(f"[resume] next after update: {snapshot_after.next}")
+
+    # Resume — None means continue from current position
+    _run_in_background(_graph.ainvoke(None, config))
+
     return {"status": "resumed"}
 
 
@@ -130,6 +193,37 @@ async def get_state(thread_id: str):
         "generated_content": s.get("generated_content"),
         "error":             s.get("error"),
     }
+
+# api_server.py — add this endpoint
+
+class ExtractRequest(BaseModel):
+    file_path: str
+    resource_type: str  # pdf, docx, pptx, audio, video, website
+
+@app.post("/extract")
+async def extract(body: ExtractRequest):
+    """Extract text from a resource file using the extractor wrapper."""
+    from wrapper import SimpleExtractorWrapper
+    extractor = SimpleExtractorWrapper()
+    
+    type_map = {
+        "pdf":     extractor.extract_pdf,
+        "docx":    extractor.extract_docx,
+        "pptx":    extractor.extract_pptx,
+        "audio":   extractor.extract_audio,
+        "video":   extractor.extract_video,
+        "website": extractor.extract_url,
+    }
+    
+    handler = type_map.get(body.resource_type.lower())
+    if not handler:
+        # fallback for txt files — just read
+        text = Path(body.file_path).read_text(encoding="utf-8", errors="ignore")
+    else:
+        loop = asyncio.get_event_loop()
+        text = await loop.run_in_executor(None, handler, body.file_path)
+    
+    return {"text": text, "chars": len(text)}
 
 
 @app.get("/health")
