@@ -1,5 +1,8 @@
 
 # app/api/v1/endpoints/teachers.py
+import logging
+
+import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File
 from sqlmodel import Session, select
 
@@ -9,6 +12,8 @@ from app.core.file_utils import save_teacher_file, delete_teacher_file, ensure_u
 from app.models.user import User
 from app.models.teacher import Teacher, TeacherPublic, TeacherUpdate, TeacherProfileStatus
 from app.workers.onboarding_worker import run_onboarding
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -57,34 +62,70 @@ async def upload_teacher_photo(
 
     from app.core.config import settings as app_settings
 
-    pipeline_ready = bool(app_settings.PREPROCESS_SCRIPT and app_settings.LONGCAT_ENV_PYTHON)
+    ai_server_ready = bool(
+        app_settings.AI_SERVER_URL
+        and app_settings.BACKEND_PUBLIC_URL
+        and app_settings.INTERNAL_API_TOKEN
+    )
 
     # ── Reset onboarding state ─────────────────────────────────────
     teacher.photo = photo_path
     teacher.preprocessed_image_path = None          # clear any stale path
-
-    if pipeline_ready:
-        # Pipeline is configured → kick off preprocessing immediately
-        teacher.onboarding_status = "processing"
-    else:
-        # Pipeline not configured on this machine (e.g. dev/staging).
-        # Photo is saved successfully; preprocessing will run once pipeline
-        # paths are added to .env and the teacher re-uploads.
-        teacher.onboarding_status = "pending"
+    teacher.onboarding_status = "processing" if ai_server_ready else "pending"
 
     session.add(teacher)
     session.commit()
     session.refresh(teacher)
 
-    # ── Dispatch background preprocessing (only if pipeline exists) ─
-    if pipeline_ready:
+    # ── Dispatch preprocessing to AI server ────────────────────────
+    if ai_server_ready:
         background_tasks.add_task(
-            run_onboarding,
+            _dispatch_preprocess,
             teacher_id=teacher.user_id,
-            raw_image_path=photo_path,
+            photo_path=photo_path,
         )
 
     return teacher
+
+
+async def _dispatch_preprocess(teacher_id: int, photo_path: str) -> None:
+    """
+    Background task — POSTs to the AI server's /ai/preprocess endpoint.
+    The AI server will download the raw photo, run preprocess_image.py,
+    then call back POST /internal/onboarding-done with the PNG.
+    """
+    from app.core.config import settings as app_settings
+
+    base     = app_settings.BACKEND_PUBLIC_URL.rstrip("/")
+    token    = app_settings.INTERNAL_API_TOKEN
+    ai_url   = app_settings.AI_SERVER_URL.rstrip("/")
+
+    payload = {
+        "teacher_id":         teacher_id,
+        "image_download_url": f"{base}/api/v1/internal/files?path={photo_path}",
+        "callback_url":       f"{base}/api/v1/internal/onboarding-done",
+        "token":              token,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(
+                f"{ai_url}/ai/preprocess",
+                json=payload,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if response.status_code not in (200, 202):
+            logger.error(
+                f"[Onboarding:{teacher_id}] AI server rejected preprocess job "
+                f"(HTTP {response.status_code}): {response.text[:300]}"
+            )
+    except httpx.ConnectError:
+        logger.error(
+            f"[Onboarding:{teacher_id}] Could not reach AI server at {ai_url}. "
+            "Is it running and is ngrok active?"
+        )
+    except httpx.TimeoutException:
+        logger.error(f"[Onboarding:{teacher_id}] AI server did not respond within 15 seconds.")
 
 
 @router.post("/upload-voice", response_model=TeacherPublic)

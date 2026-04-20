@@ -5,8 +5,7 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from datetime import time, date, datetime
 from pathlib import Path
-from arq import create_pool
-from arq.connections import RedisSettings
+import httpx
 import os
 from app.services.google_drive import drive_service
 from app.core.config import settings
@@ -520,18 +519,20 @@ async def delete_lecture(
 
 from pydantic import BaseModel
 
-class PreparePipelineRequest(BaseModel):
-    """All fields optional — defaults from LecturePipeline model are used if omitted."""
-    num_steps:      Optional[int]   = None
-    audio_cfg:      Optional[float] = None
-    text_cfg:       Optional[float] = None
-    seed:           Optional[int]   = None
-    preset:         Optional[str]   = None
-    avatar_backend: Optional[str]   = None
+# ── Fixed pipeline defaults (not exposed to caller) ──────────────────────────
+_PIPELINE_DEFAULTS = dict(
+    num_steps      = 20,
+    audio_cfg      = 4.0,
+    text_cfg       = 4.0,
+    seed           = 42,
+    preset         = "engaging_narration",
+    avatar_backend = "local",
+)
 
 
 class PreparePipelineResponse(BaseModel):
     lecture_id:     int
+    lecture_type:   str
     script_path:    str
     status:         str
     avatar_backend: str
@@ -546,12 +547,14 @@ class PreparePipelineResponse(BaseModel):
 )
 def prepare_pipeline(
     lecture_id: int,
-    body: PreparePipelineRequest,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_teacher),
 ):
     """
     Connects the agent session output to the avatar pipeline.
+
+    Works for **any** lecture type (PREPARED or GENERATED) as long as a script
+    row exists in generated_content for that lecture.
 
     Prerequisites (must be done first):
       1. POST /session/start           → agent generates content
@@ -559,9 +562,14 @@ def prepare_pipeline(
       → agent saves script to generated_content table
 
     What this endpoint does:
+      - Verifies lecture ownership (any type accepted)
       - Reads GeneratedContent where content_type = 'script' for this lecture
-      - Creates or updates a LecturePipeline record with script_path set
+      - Creates or updates a LecturePipeline record with fixed default params:
+            num_steps=20, audio_cfg=4.0, text_cfg=4.0, seed=42,
+            preset="engaging_narration", avatar_backend="local"
       - Returns confirmation so teacher can call trigger-pipeline next
+
+    No request body required — all pipeline params are fixed in the backend.
     """
 
     # ── 1. Verify lecture exists and belongs to this teacher ──────────────
@@ -571,13 +579,6 @@ def prepare_pipeline(
 
     if lecture.teacher_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="You can only prepare your own lectures.")
-
-    if lecture.lecture_type != LectureType.GENERATED:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only GENERATED lectures use the avatar pipeline. "
-                   f"This lecture is type '{lecture.lecture_type.value}'.",
-        )
 
     # ── 2. Read script from generated_content ────────────────────────────
     script = session.exec(
@@ -601,22 +602,18 @@ def prepare_pipeline(
                    "The agent may need to re-run.",
         )
 
-    # ── 3. Create or update LecturePipeline ──────────────────────────────
+    # ── 3. Create or update LecturePipeline with fixed defaults ──────────
     pipeline = session.get(LecturePipeline, lecture_id)
 
     if not pipeline:
-        pipeline = LecturePipeline(lecture_id=lecture_id)
+        pipeline = LecturePipeline(lecture_id=lecture_id, **_PIPELINE_DEFAULTS)
+    else:
+        # Reset to fixed defaults on every call (no drift from old values)
+        for field, value in _PIPELINE_DEFAULTS.items():
+            setattr(pipeline, field, value)
 
     pipeline.script_path = script.file_path
     pipeline.status      = PipelineStatus.QUEUED
-
-    # Apply optional overrides — keep model defaults if not provided
-    if body.num_steps      is not None: pipeline.num_steps      = body.num_steps
-    if body.audio_cfg      is not None: pipeline.audio_cfg      = body.audio_cfg
-    if body.text_cfg       is not None: pipeline.text_cfg       = body.text_cfg
-    if body.seed           is not None: pipeline.seed           = body.seed
-    if body.preset         is not None: pipeline.preset         = body.preset
-    if body.avatar_backend is not None: pipeline.avatar_backend = body.avatar_backend
 
     session.add(pipeline)
     session.commit()
@@ -624,6 +621,7 @@ def prepare_pipeline(
 
     return PreparePipelineResponse(
         lecture_id=lecture_id,
+        lecture_type=lecture.lecture_type.value,
         script_path=script.file_path,
         status=pipeline.status.value,
         avatar_backend=pipeline.avatar_backend,
@@ -682,15 +680,7 @@ async def trigger_lecture_pipeline(
     if lecture.teacher_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="You can only trigger generation for your own lectures")
 
-    # Check 3: Must be GENERATED type
-    if lecture.lecture_type != LectureType.GENERATED:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only GENERATED lectures can use the pipeline. "
-                   f"This lecture is type: {lecture.lecture_type.value}"
-        )
-
-    # Check 4: Teacher onboarding must be ready
+    # Check 3: Teacher onboarding must be ready (set by AI server after preprocessing)
     teacher = session.get(Teacher, lecture.teacher_id)
     if not teacher or teacher.onboarding_status != "ready":
         current_onboarding = teacher.onboarding_status if teacher else "no teacher record"
@@ -700,7 +690,7 @@ async def trigger_lecture_pipeline(
                    f"onboarding_status: '{current_onboarding}'. Must be 'ready'."
         )
 
-    # Check 5: LecturePipeline record must exist
+    # Check 4: LecturePipeline record must exist
     pipeline = session.get(LecturePipeline, lecture_id)
     if not pipeline:
         raise HTTPException(
@@ -732,19 +722,72 @@ async def trigger_lecture_pipeline(
                    f"Only QUEUED or FAILED pipelines can be triggered."
         )
 
-    # All checks passed — enqueue the job
-    try:
-        redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
-        await redis.enqueue_job("run_generation", lecture_id)
-        await redis.close()
-    except Exception as e:
+    # All checks passed — dispatch job to AI server via HTTP
+    if not settings.AI_SERVER_URL:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to enqueue job: {str(e)}. Is Redis running at {settings.REDIS_URL}?"
+            status_code=503,
+            detail="AI_SERVER_URL is not configured. Set it in .env to point to the AI server's ngrok URL.",
+        )
+    if not settings.BACKEND_PUBLIC_URL:
+        raise HTTPException(
+            status_code=503,
+            detail="BACKEND_PUBLIC_URL is not configured. Set it in .env to your laptop's ngrok URL.",
+        )
+    if not settings.INTERNAL_API_TOKEN:
+        raise HTTPException(
+            status_code=503,
+            detail="INTERNAL_API_TOKEN is not configured. Set it in .env.",
         )
 
-    # Update lecture status so frontend polling sees it immediately
-    lecture.status = LectureStatus.GENERATING
+    base = settings.BACKEND_PUBLIC_URL.rstrip("/")
+    token = settings.INTERNAL_API_TOKEN
+
+    def _file_url(path: str) -> str:
+        """Build a signed download URL for the AI server to fetch a file from this laptop."""
+        return f"{base}/api/v1/internal/files?path={path}"
+
+    payload = {
+        "lecture_id":          lecture_id,
+        "script_download_url": _file_url(pipeline.script_path),
+        "image_download_url":  _file_url(teacher.preprocessed_image_path) if teacher.preprocessed_image_path else None,
+        "voice_download_url":  _file_url(teacher.voice_sample) if teacher.voice_sample else None,
+        "pipeline_params": {
+            "num_steps":      pipeline.num_steps,
+            "audio_cfg":      pipeline.audio_cfg,
+            "text_cfg":       pipeline.text_cfg,
+            "seed":           pipeline.seed,
+            "preset":         pipeline.preset,
+            "avatar_backend": pipeline.avatar_backend,
+        },
+        "callback_url": f"{base}/api/v1/internal/pipeline-done",
+        "token":        token,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(
+                f"{settings.AI_SERVER_URL.rstrip('/')}/ai/generate",
+                json=payload,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if response.status_code not in (200, 202):
+            raise HTTPException(
+                status_code=502,
+                detail=f"AI server rejected the job (HTTP {response.status_code}): {response.text[:300]}",
+            )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not reach AI server at {settings.AI_SERVER_URL}. Is ngrok running on friend's PC?",
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="AI server did not respond within 15 seconds.",
+        )
+
+    # Update status so frontend polling sees it immediately
+    lecture.status  = LectureStatus.GENERATING
     pipeline.status = PipelineStatus.GENERATING
     session.add(lecture)
     session.add(pipeline)
@@ -752,8 +795,8 @@ async def trigger_lecture_pipeline(
 
     return LecturePipelineTriggerResponse(
         lecture_id=lecture_id,
-        status="queued",
-        message=f"Video generation queued. Poll GET /lecture/{lecture_id}/video for progress."
+        status="generating",
+        message=f"Job dispatched to AI server. Poll GET /lecture/{lecture_id}/video for progress.",
     )
 
 
