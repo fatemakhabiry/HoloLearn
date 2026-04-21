@@ -106,7 +106,7 @@ class _SessionCardState extends State<SessionCard> {
             Text(
               'Starts in ${widget.session.remainingTime}',
               style: AppStyles.bodyLarge.copyWith(
-                color: AppColors.lightBlue,
+                color: AppColors.primaryColor,
                 fontWeight: AppFonts.semiBold,
               ),
             ),

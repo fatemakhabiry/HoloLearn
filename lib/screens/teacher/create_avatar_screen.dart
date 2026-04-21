@@ -1,20 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:hololearn/routes/app_routes.dart';
 import 'dart:io';
 import 'package:record/record.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/error_handler_widget.dart';
-import '../widgets/button_widget.dart';
-import '../services/avatar_service.dart';
-import '../state/providers/app_state_provider.dart';
-import '../widgets/message_handler_widget.dart';
-import '../widgets/upload_card_widget.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import'../../constants/constants.dart';
+import '../../services/avatar_service.dart';
+import '../../state/providers/app_state_provider.dart';
 
 class CreateAvatarScreen extends StatefulWidget {
   const CreateAvatarScreen({super.key});
@@ -142,7 +138,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.camera_alt,
-                  color: AppColors.lightBlue,
+                  color: AppColors.primaryColor,
                 ),
                 title: const Text('Camera', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
@@ -150,7 +146,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.photo_library,
-                  color: AppColors.lightBlue,
+                  color: AppColors.primaryColor,
                 ),
                 title: const Text('Gallery', style: AppStyles.h3),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),

@@ -81,3 +81,45 @@ class User {
   @override
   int get hashCode => email.hashCode;
 }
+
+class LoginResponseModel {
+  final String accessToken;
+  final String tokenType;
+  final User user;
+
+  LoginResponseModel({
+    required this.accessToken,
+    required this.tokenType,
+    required this.user,
+  });
+
+  factory LoginResponseModel.fromJson(Map<String, dynamic> json) {
+    return LoginResponseModel(
+      accessToken: json['access_token'] as String,
+      tokenType: json['token_type'] as String,
+      user: User.fromJson(json['user'] as Map<String, dynamic>),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'access_token': accessToken,
+      'token_type': tokenType,
+      'user': user.toJson(),
+    };
+  }
+}
+
+class UserUpdateModel {
+  final String? email;
+  final String? fullName;
+
+  UserUpdateModel({this.email, this.fullName});
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    if (email != null) data['email'] = email;
+    if (fullName != null) data['full_name'] = fullName;
+    return data;
+  }
+}

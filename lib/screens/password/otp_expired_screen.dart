@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/routes/app_routes.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/message_handler_widget.dart';
-import '../state/providers/app_state_provider.dart';
-import '../services/password_reset_service.dart';
+
+import '../../constants/constants.dart';
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import '../../state/providers/app_state_provider.dart';
+import '../../services/password_reset_service.dart';
 
 class OtpExpiredScreen extends StatelessWidget {
   const OtpExpiredScreen({super.key});
@@ -24,11 +22,7 @@ class OtpExpiredScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void _backToLogin() {
-      // Back to login
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const LoginPage()),
-      // );
+
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
 

@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'state/providers/app_state_provider.dart';
-import 'state/providers/lecture_state_provider.dart';
+
 import 'routes/app_routes.dart';
 import 'routes/route_generator.dart';
-import 'screens/splash_screen.dart';
+import 'state/processing_notifier.dart';
+import 'state/providers/app_state_provider.dart';
+import 'state/providers/lecture_state_provider.dart';
+import 'state/providers/resource_state_provider.dart';
+
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+
+  final processingNotifier = ProcessingNotifier();
+  await processingNotifier.init();
+
+  runApp(MyApp(processingNotifier: processingNotifier));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ProcessingNotifier processingNotifier;
+
+  const MyApp({super.key, required this.processingNotifier});
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +32,13 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(create: (_) => LectureStateProvider()),
-        // Add other providers here if needed
+        ChangeNotifierProvider(create: (_) => ResourceStateProvider()),
+        ChangeNotifierProvider.value(value: processingNotifier),
       ],
       child: MaterialApp(
         title: 'HoloLearn',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-        initialRoute: AppRoutes.splash, // start with splash screen route
+        initialRoute: AppRoutes.splash,
         onGenerateRoute: RouteGenerator.generateRoute,
         navigatorObservers: [routeObserver],
       ),

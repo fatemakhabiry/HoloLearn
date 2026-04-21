@@ -28,7 +28,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       leadingWidget = IconsButton(
         onPressed: onBackPressed ?? () => Navigator.pop(context),
         icon: Icons.arrow_back_ios,
-        backgroundColor: AppColors.lightBlue,
+        backgroundColor: AppColors.primaryColor,
       );
     }
 
@@ -58,7 +58,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.primaryColor,
       elevation: 0,
       automaticallyImplyLeading: false,
       leading: leadingWidget,

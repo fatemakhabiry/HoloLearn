@@ -14,7 +14,11 @@ class AppRoutes {
   static const String resetPassSuccess = '/reset-pass-success';
   static const String createNewLecture = '/create-new-lecture';
   static const String editLecture = '/edit-lecture';
+  static const String insertQueries = '/insert-queries';
+  static const String lectureprocessing = '/lecture-progress';
+  static const String lecturepreview = '/lecture-preview';
   static const String splash = '/splash';
+  static const String refinecontent = '/refine-content'; 
   // static const String register = '/register';
 
   // static const String profile = '/profile';

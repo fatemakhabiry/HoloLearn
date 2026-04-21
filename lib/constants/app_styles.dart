@@ -97,7 +97,7 @@ class AppStyles {
   /// Focused input field border
   static final inputBorderFocused = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(color: AppColors.lightBlue, width: 2),
+    borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
   );
 
   /// Card border
@@ -110,7 +110,7 @@ class AppStyles {
   /// Soft card shadow
   static final cardShadow = [
     BoxShadow(
-      color: AppColors.lightBlue.withOpacity(0.1),
+      color: AppColors.primaryColor.withOpacity(0.1),
       blurRadius: 20,
       offset: const Offset(0, 4),
     ),
@@ -119,7 +119,7 @@ class AppStyles {
   /// Button shadow
   static final buttonShadow = [
     BoxShadow(
-      color: AppColors.lightBlue.withOpacity(0.3),
+      color: AppColors.primaryColor.withOpacity(0.3),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
@@ -171,7 +171,7 @@ class AppStyles {
 
   /// Primary button style
   static final primaryButton = ElevatedButton.styleFrom(
-    backgroundColor: AppColors.lightBlue,
+    backgroundColor: AppColors.primaryColor,
     foregroundColor: AppColors.white,
     padding: const EdgeInsets.symmetric(
       horizontal: spacingL,
@@ -185,7 +185,7 @@ class AppStyles {
   /// darkBlue button style
   static final secondaryButton = ElevatedButton.styleFrom(
     backgroundColor: AppColors.white,
-    foregroundColor: AppColors.lightBlue,
+    foregroundColor: AppColors.primaryColor,
     padding: const EdgeInsets.symmetric(
       horizontal: spacingL,
       vertical: spacingM,
@@ -196,8 +196,8 @@ class AppStyles {
 
   /// Outlined button style
   static final outlinedButton = OutlinedButton.styleFrom(
-    foregroundColor: AppColors.lightBlue,
-    side: const BorderSide(color: AppColors.lightBlue, width: 2),
+    foregroundColor: AppColors.primaryColor,
+    side: const BorderSide(color: AppColors.primaryColor, width: 2),
     padding: const EdgeInsets.symmetric(
       horizontal: spacingL,
       vertical: spacingM,

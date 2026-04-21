@@ -81,7 +81,7 @@
 //               focusedBorder: OutlineInputBorder(
 //                 borderRadius: BorderRadius.circular(12),
 //                 borderSide: const BorderSide(
-//                   color: AppColors.lightBlue,
+//                   color: AppColors.primaryColor,
 //                   width: 2,
 //                 ),
 //               ),
@@ -184,7 +184,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: AppColors.lightBlue,
+                      color: AppColors.primaryColor,
                       width: 2,
                     ),
                   ),

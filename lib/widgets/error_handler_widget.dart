@@ -50,6 +50,7 @@ class CustomErrorHandler {
           ],
         ),
         backgroundColor: backgroundColor,
+        // behavior: SnackBarBehavior.fixed,
         duration: duration,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

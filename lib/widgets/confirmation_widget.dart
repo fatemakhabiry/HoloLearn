@@ -30,7 +30,7 @@ class CustomConfirmationDialog extends StatelessWidget {
       title: title != null
           ? Text(
               title!,
-              style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+              style: AppStyles.h2.copyWith(color: AppColors.primaryColor),
             )
           : null,
       content: Column(

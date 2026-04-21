@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import '../state/providers/app_state_provider.dart';
-import '../widgets/app_bar_widget.dart';
-import '../models/schedule_models.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/error_handler_widget.dart';
-import '../services/schedule_service.dart';
-import '../widgets/session_card_widget.dart';
+
+
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import '../../constants/constants.dart';
+import '../../models/schedule_models.dart';
+import '../../services/schedule_service.dart';
+import '../../state/providers/app_state_provider.dart';
+
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});

@@ -1,17 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../routes/app_routes.dart';
-import '../services/password_reset_service.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/error_handler_widget.dart';
-import '../widgets/message_handler_widget.dart';
-import '../widgets/text_form_widget.dart';
+
+import '../../constants/constants.dart';
+import '../../widgets/widgets.dart';
+import '../../services/password_reset_service.dart';
+import '../../routes/app_routes.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
   const ForgetPasswordPage({super.key});
@@ -37,15 +32,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     });
     try {
       await PasswordResetService.requestOTP(email!);
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => OtpVerficationScreen(
-      //       email: email!,
-      //       linkSentTime: DateTime.now(),
-      //     ),
-      //   ),
-      // ); // Added closing parenthesis and semicolon
       Navigator.pushReplacementNamed(
         context,
         AppRoutes.otpVerification,
@@ -94,7 +80,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                   MessageDisplay(
                     massegeBanner: '',
                     message:
-                        'To reset your password, please fill out the form below. We will send you a password to your email address within a few minutes.',
+                        'To reset your password, please fill out the form below. We will send you an OTP to your email address within a few minutes.',
                     isInfo: true,
                     showIcon: false,
                   ),
@@ -154,12 +140,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           CustomButton(
                             text: "Back To Login",
                             onPressed: () {
-                              // Navigator.pushReplacement(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => LoginPage(),
-                              //   ),
-                              // );
                               Navigator.pushReplacementNamed(
                                 context,
                                 AppRoutes.login,

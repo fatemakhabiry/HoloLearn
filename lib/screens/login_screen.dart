@@ -1,18 +1,16 @@
-import 'dart:async';
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:http/http.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../constants/app_fonts.dart';
-import '../widgets/message_handler_widget.dart';
-import '../widgets/text_form_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/error_handler_widget.dart';
+
+
+import '../widgets/widgets.dart';
+import '../routes/app_routes.dart';
+import '../constants/constants.dart';
 import '../services/auth_service.dart';
 import '../state/providers/app_state_provider.dart';
-import '../routes/app_routes.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -156,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                       vertical: AppStyles.spacingS,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.lightBlue,
+                      color: AppColors.primaryColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusPill),
                     ),
                     child: Text(
@@ -248,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
                                     _rememberMe = value ?? false;
                                   });
                                 },
-                                activeColor: AppColors.lightBlue,
+                                activeColor: AppColors.primaryColor,
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
@@ -284,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Text(
                                   'Forgot Password?',
                                   style: AppStyles.link.copyWith(
-                                    color: AppColors.lightBlue,
+                                    color: AppColors.primaryColor,
                                   ),
                                 ),
                               ),

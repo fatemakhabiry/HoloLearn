@@ -1,7 +1,7 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-      'https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1';
+      'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
 
   // ===== Authentication Endpoints =====
   static const String loginEndpoint = '/auth/login';
@@ -24,7 +24,7 @@ class ApiConfig {
   static const String changePasswordEndpoint =
       '/password_reset/change-password';
   static const String resendOtpEndpoint = '/password_reset/resend-otp';
-  
+
   // ===== Schedule Endpoints =====
   static const String reservedSlotsEndpoint =
       '/schedules/my-scheduled-lectures';
@@ -32,17 +32,37 @@ class ApiConfig {
 
   // Lecture endpoints
   static const String lecturesEndpoint = '/lecture/';
+  //prepared lecture endpoints
   static const String createLectureDraftEndpoint = '/lecture/create-draft';
-  static const String publishLectureEndpoint = '/lecture';
-  static const String lectureHistoryendpoint =
-      '/lecture/all-my-lectures';
+  static const String startPreparedEndpoint =
+      '/sessions/start-prepared/{lecture_id}';
+  //Generated lecture endpoints
+  static const String uploadGeneratedFileEndpoint ="/session/upload-resource";
+  static const String startGeneratedSessionEndpoint =
+       '/session/start';
+  static const String getSessionStatusEndpoint =
+      '/session/{session_id}/status';
+  static const String getSessionStreamEndpoint =
+      '/session/{session_id}/stream';
+  static const String approveSessionEndpoint = '/session/{session_id}/approve';
+  static const String rejectWithFeedbackSessionEndpoint =
+      '/session/{session_id}/reject';
+  static const String getLectureContentEndpoint =
+      '/session/{session_id}/content';
+  static const String getLecturePdfEndpoint =
+      '/session/{session_id}/lecture-pdf';
+
+  static const String publishLectureEndpoint =
+      '/lecture/{lecture_id}/confirm-and-publish';
+  static const String lectureHistoryendpoint = '/lecture/all-my-lectures';
 
   // Delete and update endpoints with placeholders
   // Note: {schedule_id} will be replaced with actual ID in the service
   static const String deleteLectureEndpoint = '/schedules/{schedule_id}/cancel';
   static const String updateLectureEndpoint =
       '/lecture/schedule/{schedule_id}/edit';
-
+  static const String getLectureDetailsEndpoint =
+      '/lecture/schedule/{schedule_id}/edit-details';
   // ===== Student Endpoints =====
   static const String courseListEndpoint = '/courses/';
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
@@ -58,5 +78,4 @@ class ApiConfig {
 
   // Build full URL
   static String getUrl(String endpoint) => baseUrl + endpoint;
-
 }

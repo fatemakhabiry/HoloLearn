@@ -4,7 +4,7 @@ class AppColors {
   AppColors._();
 
   /// Primary blue - Used for main buttons, highlights, and branding
-  static const Color lightBlue = Color(0xFF2562EB);
+  static const Color primaryColor = Color(0xFF2562EB);
 
   /// Secondary blue - Used for accents and secondary elements
   static const Color darkBlue = Color(0xFF433EA0);

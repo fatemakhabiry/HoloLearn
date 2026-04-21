@@ -7,7 +7,9 @@ class PasswordResetService {
   static Future<String> requestOTP(String email) async {
     final response = await http.post(
       Uri.parse(ApiConfig.getUrl(ApiConfig.forgotPasswordEndpoint)),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'
+      // ,'ngrok-skip-browser-warning': 'true'
+      },
       body: json.encode({'email': email}),
     );
 

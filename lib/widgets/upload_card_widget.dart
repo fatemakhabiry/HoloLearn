@@ -57,7 +57,7 @@ class UpoladCard extends StatelessWidget {
                 shape: isDashed ? BoxShape.rectangle : BoxShape.circle,
                 borderRadius: isDashed ? BorderRadius.circular(AppStyles.radiusM) : null,
                 border: Border.all(
-                  color: isDashed ? AppColors.gray : AppColors.lightBlue,
+                  color: isDashed ? AppColors.gray : AppColors.primaryColor,
                   width:2,
                   strokeAlign: BorderSide.strokeAlignInside,
                 ),
@@ -73,7 +73,7 @@ class UpoladCard extends StatelessWidget {
                   : Icon(
                       icon,
                       size: 40,
-                      color:  AppColors.lightBlue
+                      color:  AppColors.primaryColor
                     ),
             ),
           const SizedBox(height: AppStyles.spacingM),

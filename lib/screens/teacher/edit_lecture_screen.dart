@@ -1,20 +1,18 @@
-import 'dart:async';
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:hololearn/routes/app_routes.dart';
+import 'dart:async';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import '../services/lecture_service.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../constants/app_fonts.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/avatar_option_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/text_form_widget.dart';
-import '../widgets/message_handler_widget.dart';
-import '../state/providers/app_state_provider.dart';
-import '../services/availability_service.dart';
+import 'package:flutter/material.dart';
+
+
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import'../../constants/constants.dart';
+import '../../services/lecture_service.dart';
+import '../../models/availability_models.dart';
+import '../../services/availability_service.dart';
+import '../../state/providers/app_state_provider.dart';
+
 
 class EditLectureScreen extends StatefulWidget {
   final int scheduleId;
@@ -328,7 +326,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
       backgroundColor: AppColors.lightBackground,
       appBar: CustomAppBar(title: 'Edit Lecture'),
       body: isFetchingLecture
-          ? Center(child: CircularProgressIndicator(color: AppColors.lightBlue))
+          ? Center(child: CircularProgressIndicator(color: AppColors.primaryColor))
           : Center(
               child: SingleChildScrollView(
                 child: Padding(
@@ -443,7 +441,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                                       children: [
                                         Icon(
                                           Icons.insert_drive_file,
-                                          color: AppColors.lightBlue,
+                                          color: AppColors.primaryColor,
                                         ),
                                         const SizedBox(
                                           width: AppStyles.spacingS,
@@ -534,7 +532,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                                         AppStyles.spacingM,
                                       ),
                                       child: CircularProgressIndicator(
-                                        color: AppColors.lightBlue,
+                                        color: AppColors.primaryColor,
                                       ),
                                     ),
                                   )

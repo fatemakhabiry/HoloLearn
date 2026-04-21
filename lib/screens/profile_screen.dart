@@ -6,16 +6,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
+
+import '../widgets/widgets.dart';
+import '../routes/app_routes.dart';
+import '../constants/constants.dart';
 import '../services/avatar_service.dart';
 import '../state/providers/app_state_provider.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/text_form_widget.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/confirmation_widget.dart';
-import '../widgets/error_handler_widget.dart';
-import '../routes/app_routes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -86,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return AlertDialog(
             title: Text(
               'Change Voice Sample',
-              style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+              style: AppStyles.h2.copyWith(color: AppColors.primaryColor),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -97,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isRecording ? Colors.red : AppColors.lightBlue,
+                      color: isRecording ? Colors.red : AppColors.primaryColor,
                       width: 3,
                     ),
                     color: isRecording ? Colors.red.withOpacity(0.1) : null,
@@ -106,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Icon(
                       isRecording ? Icons.stop : Icons.mic,
                       size: 50,
-                      color: isRecording ? Colors.red : AppColors.lightBlue,
+                      color: isRecording ? Colors.red : AppColors.primaryColor,
                     ),
                   ),
                 ),
@@ -349,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (dialogContext) => AlertDialog(
           title: Text(
             'Choose Photo Source',
-            style: AppStyles.h2.copyWith(color: AppColors.lightBlue),
+            style: AppStyles.h2.copyWith(color: AppColors.primaryColor),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -357,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.camera_alt,
-                  color: AppColors.lightBlue,
+                  color: AppColors.primaryColor,
                 ),
                 title: const Text('Camera', style: AppStyles.h3),
                 onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
@@ -365,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.photo_library,
-                  color: AppColors.lightBlue,
+                  color: AppColors.primaryColor,
                 ),
                 title: const Text('Gallery', style: AppStyles.h3),
                 onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
@@ -543,14 +539,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.lightBlue, width: 3),
+                      border: Border.all(color: AppColors.primaryColor, width: 3),
                     ),
                     child: CircleAvatar(
                       radius: 48,
                       child: Icon(
                         Icons.person,
                         size: 50,
-                        color: AppColors.lightBlue,
+                        color: AppColors.primaryColor,
                       ),
                     ),
                   ),
@@ -596,7 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     CustomTextFormField(
                       prefixIcon: Icon(
                         Icons.history,
-                        color: AppColors.lightBlue,
+                        color: AppColors.primaryColor,
                       ),
                       hintText: 'Lecture History',
                       readOnly: true,
@@ -612,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CustomTextFormField(
                     prefixIcon: Icon(
                       Icons.lock_outline,
-                      color: AppColors.lightBlue,
+                      color: AppColors.primaryColor,
                     ),
                     hintText: 'Password',
                     readOnly: true,
@@ -621,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Text(
                         'Change',
                         style: AppStyles.h3.copyWith(
-                          color: AppColors.lightBlue,
+                          color: AppColors.primaryColor,
                         ),
                       ),
                     ),
@@ -636,7 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     CustomTextFormField(
                       prefixIcon: Icon(
                         Icons.photo_camera_outlined,
-                        color: AppColors.lightBlue,
+                        color: AppColors.primaryColor,
                       ),
                       hintText: 'change avatar photo',
                       readOnly: true,
@@ -645,7 +641,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           'Change',
                           style: AppStyles.h3.copyWith(
-                            color: AppColors.lightBlue,
+                            color: AppColors.primaryColor,
                           ),
                         ),
                       ),
@@ -653,7 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: AppStyles.spacingS),
                     CustomTextFormField(
-                      prefixIcon: Icon(Icons.mic, color: AppColors.lightBlue),
+                      prefixIcon: Icon(Icons.mic, color: AppColors.primaryColor),
                       hintText: 'change voice sample',
                       readOnly: true,
                       suffixIcon: TextButton(
@@ -661,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           'Change',
                           style: AppStyles.h3.copyWith(
-                            color: AppColors.lightBlue,
+                            color: AppColors.primaryColor,
                           ),
                         ),
                       ),

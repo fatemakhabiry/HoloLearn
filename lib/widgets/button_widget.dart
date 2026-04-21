@@ -15,6 +15,8 @@ class CustomButton extends StatelessWidget {
   final ButtonType buttonType;
   final bool fullWidth;
   final bool isLoading;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
   const CustomButton({
     super.key,
     required this.text,
@@ -22,18 +24,40 @@ class CustomButton extends StatelessWidget {
     this.buttonType = ButtonType.primary,
     this.fullWidth = false,
     this.isLoading = false,
+    this.prefixIcon,
+    this.suffixIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     Widget button;
+    Widget buttonChild = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (prefixIcon != null) ...[
+          prefixIcon!,
+          const SizedBox(width: AppStyles.spacingS),
+        ],
+        Text(
+          isLoading ? "Loading..." : text,
+          style: buttonType == ButtonType.primary
+              ? AppStyles.button
+              : AppStyles.button.copyWith(color: AppColors.primaryColor),
+        ),
+        if (suffixIcon != null) ...[
+          const SizedBox(width: AppStyles.spacingS),
+          suffixIcon!,
+        ],
+      ],
+    );
 
     switch (buttonType) {
       case ButtonType.primary:
         button = ElevatedButton(
           onPressed: onPressed,
           style: AppStyles.primaryButton,
-          child: Text(isLoading ? "Loading..." : text, style: AppStyles.button),
+          child: buttonChild,
         );
         break;
 
@@ -41,10 +65,7 @@ class CustomButton extends StatelessWidget {
         button = ElevatedButton(
           onPressed: onPressed,
           style: AppStyles.secondaryButton,
-          child: Text(
-            isLoading ? "Loading..." : text,
-            style: AppStyles.button.copyWith(color: AppColors.lightBlue),
-          ),
+          child: buttonChild,
         );
         break;
 
@@ -52,10 +73,7 @@ class CustomButton extends StatelessWidget {
         button = OutlinedButton(
           onPressed: onPressed,
           style: AppStyles.outlinedButton,
-          child: Text(
-            isLoading ? "Loading..." : text,
-            style: AppStyles.button.copyWith(color: AppColors.lightBlue),
-          ),
+          child: buttonChild,
         );
         break;
     }
@@ -165,7 +183,7 @@ class CustomDropdown extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppStyles.radiusM),
               borderSide: const BorderSide(
-                color: AppColors.lightBlue,
+                color: AppColors.primaryColor,
                 width: 2,
               ),
             ),

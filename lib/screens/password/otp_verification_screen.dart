@@ -4,17 +4,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import '../routes/app_routes.dart';
-import '../constants/app_fonts.dart';
-import '../state/providers/app_state_provider.dart';
-import '../widgets/error_handler_widget.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/message_handler_widget.dart';
-import '../widgets/otp_widget.dart';
-import '../services/password_reset_service.dart';
+import '../../constants/constants.dart';
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import '../../state/providers/app_state_provider.dart';
+import '../../services/password_reset_service.dart';
 
 class OtpVerficationScreen extends StatefulWidget {
   final String email;
@@ -258,7 +252,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             Text(
                               widget.email,
                               style: AppStyles.link.copyWith(
-                                color: AppColors.lightBlue,
+                                color: AppColors.primaryColor,
                                 fontWeight: AppFonts.semiBold,
                               ),
                             ),
@@ -284,7 +278,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                                   child: Text(
                                     'Resend the Email.',
                                     style: AppStyles.labelStyle.copyWith(
-                                      color: AppColors.lightBlue,
+                                      color: AppColors.primaryColor,
                                       fontWeight: AppFonts.semiBold,
                                     ),
                                   ),

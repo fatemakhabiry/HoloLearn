@@ -46,6 +46,8 @@ dependencies:
   provider: ^6.1.2
   image: ^4.3.0
   flutter_secure_storage: ^9.0.0
+  syncfusion_flutter_pdfviewer: ^33.1.49
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +77,7 @@ flutter:
     - images/check_icon.png
     - images/email_sent_icon.png
     - images/time_expired_icon.png
+    - assets/test_lecture.pdf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

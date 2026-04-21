@@ -62,7 +62,7 @@ class RadioOptionsGroup extends StatelessWidget {
                 color: AppColors.white,
                 border: Border.all(
                   color: selectedId == option.id
-                      ? AppColors.lightBlue
+                      ? AppColors.primaryColor
                       : AppColors.gray.withOpacity(0.3),
                   width: selectedId == option.id ? 2 : 1,
                 ),
@@ -78,7 +78,7 @@ class RadioOptionsGroup extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: selectedId == option.id
-                            ? AppColors.lightBlue
+                            ? AppColors.primaryColor
                             : AppColors.gray,
                         width: 2,
                       ),
@@ -90,7 +90,7 @@ class RadioOptionsGroup extends StatelessWidget {
                               height: 10,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColors.lightBlue,
+                                color: AppColors.primaryColor,
                               ),
                             ),
                           )
@@ -148,14 +148,14 @@ class AvatarOptions {
 class LectureInputOptions {
   static const List<SelectableOption> options = [
     SelectableOption(
-      id: 'document',
+      id: 'prepared',
       title: 'Prepared',
       description: 'Upload PDF, PPTX, or TXT files',
     ),
     SelectableOption(
-      id: 'url',
+      id: 'generated',
       title: 'Generated',
-      description: 'Enter a web link to your lecture content',
+      description: 'Enter Resources to your lecture content',
     ),
   ];
 }

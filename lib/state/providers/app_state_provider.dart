@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as _secureStorage;
+import '../../services/auth_service.dart';
 import '../../utils/storage_helper.dart';
 
 class AppStateProvider extends ChangeNotifier {
@@ -33,6 +35,25 @@ class AppStateProvider extends ChangeNotifier {
     _isFirstTimeLogin = await StorageHelper.getFirstTimeLogin();
     _rememberMe = await StorageHelper.getRememberMe(); // NEW
     notifyListeners();
+  }
+    Future<bool> tryAutoLogin() async {
+    final shouldAutoLogin = await StorageHelper.shouldAutoLogin();
+    if (!shouldAutoLogin) return false;
+
+    final savedEmail = await StorageHelper.getEmail();
+    final savedPassword = await StorageHelper.getPassword();
+
+    if (savedEmail == null || savedPassword == null) return false;
+
+    try {
+       await AuthService.login(
+        email: savedEmail,
+        password: savedPassword,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // Setters with notification and persistence

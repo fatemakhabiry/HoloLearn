@@ -14,6 +14,7 @@ class CustomTextFormField extends StatelessWidget {
   final bool isFieldRequired;
   final VoidCallback? onTap;
   final bool readOnly;
+  final int maxLines;
 
   const CustomTextFormField({
     super.key,
@@ -29,6 +30,7 @@ class CustomTextFormField extends StatelessWidget {
     this.isFieldRequired = true,
     this.onTap,
     this.readOnly = false,
+    this.maxLines = 1,
   });
 
   @override
@@ -57,12 +59,14 @@ class CustomTextFormField extends StatelessWidget {
           onSaved: onSaved,
           controller: controller,
           onTap: onTap,
+          maxLines: maxLines,
           readOnly: readOnly,
           keyboardType: keyboardType,
           decoration: AppStyles.inputDecoration(
             hint: hintText,
             prefixIcon: prefixIcon,  // ✅ Pass it here
             suffixIcon: suffixIcon,
+            
           ),
           obscureText: obscureText,
         ),

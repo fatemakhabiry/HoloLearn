@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/routes/app_routes.dart';
-import 'package:hololearn/services/lecture_service.dart';
 import 'package:provider/provider.dart';
-import '../state/providers/app_state_provider.dart';
-import '../state/providers/lecture_state_provider.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/confirmation_widget.dart';
-import '../widgets/lecture_schedule_card_widget.dart';
-import '../models/schedule_models.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/error_handler_widget.dart';
-import '../services/schedule_service.dart';
+
+
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import '../../constants/constants.dart';
+import '../../models/schedule_models.dart';
+import '../../services/lecture_service.dart';
+import '../../services/schedule_service.dart';
+import '../../state/providers/app_state_provider.dart';
+import '../../state/providers/lecture_state_provider.dart';
 
 class TeacherLecturesScreen extends StatefulWidget {
   const TeacherLecturesScreen({super.key});

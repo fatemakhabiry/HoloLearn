@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/routes/app_routes.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/message_handler_widget.dart';
+
+import '../../constants/constants.dart';
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+
 
 class ResetPassSuccessPage extends StatefulWidget {
   const ResetPassSuccessPage({super.key});

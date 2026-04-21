@@ -1,23 +1,20 @@
-import 'dart:async';
 import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:hololearn/models/lecture_model.dart';
-import 'package:hololearn/routes/app_routes.dart';
+import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:http/http.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_styles.dart';
-import '../constants/app_fonts.dart';
-import '../widgets/app_bar_widget.dart';
-import '../widgets/avatar_option_widget.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/text_form_widget.dart';
-import '../widgets/message_handler_widget.dart';
-import '../services/availability_service.dart';
-import '../services/lecture_service.dart';
-import '../state/providers/app_state_provider.dart';
-import '../state/providers/lecture_state_provider.dart';
+
+
+import '../../widgets/widgets.dart';
+import '../../routes/app_routes.dart';
+import '../../constants/constants.dart';
+import '../../models/lecture_models.dart';
+import '../../services/lecture_service.dart';
+import '../../models/availability_models.dart';
+import '../../services/availability_service.dart';
+import '../../state/providers/app_state_provider.dart';
+import '../../state/providers/lecture_state_provider.dart';
 
 class LectureSetupScreen extends StatefulWidget {
   const LectureSetupScreen({super.key});
@@ -180,7 +177,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
             context,
             listen: false,
           );
-          final matchingSlot = availableSlots.firstWhere(
+          final matchingSlot = availableSlots.firstWhereOrNull(
             (slot) =>
                 slot.startTime.hour ==
                     _parseTime(lectureState.lectureStartTime).hour &&
@@ -190,9 +187,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                     _parseTime(lectureState.lectureEndTime).hour &&
                 slot.endTime.minute ==
                     _parseTime(lectureState.lectureEndTime).minute,
-            orElse: () => availableSlots.isNotEmpty
-                ? availableSlots.first
-                : null as AvailabilitySlot,
+
           );
           if (matchingSlot != null) {
             selectedSlot = matchingSlot;
@@ -407,7 +402,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(AppStyles.spacingM),
                             child: CircularProgressIndicator(
-                              color: AppColors.lightBlue,
+                              color: AppColors.primaryColor,
                             ),
                           ),
                         )
@@ -464,7 +459,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                                     AppStyles.radiusM,
                                   ),
                                   borderSide: const BorderSide(
-                                    color: AppColors.lightBlue,
+                                    color: AppColors.primaryColor,
                                     width: 2,
                                   ),
                                 ),

@@ -1,45 +1,136 @@
 import 'package:flutter/foundation.dart';
-import '../../models/lecture_model.dart';
+import '../../models/lecture_models.dart';
 import '../../models/schedule_models.dart';
 import '../../models/availability_models.dart';
 import '../../utils/storage_helper.dart';
 
 class LectureStateProvider extends ChangeNotifier {
-  String _lectureTitle = "";
-  String _courseCode = "";
+  String _lectureTitle = '';
+  String _courseCode = '';
   int _lectureId = 0;
+  int _sessionId = 0;
   int _teacherId = 0;
-  String _lectureDate = "";
-  String _lectureStartTime = "";
-  String _lectureEndTime = "";
-  String _lectureLink = "";
-  String _lectureStatus = "";
-  String _lectureType = "";
+  String _lectureDate = '';
+  String _lectureStartTime = '';
+  String _lectureEndTime = '';
+  String _lectureLink = '';
+  String _lectureStatus = '';
+  String _lectureType = '';
 
-  // Initialize from storage
-  Future<void> init() async {
-    final state = await StorageHelper.getLectureState();
-    if (state != null) {
-      _lectureTitle = state['lectureTitle'] ?? "";
-      _courseCode = state['courseCode'] ?? "";
-      _lectureId = state['lectureId'] ?? 0;
-      _teacherId = state['teacherId'] ?? 0;
-      _lectureDate = state['lectureDate'] ?? "";
-      _lectureStartTime = state['lectureStartTime'] ?? "";
-      _lectureEndTime = state['lectureEndTime'] ?? "";
-      _lectureLink = state['lectureLink'] ?? "";
-      _lectureStatus = state['lectureStatus'] ?? "";
-      _lectureType = state['lectureType'] ?? "";
-      notifyListeners();
-    }
+  // ── Setters ──────────────────────────────────────────────────────────────
+
+  Future<void> setLectureTitle(String title) async {
+    _lectureTitle = title;
+    await _saveToStorage();
+    notifyListeners();
   }
 
-  // Save to storage
+  Future<void> setCourseCode(String courseCode) async {
+    _courseCode = courseCode;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureId(int lectureId) async {
+    _lectureId = lectureId;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setSessionId(int sessionId) async {
+    _sessionId = sessionId;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setTeacherId(int teacherId) async {
+    _teacherId = teacherId;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureDate(String date) async {
+    _lectureDate = date;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureStartTime(String startTime) async {
+    _lectureStartTime = startTime;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureEndTime(String endTime) async {
+    _lectureEndTime = endTime;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureLink(String link) async {
+    _lectureLink = link;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureStatus(String status) async {
+    _lectureStatus = status;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  Future<void> setLectureType(String type) async {
+    _lectureType = type;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  // ── Getters ──────────────────────────────────────────────────────────────
+
+  String get lectureTitle => _lectureTitle;
+  String get courseCode => _courseCode;
+  int get lectureId => _lectureId;
+  int get sessionId => _sessionId;
+  int get teacherId => _teacherId;
+  String get lectureDate => _lectureDate;
+  String get lectureStartTime => _lectureStartTime;
+  String get lectureEndTime => _lectureEndTime;
+  String get lectureLink => _lectureLink;
+  String get lectureStatus => _lectureStatus;
+  String get lectureType => _lectureType;
+
+  // ── Init / Storage ────────────────────────────────────────────────────────
+
+  Future<void> init() async {
+    final state = await StorageHelper.getLectureState();
+    if (state == null) return;
+
+    _lectureTitle = state['lectureTitle'] ?? '';
+    _courseCode = state['courseCode'] ?? '';
+    _lectureId = state['lectureId'] ?? 0;
+    _teacherId = state['teacherId'] ?? 0;
+    _lectureDate = state['lectureDate'] ?? '';
+    _lectureStartTime = state['lectureStartTime'] ?? '';
+    _lectureEndTime = state['lectureEndTime'] ?? '';
+    _lectureLink = state['lectureLink'] ?? '';
+    _lectureStatus = state['lectureStatus'] ?? '';
+    _lectureType = state['lectureType'] ?? '';
+
+    final storedSessionId = await StorageHelper.getSessionId();
+
+    if (storedSessionId != null) {
+      _sessionId = storedSessionId;
+    }
+
+    notifyListeners();
+  }
+
   Future<void> _saveToStorage() async {
     await StorageHelper.saveLectureState({
       'lectureTitle': _lectureTitle,
       'courseCode': _courseCode,
       'lectureId': _lectureId,
+      'sessionId': _sessionId,
       'teacherId': _teacherId,
       'lectureDate': _lectureDate,
       'lectureStartTime': _lectureStartTime,
@@ -50,19 +141,18 @@ class LectureStateProvider extends ChangeNotifier {
     });
   }
 
-  // Getters
-  String get lectureTitle => _lectureTitle;
-  String get courseCode => _courseCode;
-  int get lectureId => _lectureId;
-  int get teacherId => _teacherId;
-  String get lectureDate => _lectureDate;
-  String get lectureStartTime => _lectureStartTime;
-  String get lectureEndTime => _lectureEndTime;
-  String get lectureLink => _lectureLink;
-  String get lectureStatus => _lectureStatus;
-  String get lectureType => _lectureType;
+  // ── Setters ───────────────────────────────────────────────────────────────
 
-  // Set from API response
+  Future<void> setSession({
+    required int sessionId,
+    required int lectureId,
+  }) async {
+    _sessionId = sessionId;
+    _lectureId = lectureId;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
   Future<void> setFromCreateResponse(LectureCreateResponse response) async {
     _lectureTitle = response.title;
     _lectureId = response.lectureId;
@@ -100,74 +190,72 @@ class LectureStateProvider extends ChangeNotifier {
   Future<void> setFromScheduleSlot(ScheduleSlot scheduleSlot) async {
     _lectureId = scheduleSlot.lectureId ?? 0;
     _lectureTitle = scheduleSlot.lectureTitle;
-    _courseCode = scheduleSlot.courseCode ;
+    _courseCode = scheduleSlot.courseCode;
+    _lectureStatus = scheduleSlot.status;
+    _lectureType = scheduleSlot.lectureType ?? '';
 
-    // ✅ Parse date from startTime if date field is null
-    String extractedDate = scheduleSlot.date ?? "";
+    // Parse date from the date field, falling back to extracting it from startTime
+    String extractedDate = scheduleSlot.date ?? '';
     if (extractedDate.isEmpty && scheduleSlot.startTime.isNotEmpty) {
       try {
-        final dateTime = DateTime.parse(scheduleSlot.startTime);
+        final dt = DateTime.parse(scheduleSlot.startTime);
         extractedDate =
-            '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
-      } catch (e) {
-        print('Error parsing date from startTime: $e');
-      }
+            '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      } catch (_) {}
     }
-
     _lectureDate = extractedDate;
 
-    // ✅ Extract time from ISO format
     _lectureStartTime = _extractTimeFromISO(scheduleSlot.startTime);
     _lectureEndTime = _extractTimeFromISO(scheduleSlot.endTime);
-    _lectureStatus = scheduleSlot.status;
-    _lectureType = scheduleSlot.lectureType ?? "";
-
-    print('✅ Lecture state set for reschedule:');
-    print('   Lecture ID: $_lectureId');
-    print('   Title: $_lectureTitle');
-    print('   Date: $_lectureDate');
-    print('   Time: $_lectureStartTime - $_lectureEndTime');
 
     await _saveToStorage();
     notifyListeners();
   }
 
-  // ✅ Helper to extract time from ISO format "2025-01-20T10:00:00" -> "10:00"
+  Future<void> clearLectureState() async {
+    _lectureTitle = '';
+    _courseCode = '';
+    _lectureId = 0;
+    _sessionId = 0;
+    _sessionId = 0;
+    _teacherId = 0;
+    _lectureDate = '';
+    _lectureStartTime = '';
+    _lectureEndTime = '';
+    _lectureLink = '';
+    _lectureStatus = '';
+    _lectureType = '';
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  /// Converts an ISO datetime string like "2025-01-20T10:00:00" → "10:00".
   String _extractTimeFromISO(String isoTime) {
     try {
-      final dateTime = DateTime.parse(isoTime);
-      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      print('Error extracting time from ISO: $e');
-      return "";
+      final dt = DateTime.parse(isoTime);
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return '';
     }
   }
-
-  // ✅ Add clear method for when navigating away
-  Future<void> clearLectureState() async {
-    _lectureTitle = "";
-    _courseCode = "";
-    _lectureId = 0;
-    _teacherId = 0;
-    _lectureDate = "";
-    _lectureStartTime = "";
-    _lectureEndTime = "";
-    _lectureLink = "";
-    _lectureStatus = "";
-    _lectureType = "";
-    await _saveToStorage();
-    notifyListeners();
-  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class ScheduleStateProvider extends ChangeNotifier {
   List<AvailabilitySlot> _studentSchedules = [];
   List<ScheduleSlot> _teacherSchedules = [];
   List<ScheduleSlot> _lectureHistory = [];
 
+  // ── Getters ──────────────────────────────────────────────────────────────
+
   List<AvailabilitySlot> get studentSchedules => _studentSchedules;
   List<ScheduleSlot> get teacherSchedules => _teacherSchedules;
   List<ScheduleSlot> get lectureHistory => _lectureHistory;
+
+  // ── Setters ───────────────────────────────────────────────────────────────
 
   void setStudentSchedules(List<AvailabilitySlot> schedules) {
     _studentSchedules = schedules;
