@@ -1994,6 +1994,93 @@ async def get_lecture_pdf(
         filename   = f"lecture_v{latest_version.version_number}.pdf",
     )
 
+@router.get("/{session_id}/content/{content_type}/download")
+async def download_content_file(
+    session_id:   int,
+    content_type: str,
+    file_key:     str = "primary",  # primary | answers | extra
+    db:           Session = Depends(get_session),
+    teacher:      User    = Depends(get_current_teacher),
+):
+    """
+    Stream a generated content file to Flutter.
+    
+    content_type: script | worksheet | quiz | summary | knowledge_graph
+    file_key:     primary (default) | answers | extra
+    
+    Examples:
+    GET /sessions/15/content/worksheet/download              → questions PDF
+    GET /sessions/15/content/worksheet/download?file_key=answers → answers PDF
+    GET /sessions/15/content/script/download                 → script TXT
+    GET /sessions/15/content/knowledge_graph/download        → HTML file
+    """
+    agent_session, lecture = _get_session_or_404(session_id, db, teacher)
+
+    # Validate content_type
+    try:
+        ct = ContentType(content_type.lower())
+    except ValueError:
+        raise HTTPException(
+            400,
+            f"Invalid content_type '{content_type}'. "
+            f"Allowed: script, worksheet, quiz, summary, knowledge_graph"
+        )
+
+    # Find the content row
+    content_row = db.exec(
+        select(GeneratedContent).where(
+            GeneratedContent.lecture_id   == lecture.lecture_id,
+            GeneratedContent.content_type == ct,
+        )
+    ).first()
+
+    if not content_row:
+        raise HTTPException(404, f"{content_type} not generated yet")
+
+    # Select which file to serve
+    if file_key == "primary":
+        file_path = content_row.file_path
+    elif file_key == "answers":
+        file_path = content_row.answers_path
+        if not file_path:
+            raise HTTPException(404, f"No answers file for {content_type}")
+    elif file_key == "extra":
+        file_path = content_row.extra_path
+        if not file_path:
+            raise HTTPException(404, f"No extra file for {content_type}")
+    else:
+        raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
+
+    # Verify file exists on disk
+    path = Path(file_path)
+    if not path.exists():
+        raise HTTPException(404, f"File not found on disk: {path}")
+
+    # Determine media type from extension
+    ext = path.suffix.lower()
+    media_type_map = {
+        ".pdf":  "application/pdf",
+        ".txt":  "text/plain",
+        ".html": "text/html",
+        ".json": "application/json",
+        ".mmd":  "text/plain",
+    }
+    media_type = media_type_map.get(ext, "application/octet-stream")
+
+    # Build a clean filename for Flutter
+    filename = f"{lecture.course_code}_{content_type}"
+    if file_key == "answers":
+        filename += "_answers"
+    elif file_key == "extra":
+        filename += "_extra"
+    filename += ext
+
+    return FileResponse(
+        path       = str(path),
+        media_type = media_type,
+        filename   = filename,
+    )
+
 
 @router.get("/{session_id}/feedback-suggestions")
 async def get_feedback_suggestions(
