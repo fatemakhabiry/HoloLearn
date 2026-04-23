@@ -7,9 +7,10 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from kg_config import CLUSTER_COLORS, get_chunk_settings, clean_text, parse_json, merge
+from kg_config import CLUSTER_COLORS, get_chunk_settings, clean_text, parse_json, merge, MODEL
 from kg_prompts import SYSTEM_PROMPT, make_human_prompt
 from kg_render import render_html
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ def generate(txt_path: str, course_code: str = "", output_path: str = "") -> str
     llm = ChatOpenAI(
         api_key=api_key,
         base_url="https://openrouter.ai/api/v1",
-        model_name="arcee-ai/trinity-large-preview:free",
+        model_name=MODEL,
         temperature=0.1,
         max_tokens=16000,
     )

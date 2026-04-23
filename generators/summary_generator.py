@@ -28,7 +28,7 @@ class SummaryGenerator:
         self.llm =  ChatOpenAI(
         api_key=api_key,
         base_url="https://openrouter.ai/api/v1",
-        model_name="arcee-ai/trinity-large-preview:free",
+        model_name="z-ai/glm-4.5-air:free",
         temperature=0.5,
         max_tokens=8000,
     )

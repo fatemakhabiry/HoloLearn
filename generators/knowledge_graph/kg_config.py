@@ -5,7 +5,7 @@ from pathlib import Path
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
-MODEL         = "arcee-ai/trinity-large-preview:free"
+MODEL         = "z-ai/glm-4.5-air:free"
 CHUNK_SIZE    = 22_000
 CHUNK_OVERLAP = 600
 

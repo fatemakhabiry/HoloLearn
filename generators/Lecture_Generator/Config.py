@@ -1,7 +1,7 @@
 from reportlab.lib.units import inch
 
 # OpenRouter model
-OPENROUTER_MODEL = "arcee-ai/trinity-large-preview:free"
+OPENROUTER_MODEL = "z-ai/glm-4.5-air:free"
 
 # Slide page size: 16:9 widescreen (10 x 5.625 inches)
 
