@@ -183,7 +183,7 @@ class ScheduleService {
   }) async {
     try {
       // Build URL with scheduleId replacing the placeholder
-      final endpoint = ApiConfig.deleteLectureEndpoint.replaceAll(
+      final endpoint = ApiConfig.cancleLectureEndpoint.replaceAll(
         '{schedule_id}',
         scheduleId.toString(),
       );

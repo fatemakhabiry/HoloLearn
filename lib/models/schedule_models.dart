@@ -8,7 +8,7 @@ class ScheduleSlot {
   final String lectureTitle;
   final String courseCode;
   final String status;
-  final String? lectureType;
+  String? lectureType;
   final String? date;
 
 
@@ -21,7 +21,7 @@ class ScheduleSlot {
     required this.lectureTitle,
     this.courseCode = '',
     this.status = '',
-    this.lectureType,
+    this.lectureType='',
     this.date,
   });
 

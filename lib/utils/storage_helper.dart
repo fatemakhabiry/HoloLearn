@@ -219,5 +219,74 @@ static Future<int?> getSessionId() async {
   static Future<void> clearSessionId() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(_sessionIdKey);
+}static const String _lectureSessionMapKey = 'lecture_session_map';
+
+/// Save a lectureId → sessionId mapping
+static Future<void> saveLectureSessionId(int lectureId, int sessionId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureSessionMapKey);
+  
+  Map<String, dynamic> map = {};
+  if (existing != null) {
+    map = json.decode(existing) as Map<String, dynamic>;
+  }
+  
+  map[lectureId.toString()] = sessionId;
+  await prefs.setString(_lectureSessionMapKey, json.encode(map));
+}
+
+/// Get sessionId for a given lectureId
+static Future<int?> getSessionIdForLecture(int lectureId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureSessionMapKey);
+  if (existing == null) return null;
+  
+  final map = json.decode(existing) as Map<String, dynamic>;
+  final value = map[lectureId.toString()];
+  return value as int?;
+}
+
+/// Clear a single lecture-session mapping after deletion
+static Future<void> clearLectureSessionId(int lectureId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureSessionMapKey);
+  if (existing == null) return;
+  
+  final map = json.decode(existing) as Map<String, dynamic>;
+  map.remove(lectureId.toString());
+  await prefs.setString(_lectureSessionMapKey, json.encode(map));
+}
+static const String _lectureTypeMapKey = 'lecture_type_map';
+
+static Future<void> saveLectureType(int lectureId, String type) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureTypeMapKey);
+  
+  Map<String, dynamic> map = {};
+  if (existing != null) {
+    map = json.decode(existing) as Map<String, dynamic>;
+  }
+  
+  map[lectureId.toString()] = type;
+  await prefs.setString(_lectureTypeMapKey, json.encode(map));
+}
+
+static Future<String?> getLectureType(int lectureId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureTypeMapKey);
+  if (existing == null) return null;
+  
+  final map = json.decode(existing) as Map<String, dynamic>;
+  return map[lectureId.toString()] as String?;
+}
+
+static Future<void> clearLectureType(int lectureId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_lectureTypeMapKey);
+  if (existing == null) return;
+  
+  final map = json.decode(existing) as Map<String, dynamic>;
+  map.remove(lectureId.toString());
+  await prefs.setString(_lectureTypeMapKey, json.encode(map));
 }
 }

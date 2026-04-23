@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
+import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
@@ -11,7 +12,6 @@ import '../../services/lecture_service.dart';
 import '../../state/providers/app_state_provider.dart';
 import '../../state/providers/lecture_state_provider.dart';
 import '../../state/providers/resource_state_provider.dart';
-
 
 class InsertQueriesScreen extends StatefulWidget {
   const InsertQueriesScreen({super.key});
@@ -166,7 +166,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
       final lectureResources = resources
           .map(
             (r) => LectureResource(
-              resourceType: r.resourceType,
+              resourceExtension: r.resourceType,
               filePath: r.filePath,
               query: r.query,
             ),
@@ -181,20 +181,28 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
         ),
         appState,
       );
+      print('Response: $response');
+      print("5rgt mlservice" );
 
       lectureState.setSessionId(response.sessionId);
       lectureState.setLectureId(response.lectureId);
-      // await lectureState.setSession(
-      //   sessionId: response.sessionId,
-      //   lectureId: response.lectureId,
-      // );
+      lectureState.setLectureType('generated');
 
+      await StorageHelper.saveLectureSessionId(
+        response.lectureId,
+        response.sessionId,
+      );
+      await StorageHelper.saveLectureType(
+        response.lectureId,
+        'generated',
+      );
       if (!mounted) return;
       Navigator.pushNamed(
         context,
         AppRoutes.lectureprocessing,
-        arguments: lectureState.sessionId,
+        arguments: {'sessionId': lectureState.sessionId,'lectureType': 'generated',},
       );
+
     } on SocketException {
       error_message = 'No internet connection.';
     } on TimeoutException {

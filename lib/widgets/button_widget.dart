@@ -32,7 +32,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget button;
     Widget buttonChild = Row(
-      mainAxisSize: MainAxisSize.min,
+      // mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (prefixIcon != null) ...[
@@ -94,8 +94,8 @@ class IconsButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.icon,
-    this.iconColor = Colors.white,
-    this.backgroundColor = Colors.blue,
+    this.iconColor = AppColors.white,
+    this.backgroundColor = AppColors.primaryColor,
     this.size = 48.0,
   });
 

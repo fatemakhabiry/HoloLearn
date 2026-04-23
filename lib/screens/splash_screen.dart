@@ -17,8 +17,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // _initializeApp();
-    _checkAutoLogin();
+        // Show splash for 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      _checkAutoLogin();
+      _initializeApp();
+    });
+
   }
 Future<void> _checkAutoLogin() async {
   try {
@@ -47,76 +51,10 @@ Future<void> _checkAutoLogin() async {
     if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 }
-  // Future<void> _initializeApp() async {
-  //   // Show splash for 2 seconds
-  //   await Future.delayed(const Duration(seconds: 2));
+  Future<void> _initializeApp() async {
+// 7agat alsessions
 
-  //   if (!mounted) return;
-
-  //   try {
-  //     // Initialize app state from storage
-  //     final appState = Provider.of<AppStateProvider>(context, listen: false);
-  //     await appState.init();
-
-  //     // Check if should auto-login
-  //     final shouldAutoLogin = await appState.tryAutoLogin();
-
-  //     if (!mounted) return;
-
-  //     if (shouldAutoLogin && appState.isLoggedIn) {
-  //       // User has valid session and Remember Me checked
-  //       print('✅ Auto-login successful');
-  //       print('👤 Role: ${appState.userRole}');
-
-  //       final role = appState.userRole;
-
-  //       if (role == 'teacher') {
-  //         // Navigator.pushReplacement(
-  //         //   context,
-  //         //   MaterialPageRoute(
-  //         //     builder: (context) => const TeacherDashboardScreen(),
-  //         //   ),
-  //         // );
-  //         Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
-  //       } else if (role == 'student') {
-  //         // Navigator.pushReplacement(
-  //         //   context,
-  //         //   MaterialPageRoute(
-  //         //     builder: (context) => const StudentDashboardScreen(),
-  //         //   ),
-  //         // );
-  //         Navigator.pushReplacementNamed(context, AppRoutes.studentDashboard);
-  //       } else {
-  //         // Unknown role, go to login
-  //         print('⚠️ Unknown role: $role');
-  //         // Navigator.pushReplacement(
-  //         //   context,
-  //         //   MaterialPageRoute(builder: (context) => const LoginPage()),
-  //         // );
-  //         Navigator.pushReplacementNamed(context, AppRoutes.login);
-  //       }
-  //     } else {
-  //       // Not logged in or Remember Me not checked
-  //       print('ℹ️ No saved login found, going to login screen');
-  //       // Navigator.pushReplacement(
-  //       //   context,
-  //       //   MaterialPageRoute(builder: (context) => const LoginPage()),
-  //       // );
-  //       Navigator.pushReplacementNamed(context, AppRoutes.login);
-  //     }
-  //   } catch (e) {
-  //     print('❌ Error during splash: $e');
-  //     if (mounted) {
-  //       // Navigator.pushReplacement(
-  //       //   context,
-  //       //   MaterialPageRoute(
-  //       //     builder: (context) => const LoginPage(),
-  //       //   ),
-  //       // );
-  //       Navigator.pushReplacementNamed(context, AppRoutes.login);
-  //     }
-  //   }
-  // }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -10,9 +10,9 @@ class TeacherRoutes {
           builder: (_) => const TeacherDashboardScreen(),
         );
 
-      case AppRoutes.teacherLectures:
+      case AppRoutes.lectureHistory:
         return MaterialPageRoute(
-          builder: (_) => const TeacherLecturesScreen(),
+          builder: (_) => const LectureHistoryScreen(),
         );
 
       case AppRoutes.createNewLecture:

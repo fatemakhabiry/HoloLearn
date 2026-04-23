@@ -58,7 +58,7 @@ class AppStyles {
   // Button text
   static const TextStyle button = TextStyle(
     fontFamily: AppFonts.primary,
-    fontSize: AppFonts.fontSizeM,
+    fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.semiBold,
     color: AppColors.white,
     letterSpacing: 0.1,

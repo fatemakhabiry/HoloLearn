@@ -20,7 +20,9 @@ class ResourceItem {
     final ext = fileName.split('.').last.toLowerCase();
     if (ext == 'pdf') return 'pdf';
     if (ext == 'pptx' || ext == 'ppt') return 'pptx';
-    return 'image';
+    if (ext == 'mp4' || ext == 'avi' || ext == 'mkv') return 'video';
+    if (ext == 'jpg' || ext == 'png' || ext == 'gif'||ext=='jpeg') return 'image';
+    return 'website';
   }
 
   /// Safely parse size_bytes whether it's an int, a Map, or null

@@ -16,7 +16,7 @@ class LectureStateProvider extends ChangeNotifier {
   String _lectureLink = '';
   String _lectureStatus = '';
   String _lectureType = '';
-
+  bool _isRescheduling = false;
   // ── Setters ──────────────────────────────────────────────────────────────
 
   Future<void> setLectureTitle(String title) async {
@@ -85,6 +85,12 @@ class LectureStateProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setIsRescheduling(bool value) async {
+    _isRescheduling = value;
+    await _saveToStorage();
+    notifyListeners();
+  }
+
   // ── Getters ──────────────────────────────────────────────────────────────
 
   String get lectureTitle => _lectureTitle;
@@ -98,7 +104,7 @@ class LectureStateProvider extends ChangeNotifier {
   String get lectureLink => _lectureLink;
   String get lectureStatus => _lectureStatus;
   String get lectureType => _lectureType;
-
+  bool get isRescheduling => _isRescheduling;
   // ── Init / Storage ────────────────────────────────────────────────────────
 
   Future<void> init() async {
@@ -115,6 +121,7 @@ class LectureStateProvider extends ChangeNotifier {
     _lectureLink = state['lectureLink'] ?? '';
     _lectureStatus = state['lectureStatus'] ?? '';
     _lectureType = state['lectureType'] ?? '';
+    _isRescheduling = state['isRescheduling'] ?? false;
 
     final storedSessionId = await StorageHelper.getSessionId();
 
@@ -138,6 +145,7 @@ class LectureStateProvider extends ChangeNotifier {
       'lectureLink': _lectureLink,
       'lectureStatus': _lectureStatus,
       'lectureType': _lectureType,
+      'isRescheduling': _isRescheduling,
     });
   }
 
@@ -225,6 +233,7 @@ class LectureStateProvider extends ChangeNotifier {
     _lectureLink = '';
     _lectureStatus = '';
     _lectureType = '';
+    _isRescheduling = false;
     await _saveToStorage();
     notifyListeners();
   }

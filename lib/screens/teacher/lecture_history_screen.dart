@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
+import '../../constants/constants.dart';
+import '../../services/local_file_service.dart';
+import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import '../../constants/constants.dart';
 import '../../models/schedule_models.dart';
 import '../../services/lecture_service.dart';
 import '../../services/schedule_service.dart';
 import '../../state/providers/app_state_provider.dart';
 import '../../state/providers/lecture_state_provider.dart';
 
-class TeacherLecturesScreen extends StatefulWidget {
-  const TeacherLecturesScreen({super.key});
+class LectureHistoryScreen extends StatefulWidget {
+  const LectureHistoryScreen({super.key});
 
   @override
-  State<TeacherLecturesScreen> createState() => _TeacherLecturesScreenState();
+  State<LectureHistoryScreen> createState() => _LectureHistoryScreenState();
 }
 
-class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
+class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
   List<ScheduleSlot> myLectures = [];
   bool isLoading = true;
 
@@ -103,7 +104,15 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
                 appState: appState,
                 lectureId: myLectures[index].lectureId!,
               )
-              .then((_) {
+              .then((_) async {
+                // Clear locally cached files for this lecture
+                LocalFileService.clearLecture(myLectures[index].lectureId!);
+                await StorageHelper.clearLectureSessionId(
+                  myLectures[index].lectureId!,
+                );
+                await StorageHelper.clearLectureType(
+                  myLectures[index].lectureId!,
+                ); 
                 // Refresh data after deletion
                 fetchData();
                 CustomErrorHandler.show(
@@ -111,15 +120,18 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
                   message: 'Lecture deleted successfully.',
                   type: ErrorType.success,
                 );
-                Future.delayed(const Duration(seconds: 1), () {
-                  if (mounted) {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutes.teacherDashboard,
-                      (route) => false,
-                    );
-                  }
-                });
+                // Future.delayed(const Duration(seconds: 1), () {
+                //   // Navigator.pushNamedAndRemoveUntil(
+                //   //   context,
+                //   //   AppRoutes.teacherDashboard,
+                //   //   (route) => false,
+                //   // );Future.delayed(const Duration(seconds: 1), () {
+                //   if (mounted) {
+                //     Navigator.pop(
+                //       context,
+                //     ); // just go back, fetchData already refreshed
+                //   }
+                // });
               })
               .catchError((e) {
                 CustomErrorHandler.show(
@@ -165,16 +177,13 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
         );
 
         try {
-          // ✅ Get the lecture state provider
           final lectureState = Provider.of<LectureStateProvider>(
             context,
             listen: false,
           );
-
-          // ✅ Set lecture data for rescheduling
           await lectureState.setFromScheduleSlot(myLectures[index]);
+          await lectureState.setIsRescheduling(true); // ← add this
 
-          // ✅ Dismiss dialog first
           if (mounted) {
             Navigator.pop(context); // Close confirmation dialog
           }
@@ -184,22 +193,10 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
 
           // ✅ Navigate to lecture setup screen
           if (mounted) {
-            // Navigator.push(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => const LectureSetupScreen(),
-            //   ),
-            // )
-            Navigator.pushNamed(context, AppRoutes.lectureSetup).then((_) {
-              lectureState.clearLectureState();
-              fetchData();
-            });
+            Navigator.pushNamed(context, AppRoutes.lectureSetup);
           }
         } catch (e) {
-          print('❌ Error during reschedule: $e');
-
           if (mounted) {
-            // ✅ Dismiss dialog if still open
             Navigator.pop(context);
 
             CustomErrorHandler.show(
@@ -214,6 +211,42 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
     );
   }
 
+  void _handleViewContent(int index) async{
+  final lecture = myLectures[index];
+
+  if (lecture.lectureId == null) {
+    CustomErrorHandler.show(
+      context,
+      message: 'Cannot view content: Lecture ID is missing',
+      type: ErrorType.fail,
+    );
+    return;
+  }
+else {
+      // For prepared lectures, we can directly navigate to content
+  lecture.lectureType=await StorageHelper.getLectureType( lecture.lectureId!);
+
+  StorageHelper.getSessionIdForLecture(lecture.lectureId!).then((sessionId) {
+    if (!mounted) return;
+
+    if (sessionId == null) {
+      CustomErrorHandler.show(
+        context,
+        message: 'Content not available yet.',
+        type: ErrorType.info,
+      );
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      AppRoutes.lectureContent,
+      arguments: lecture,
+    );
+  });
+}
+}
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: 'My Lecture History'),
@@ -256,10 +289,14 @@ class _TeacherLecturesScreenState extends State<TeacherLecturesScreen> {
                                   timeRange: lecture.timeRange == ''
                                       ? ''
                                       : lecture.timeRange,
+                                  status: lecture.status,
+                                  lectureType: lecture.lectureType, // ← add
                                   editButtonText: 'RESCHEDULE',
-                                  cancelButtonText: 'DELETE RECORD',
+                                  cancelButtonText: 'DELETE ',
                                   onEdit: () => _handleReschedule(index),
                                   onCancel: () => _handleDelete(index),
+                                  onViewContent: () =>
+                                      _handleViewContent(index),
                                 ),
                               );
                             }).toList(),

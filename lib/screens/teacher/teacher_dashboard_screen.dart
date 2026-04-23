@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/state/providers/lecture_state_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../widgets/widgets.dart';
@@ -159,6 +160,30 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     }
   }
 
+  void onDone() {
+  //is content=false review lecture
+    Navigator.pushNamed(
+          context,
+          AppRoutes.lecturepreview,
+          arguments:true ,
+        );
+  }
+  void onAwait() {
+    //is content=false review lecture
+    Navigator.pushNamed(
+          context,
+          AppRoutes.lecturepreview,
+          arguments:false ,
+        );
+  }
+  void onTap(){
+      final lecturestate=Provider.of<LectureStateProvider>(context,listen: false);
+      Navigator.pushNamed(
+            context,
+            AppRoutes.lectureprocessing,
+            arguments: {"sessionId": lecturestate.sessionId, "lectureType": lecturestate.lectureType} ,
+          );
+  }
   void _handleCancel(ScheduleSlot lecture) {
     CustomConfirmationDialog.show(
       context,
@@ -264,124 +289,129 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── Processing notification bar ──────────────────────────
-                      Consumer<ProcessingNotifier>(
-                        builder: (context, notifier, _) {
-                          if (!notifier.isActive)
-                            return const SizedBox();
+                      // Consumer<ProcessingNotifier>(
+                      //   builder: (context, notifier, _) {
+                      //     if (!notifier.isActive)
+                      //       return const SizedBox();
 
-                          final isFailed =
-                              notifier.lifecycle == ProcessingLifecycle.failed;
-                          final isAwaiting = notifier.isAwaitingApproval;
+                      //     final isFailed =
+                      //         notifier.lifecycle == ProcessingLifecycle.failed;
+                      //     final isAwaiting = notifier.isAwaitingApproval;
 
-                          Color barColor = AppColors.primaryColor;
-                          if (notifier.isDone) barColor = AppColors.success;
-                          if (isFailed) barColor = AppColors.error;
+                      //     Color barColor = AppColors.primaryColor;
+                      //     if (notifier.isDone) barColor = AppColors.success;
+                      //     if (isFailed) barColor = AppColors.error;
 
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppStyles.spacingL,
-                              vertical: AppStyles.spacingS,
-                            ),
-                            // color:  AppColors.lightBackground,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: barColor),
-                              color:  AppColors.lightBackground,
-                              borderRadius: BorderRadius.circular(AppStyles.radiusM),
-                            ),
-                            child: Row(
-                              children: [
-                                if (notifier.isDone)
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: barColor,
-                                    size: 16,
-                                  )
-                                else if (isFailed)
-                                  Icon(
-                                    Icons.error_outline,
-                                    color:barColor,
-                                    size: 16,
-                                  )
-                                else
-                                   SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: barColor,
-                                    ),
-                                  ),
+                      //     return Container(
+                      //       width: double.infinity,
+                      //       padding: const EdgeInsets.symmetric(
+                      //         horizontal: AppStyles.spacingL,
+                      //         vertical: AppStyles.spacingS,
+                      //       ),
+                      //       // color:  AppColors.lightBackground,
+                      //       decoration: BoxDecoration(
+                      //         border: Border.all(color: barColor),
+                      //         color:  AppColors.lightBackground,
+                      //         borderRadius: BorderRadius.circular(AppStyles.radiusM),
+                      //       ),
+                      //       child: Row(
+                      //         children: [
+                      //           if (notifier.isDone)
+                      //             Icon(
+                      //               Icons.check_circle,
+                      //               color: barColor,
+                      //               size: 16,
+                      //             )
+                      //           else if (isFailed)
+                      //             Icon(
+                      //               Icons.error_outline,
+                      //               color:barColor,
+                      //               size: 16,
+                      //             )
+                      //           else
+                      //              SizedBox(
+                      //               width: 16,
+                      //               height: 16,
+                      //               child: CircularProgressIndicator(
+                      //                 strokeWidth: 2,
+                      //                 color: barColor,
+                      //               ),
+                      //             ),
 
-                                const SizedBox(width: AppStyles.spacingXXL),
+                      //           const SizedBox(width: AppStyles.spacingXXL),
 
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: (notifier.isDone || isFailed)
-                                        ? null
-                                        : () => Navigator.pushNamed(
-                                            context,
-                                            AppRoutes.lectureprocessing,
-                                            arguments: notifier.sessionId,
-                                          ),
-                                    child: Text(
-                                      isFailed
-                                          ? 'Generation failed. Dismiss to clear.'
-                                          : notifier.Title.isEmpty
-                                          ? 'Lecture is being generated…'
-                                          : notifier.Title,
-                                      style: AppStyles.bodyMedium.copyWith(
-                                        color: barColor,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
+                      //           Expanded(
+                      //             child: GestureDetector(
+                      //               onTap: (notifier.isDone || isFailed)
+                      //                   ? null
+                      //                   : () => Navigator.pushNamed(
+                      //                       context,
+                      //                       AppRoutes.lectureprocessing,
+                      //                       arguments: notifier.sessionId,
+                      //                     ),
+                      //               child: Text(
+                      //                 isFailed
+                      //                     ? 'Generation failed. Dismiss to clear.'
+                      //                     : notifier.Title.isEmpty
+                      //                     ? 'Lecture is being generated…'
+                      //                     : notifier.Title,
+                      //                 style: AppStyles.bodyMedium.copyWith(
+                      //                   color: barColor,
+                      //                 ),
+                      //                 overflow: TextOverflow.ellipsis,
+                      //               ),
+                      //             ),
+                      //           ),
 
-                                if (isAwaiting)
-                                  GestureDetector(
-                                    onTap: () => Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.lecturepreview,
-                                    ),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(
-                                        right: AppStyles.spacingS,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppStyles.spacingS,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: barColor.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(
-                                          AppStyles.radiusPill,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Review',
-                                        style: AppStyles.caption.copyWith(
-                                          color: barColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                      //           if (isAwaiting)
+                      //             GestureDetector(
+                      //               onTap: () => Navigator.pushNamed(
+                      //                 context,
+                      //                 AppRoutes.lecturepreview,
+                      //               ),
+                      //               child: Container(
+                      //                 margin: const EdgeInsets.only(
+                      //                   right: AppStyles.spacingS,
+                      //                 ),
+                      //                 padding: const EdgeInsets.symmetric(
+                      //                   horizontal: AppStyles.spacingS,
+                      //                   vertical: 4,
+                      //                 ),
+                      //                 decoration: BoxDecoration(
+                      //                   color: barColor.withOpacity(0.2),
+                      //                   borderRadius: BorderRadius.circular(
+                      //                     AppStyles.radiusPill,
+                      //                   ),
+                      //                 ),
+                      //                 child: Text(
+                      //                   'Review',
+                      //                   style: AppStyles.caption.copyWith(
+                      //                     color: barColor,
+                      //                     fontWeight: FontWeight.bold,
+                      //                   ),
+                      //                 ),
+                      //               ),
+                      //             ),
 
-                                GestureDetector(
-                                  onTap: () => notifier.dismiss(),
-                                  child:  Icon(
-                                    Icons.close,
-                                    color: barColor,
-                                    size: 18,
-                                  ),
-                                ),
-                      const SizedBox(height: AppStyles.spacingM),
-                              ],
-                            ),
-                          );
-                        },
+                      //           GestureDetector(
+                      //             onTap: () => notifier.dismiss(),
+                      //             child:  Icon(
+                      //               Icons.close,
+                      //               color: barColor,
+                      //               size: 18,
+                      //             ),
+                      //           ),
+                      // const SizedBox(height: AppStyles.spacingM),
+                      //         ],
+                      //       ),
+                      //     );
+                      //   },
 
+                      // ),
+                      ProcessingNotificationBar(
+                        onAwait: onAwait,
+                        onDone: onDone,
+                        ontap: onTap,
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,10 +467,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                                 padding: const EdgeInsets.only(
                                   bottom: AppStyles.spacingM,
                                 ),
-                                child: LectureScheduleCard(
+                                child:  LectureScheduleCard(
                                   lectureTitle: lecture.lectureTitle,
                                   date: lecture.formattedDate,
                                   timeRange: lecture.timeRange,
+                                  status: lecture.status,
+                                  editButtonText: "EDIT",
+                                  cancelButtonText: "CANCLE ",
                                   onEdit: () => _handleEdit(lecture),
                                   onCancel: () => _handleCancel(lecture),
                                 ),

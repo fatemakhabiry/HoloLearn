@@ -46,7 +46,7 @@ class LectureService {
 
   static final _client = http.Client();
 
-  static Map<String, String> _headers (String accesstoken) => {
+  static Map<String, String> _headers(String accesstoken) => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'ngrok-skip-browser-warning': 'true',
@@ -107,7 +107,7 @@ class LectureService {
         ApiConfig.getUrl(ApiConfig.createLectureDraftEndpoint),
         data: formData,
         options: Options(
-          headers:_headers(appState.accessToken),
+          headers: _headers(appState.accessToken),
           validateStatus: (status) => status != null && status < 500,
         ),
         onSendProgress: (sent, total) {
@@ -188,10 +188,7 @@ class LectureService {
 
     try {
       final response = await http
-          .get(
-            uri,
-            headers: _headers(appState.accessToken),
-          )
+          .get(uri, headers: _headers(appState.accessToken))
           .timeout(ApiConfig.connectionTimeout);
 
       if (response.statusCode == 200) {
@@ -261,17 +258,20 @@ class LectureService {
     required int lectureId,
   }) async {
     final uri = Uri.parse(
-      ApiConfig.getUrl('${ApiConfig.lecturesEndpoint}$lectureId'),
+      ApiConfig.getUrl(
+        ApiConfig.deleteLectureEndpoint.replaceFirst(
+          '{lecture_id}',
+          lectureId.toString(),
+        ),
+      ),
     );
 
     try {
       final response = await http
-          .delete(
-            uri,
-            headers: _headers(appState.accessToken),
-          )
+          .delete(uri, headers: _headers(appState.accessToken))
           .timeout(ApiConfig.connectionTimeout);
-
+      print(response.statusCode);
+      print(response.body);
       if (response.statusCode != 200 && response.statusCode != 204) {
         final error = json.decode(response.body);
         throw Exception(error['message'] ?? 'Failed to delete lecture');
@@ -281,6 +281,90 @@ class LectureService {
     }
   }
 
+  // static Future<Map<String, dynamic>> _uploadResource(
+  //   LectureResource resource,
+  //   AppStateProvider appState,
+  // ) async {
+  //   try {
+  //     print('📤 Starting resource upload...');
+
+  //     final file = File(resource.filePath);
+
+  //     // ✅ Check file exists
+  //     if (!await file.exists()) {
+  //       throw Exception('File not found');
+  //     }
+
+  //     // ✅ Check size (optional but recommended)
+  //     final fileSize = await file.length();
+  //     print('📦 File size: ${fileSize / 1024} KB');
+
+  //     if (fileSize > 10 * 1024 * 1024) {
+  //       throw Exception('File too large. Maximum 10MB.');
+  //     }
+
+  //     // ✅ Build FormData
+  //     FormData formData = FormData.fromMap({
+  //       'resource_type': resource.resourceExtension.toLowerCase(),
+  //       'query': resource.query,
+  //       'file': await MultipartFile.fromFile(
+  //         resource.filePath,
+  //         filename: resource.filePath.split('/').last,
+  //       ),
+  //     });
+
+  //     // 🚀 Send request
+  //     final response = await _dio.post(
+  //       ApiConfig.getUrl(ApiConfig.uploadGeneratedFileEndpoint),
+  //       data: formData,
+  //       options: Options(
+  //         headers: {'Authorization': 'Bearer ${appState.accessToken}'},
+  //         validateStatus: (status) => status != null && status < 500,
+  //       ),
+  //       onSendProgress: (sent, total) {
+  //         if (total != 0) {
+  //           final progress = (sent / total * 100).toStringAsFixed(0);
+  //           print('📊 Upload progress: $progress%');
+  //         }
+  //       },
+  //     );
+
+  //     // ✅ Handle response
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       final raw = response.data;
+
+  //       print('🔎 RAW RESPONSE TYPE: ${raw.runtimeType}');
+  //       print('🔎 RAW RESPONSE: $raw');
+
+  //       final data = raw is String
+  //           ? jsonDecode(raw) as Map<String, dynamic>
+  //           : Map<String, dynamic>.from(raw as Map);
+
+  //       // size_bytes can come back as a nested map from the server — normalize it
+  //       if (data['size_bytes'] is Map) {
+  //         data['size_bytes'] = null;
+  //       }
+
+  //       return data;
+  //     } else {
+  //       final errorData = response.data is String
+  //           ? jsonDecode(response.data)
+  //           : response.data;
+
+  //       throw Exception(errorData['detail'] ?? 'Upload failed');
+  //     }
+  //   } on DioException catch (e) {
+  //     if (e.type == DioExceptionType.connectionTimeout) {
+  //       throw Exception('Connection timeout. Check internet.');
+  //     } else if (e.type == DioExceptionType.sendTimeout) {
+  //       throw Exception('Upload timeout. File might be too large.');
+  //     } else if (e.response != null) {
+  //       throw Exception(e.response!.data['detail'] ?? 'Upload failed');
+  //     } else {
+  //       throw Exception('Network error: ${e.message}');
+  //     }
+  //   }
+  // }
   static Future<Map<String, dynamic>> _uploadResource(
     LectureResource resource,
     AppStateProvider appState,
@@ -288,14 +372,43 @@ class LectureService {
     try {
       print('📤 Starting resource upload...');
 
+      // 🟢 CASE 1: WEBSITE (no file)
+      if (resource.resourceExtension.toLowerCase() == 'website') {
+        final response = await _dio.post(
+          ApiConfig.getUrl(ApiConfig.uploadGeneratedFileEndpoint),
+          data: {
+            'resource_type': 'website',
+            'query': resource.query,
+            'url': resource.filePath, // 👈 use filePath to store URL
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer ${appState.accessToken}',
+              'Content-Type': 'application/json',
+            },
+            validateStatus: (status) => status != null && status < 500,
+          ),
+        );
+
+        final raw = response.data;
+
+        print('🔎 RAW RESPONSE TYPE: ${raw.runtimeType}');
+        print('🔎 RAW RESPONSE: $raw');
+
+        final data = raw is String
+            ? jsonDecode(raw) as Map<String, dynamic>
+            : Map<String, dynamic>.from(raw as Map);
+
+        return data;
+      }
+
+      // 🔵 CASE 2: FILE (pdf, image, etc.)
       final file = File(resource.filePath);
 
-      // ✅ Check file exists
       if (!await file.exists()) {
         throw Exception('File not found');
       }
 
-      // ✅ Check size (optional but recommended)
       final fileSize = await file.length();
       print('📦 File size: ${fileSize / 1024} KB');
 
@@ -303,9 +416,8 @@ class LectureService {
         throw Exception('File too large. Maximum 10MB.');
       }
 
-      // ✅ Build FormData
       FormData formData = FormData.fromMap({
-        'resource_type': resource.resourceType.toLowerCase(),
+        'resource_type': resource.resourceExtension.toLowerCase(),
         'query': resource.query,
         'file': await MultipartFile.fromFile(
           resource.filePath,
@@ -313,7 +425,6 @@ class LectureService {
         ),
       });
 
-      // 🚀 Send request
       final response = await _dio.post(
         ApiConfig.getUrl(ApiConfig.uploadGeneratedFileEndpoint),
         data: formData,
@@ -329,7 +440,6 @@ class LectureService {
         },
       );
 
-      // ✅ Handle response
       if (response.statusCode == 200 || response.statusCode == 201) {
         final raw = response.data;
 
@@ -340,7 +450,6 @@ class LectureService {
             ? jsonDecode(raw) as Map<String, dynamic>
             : Map<String, dynamic>.from(raw as Map);
 
-        // size_bytes can come back as a nested map from the server — normalize it
         if (data['size_bytes'] is Map) {
           data['size_bytes'] = null;
         }
@@ -375,10 +484,10 @@ class LectureService {
     // 🔁 Loop over each resource
     for (var resource in request.resources) {
       final uploaded = await _uploadResource(resource, appState);
-
+      print('3dina al upload w raga3na b: $uploaded\n');
       updatedResources.add(
         LectureResource(
-          resourceType: uploaded['resource_type'] as String,
+          resourceExtension: uploaded['resource_type'] as String,
           filePath: uploaded['file_path'] as String,
           query: uploaded['query'] as String,
         ),
@@ -402,11 +511,17 @@ class LectureService {
         .timeout(ApiConfig.connectionTimeout);
     print("5lst flstart\n");
 
-    _checkStatus(res);
+    // _checkStatus(res);
+    print('Raw response: ${res.body}');
+    final decoded = jsonDecode(res.body);
+    print('Decoded response: $decoded');
 
-    return StartSessionResponse.fromJson(
-      Map<String, dynamic>.from(jsonDecode(res.body) as Map),
-    );
+    _checkStatus(res);
+    // if (decoded is! Map<String, dynamic>) {
+    //   throw Exception("Expected Map but got ${decoded.runtimeType}");
+    // }
+
+    return StartSessionResponse.fromJson(decoded as Map<String, dynamic>);
   }
 
   /// POST /sessions/start-prepared/{lecture_id}
@@ -456,7 +571,7 @@ class LectureService {
   }
 
   /// POST /sessions/{session_id}/approve
-  static Future<void> approve(int sessionId, AppStateProvider appState) async {
+  static Future<bool> approve(int sessionId, AppStateProvider appState) async {
     final res = await _client
         .post(
           Uri.parse(
@@ -468,7 +583,17 @@ class LectureService {
         )
         .timeout(ApiConfig.connectionTimeout);
 
-    _checkStatus(res);
+    print(
+      "sessionid: $sessionId,\n res.body: ${res.body} \n res.statusCode: ${res.statusCode}",
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to approve session');
+    }
+
+    final data = jsonDecode(res.body);
+
+    return data['status'].toLowerCase() == 'approved'; // "approved"
   }
 
   /// POST /sessions/{session_id}/reject
@@ -488,33 +613,33 @@ class LectureService {
           body: jsonEncode({'feedback': feedback}),
         )
         .timeout(ApiConfig.connectionTimeout);
-
+ print(res);
     _checkStatus(res);
   }
 
   /// GET /sessions/{session_id}/content
-  static Future<SessionContent> getContent(
-    int sessionId,
-    AppStateProvider appState,
-  ) async {
-    final res = await _client
-        .get(
-          Uri.parse(
-            ApiConfig.getUrl(
-              ApiConfig.getLectureContentEndpoint,
-            ).replaceAll('{session_id}', sessionId.toString()),
-          ),
-          headers: _headers(appState.accessToken),
-        )
-        .timeout(ApiConfig.connectionTimeout);
+  // static Future<SessionContent> getContent(
+  //   int sessionId,
+  //   AppStateProvider appState,
+  // ) async {
+  //   final res = await _client
+  //       .get(
+  //         Uri.parse(
+  //           ApiConfig.getUrl(
+  //             ApiConfig.getLectureContentEndpoint,
+  //           ).replaceAll('{session_id}', sessionId.toString()),
+  //         ),
+  //         headers: _headers(appState.accessToken),
+  //       )
+  //       .timeout(ApiConfig.connectionTimeout);
 
-    _checkStatus(res);
-    return SessionContent.fromJson(
-      jsonDecode(res.body) as Map<String, dynamic>,
-    );
-  }
+  //   _checkStatus(res);
+  //   return SessionContent.fromJson(
+  //     jsonDecode(res.body) as Map<String, dynamic>,
+  //   );
+  // }
 
-  /// GET /sessions/{session_id}/lecture-pdf
+  // /// GET /sessions/{session_id}/lecture-pdf
   static Future<List<int>> getLecturePdfBytes(
     int sessionId,
     AppStateProvider appState,
@@ -536,4 +661,178 @@ class LectureService {
     _checkStatus(res);
     return res.bodyBytes;
   }
+  // static Future<List<int>> getContentBytes(
+  //   int sessionId,
+  //   AppStateProvider appState,
+  // ) async {
+  //   final res = await _client
+  //       .get(
+  //         Uri.parse(
+  //           ApiConfig.getUrl(
+  //             ApiConfig.getLectureContentEndpoint,
+  //           ).replaceAll('{session_id}', sessionId.toString()),
+  //         ),
+  //         headers: _headers(appState.accessToken),
+  //       )
+  //       .timeout(ApiConfig.connectionTimeout);
+
+  //   if (res.statusCode == 404) {
+  //     throw const ApiException('No content available yet.', statusCode: 404);
+  //   }
+  //   _checkStatus(res);
+  //   return res.bodyBytes;
+  // }
+  // static Future<List<int>> getLectureGeneratedResourceBytes(
+  //   int sessionId,
+  //   GenContentType contentType,
+  //   AppStateProvider appState,
+  // ) async {
+  //   String contentTypePathParam = GenContentType.toApiString(contentType);
+  //   String content_type = '';
+  //   String file_key = '';
+
+  //   switch (contentType) {
+  //     case GenContentType.script:
+  //       content_type = 'text/plain';
+  //       file_key = 'primary';
+  //       break;
+  //     case GenContentType.lecture:
+  //       content_type = 'application/pdf';
+  //       file_key = 'primary';
+  //       break;
+  //     case GenContentType.worksheet:
+  //       content_type = 'application/pdf';
+  //       file_key = 'primary';
+  //       break;
+  //     case GenContentType.quiz:
+  //       content_type = 'application/pdf';
+  //       file_key = 'primary';
+  //       break;
+  //     case GenContentType.knowledgeGraph:
+  //       content_type = 'text/html';
+  //       file_key = 'primary';
+  //       break;
+  //     case GenContentType.worksheetAnswers:
+  //       content_type = 'application/pdf';
+  //       file_key = 'answers';
+  //       break;
+  //     case GenContentType.quizAnswers:
+  //       content_type = 'application/pdf';
+  //       file_key = 'answers';
+  //       break;
+  //     default:
+  //       throw Exception('Unsupported content type');
+  //   }
+
+  //   final res = await _client
+  //       .get(
+  //         Uri.parse(
+  //           ApiConfig.getUrl(ApiConfig.getLectureGeneratedResourceEndpoint)
+  //               .replaceAll('{session_id}', sessionId.toString())
+  //               .replaceAll('{content_type}', contentTypePathParam),
+  //         ),
+  //         headers: {
+  //           'Content-Type': content_type,
+  //           'Accept': content_type,
+  //           'ngrok-skip-browser-warning': 'true',
+  //           'Authorization': 'Bearer $appState.accessToken',
+  //         },
+  //         queryParams: {
+  //           'file_key': file_key,
+  //         },
+  //       )
+  //       .timeout(ApiConfig.connectionTimeout);
+
+  //   if (res.statusCode == 404) {
+  //     throw const ApiException('No content available yet.', statusCode: 404);
+  //   }
+  //   _checkStatus(res);
+  //   return res.bodyBytes;
+  // }
+  static Future<List<int>> getLectureGeneratedResourceBytes(
+    int sessionId,
+    GenContentType contentType,
+    AppStateProvider appState,
+  ) async {
+    final contentTypePathParam = GenContentType.toApiString(contentType);
+
+    String fileKey, contenType;
+
+    switch (contentType) {
+      case GenContentType.worksheetAnswers:
+      case GenContentType.quizAnswers:
+        fileKey = 'answers';
+        break;
+      default:
+        fileKey = 'primary';
+    }
+    switch (contentType) {
+      case GenContentType.script:
+        contenType = 'text/plain';
+      case GenContentType.knowledgeGraph:
+        contenType = 'text/html';
+        break;
+      default:
+        contenType = 'application/pdf';
+    }
+
+    final uri = Uri.parse(
+      ApiConfig.getUrl(ApiConfig.getLectureGeneratedResourceEndpoint)
+          .replaceAll('{session_id}', sessionId.toString())
+          .replaceAll('{content_type}', contentTypePathParam),
+    ).replace(queryParameters: {'file_key': fileKey});
+
+    final res = await _client
+        .get(
+          uri,
+          headers: {
+            'Authorization': 'Bearer ${appState.accessToken}',
+            'ngrok-skip-browser-warning': 'true',
+            'Accept': contenType,
+          },
+        )
+        .timeout(ApiConfig.connectionTimeout);
+
+    if (res.statusCode == 404) {
+      throw const ApiException('No content available yet.', statusCode: 404);
+    }
+
+    _checkStatus(res);
+
+    return res.bodyBytes;
+  }
+
+static Future<List<String>> getFeedbackSuggestions(
+  AppStateProvider appState,
+  int sessionId,
+) async {
+  try {
+    final response = await _client.get(
+      Uri.parse(
+        ApiConfig.getUrl(
+          ApiConfig.getFeedbackSuggestionsEndpoint
+            .replaceAll('{session_id}', sessionId.toString()),
+        ),
+      ),
+      headers: _headers(appState.accessToken),
+    );
+
+    _checkStatus(response);
+
+    final decoded = jsonDecode(response.body);
+
+    if (decoded is Map<String, dynamic>) {
+      final suggestions = decoded['suggestions'];
+
+      if (suggestions is List) {
+        return suggestions.map((e) => e.toString()).toList();
+      }
+    }
+
+    throw Exception('Invalid response format');
+  } catch (e) {
+    throw Exception('Failed to fetch feedback suggestions: $e');
+  }
+}
+
 }

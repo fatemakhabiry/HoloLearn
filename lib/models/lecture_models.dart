@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Models for lecture-related data
 
 class LectureCreateResponse {
@@ -103,6 +105,8 @@ class LectureDetailResponse {
   final String startTime;
   final String endTime;
   final String status;
+  
+
 
   LectureDetailResponse({
     required this.lectureId,
@@ -147,7 +151,7 @@ class LectureDetailResponse {
     };
   }
 }
-
+//  lecture details response to include file update and schedule change info
 class LectureUpdateResponse {
   final String message;
   final int lectureId;
@@ -217,28 +221,64 @@ class LectureUpdateResponse {
 }
 
 
-enum ContentType {
+enum GenContentType {
   script,
+  lecture,
   worksheet,
   quiz,
-  summary,
   knowledgeGraph,
+  worksheetAnswers,
+  quizAnswers,
   unknown;
-
-  static ContentType fromString(String? value) {
+ 
+  static GenContentType fromString(String? value) {
     switch (value) {
-      case 'script':
-        return ContentType.script;
-      case 'worksheet':
-        return ContentType.worksheet;
-      case 'quiz':
-        return ContentType.quiz;
-      case 'summary':
-        return ContentType.summary;
-      case 'knowledge_graph':
-        return ContentType.knowledgeGraph;
-      default:
-        return ContentType.unknown;
+      case 'script':         return GenContentType.script;
+      case 'worksheet':      return GenContentType.worksheet;
+      case 'quiz':           return GenContentType.quiz;
+      case 'knowledge_graph':return GenContentType.knowledgeGraph;
+      case 'worksheet_answers': return GenContentType.worksheetAnswers;
+      case 'quiz_answers':   return GenContentType.quizAnswers;
+      case 'lecture':        return GenContentType.lecture;
+      default:               return GenContentType.unknown;
+    }
+  }
+ 
+  static String toApiString(GenContentType type) {
+    switch (type) {
+      case GenContentType.script:           return 'script';
+      case GenContentType.worksheet:        return 'worksheet';
+      case GenContentType.quiz:             return 'quiz';
+      case GenContentType.knowledgeGraph:   return 'knowledge_graph';
+      case GenContentType.worksheetAnswers: return 'worksheet';
+      case GenContentType.quizAnswers:      return 'quiz';
+      default:                              return 'unknown';
+    }
+  }
+ 
+  String get displayName {
+    switch (this) {
+      case GenContentType.script:           return 'Script';
+      case GenContentType.lecture:          return 'Lecture';
+      case GenContentType.worksheet:        return 'Worksheet';
+      case GenContentType.quiz:             return 'Quiz';
+      case GenContentType.knowledgeGraph:   return 'Knowledge Graph';
+      case GenContentType.worksheetAnswers: return 'Worksheet Answers';
+      case GenContentType.quizAnswers:      return 'Quiz Answers';
+      default:                              return 'Unknown';
+    }
+  }
+ 
+  IconData get icon {
+    switch (this) {
+      case GenContentType.script:           return Icons.description_outlined;
+      case GenContentType.lecture:          return Icons.play_circle_outline;
+      case GenContentType.worksheet:        return Icons.assignment_outlined;
+      case GenContentType.quiz:             return Icons.quiz_outlined;
+      case GenContentType.knowledgeGraph:   return Icons.account_tree_outlined;
+      case GenContentType.worksheetAnswers: return Icons.check_circle_outline;
+      case GenContentType.quizAnswers:      return Icons.fact_check_outlined;
+      default:                              return Icons.file_present_outlined;
     }
   }
 }
@@ -247,18 +287,18 @@ enum ContentType {
 
 class LectureResource {
   final String
-  resourceType; // pdf · docx · pptx · audio · video · website · image · txt
+  resourceExtension; // pdf · docx · pptx · audio · video · website · image · txt
   final String filePath;
   final String query;
 
   const LectureResource({
-    required this.resourceType,
+    required this.resourceExtension,
     required this.filePath,
     required this.query,
   });
 
   Map<String, dynamic> toJson() => {
-    'resource_type': resourceType,
+    'resource_type': resourceExtension,
     'file_path': filePath,
     'query': query,
   };
@@ -295,13 +335,36 @@ class StartSessionResponse {
     required this.status,
   });
 
-  factory StartSessionResponse.fromJson(Map<String, dynamic> json) =>
-      StartSessionResponse(
-        sessionId: json['session_id'] as int,
-        lectureId: json['lecture_id'] as int,
-        threadId: json['thread_id'] as String,
-        status: json['status'] as String,
-      );
+// factory StartSessionResponse.fromJson(Map<String, dynamic> json) {
+//   return StartSessionResponse(
+//     sessionId: json['session_id'] is int
+//         ? json['session_id']
+//         : int.tryParse(json['session_id'].toString()) ?? 0,
+
+//     lectureId: json['lecture_id'] is int
+//         ? json['lecture_id']
+//         : int.tryParse(json['lecture_id'].toString()) ?? 0,
+
+//     threadId: json['thread_id']?.toString() ?? '',
+//     status: json['status']?.toString() ?? '',
+//   );
+// }
+factory StartSessionResponse.fromJson(dynamic json) {
+  print("🔥 fromJson CALLED WITH TYPE: ${json.runtimeType}");
+  print("🔥 VALUE: $json");
+
+  if (json is! Map<String, dynamic>) {
+    throw Exception("fromJson expected Map but got ${json.runtimeType}");
+  }
+
+  return StartSessionResponse(
+    sessionId: json['session_id'],
+    lectureId: json['lecture_id'],
+    threadId: json['thread_id'],
+    status: json['status'],
+  );
+}
+
 }
 
 // ── Session Status ────────────────────────────────────────────────────────────
@@ -327,56 +390,56 @@ class LectureVersion {
 
 // ── SSE Stream Event ──────────────────────────────────────────────────────────
 
-class LecturePaths {
-  final String? pdf;
-  final String? txt;
-  final String? json;
+// class LecturePaths {
+//   final String? pdf;
+//   final String? txt;
+//   final String? json;
 
-  const LecturePaths({this.pdf, this.txt, this.json});
+//   const LecturePaths({this.pdf, this.txt, this.json});
 
-  factory LecturePaths.fromJson(Map<String, dynamic> json) => LecturePaths(
-    pdf: json['pdf'] as String?,
-    txt: json['txt'] as String?,
-    json: json['json'] as String?,
-  );
-}
+//   factory LecturePaths.fromJson(Map<String, dynamic> json) => LecturePaths(
+//     pdf: json['pdf'] as String?,
+//     txt: json['txt'] as String?,
+//     json: json['json'] as String?,
+//   );
+// }
 
 // ── Content ───────────────────────────────────────────────────────────────────
 
-class ContentItem {
-  final ContentType type;
-  final String filePath;
-  final String? answersPath;
-  final String? extraPath;
+// class ContentItem {
+//   final ResourceType type;
+//   final String filePath;
+//   final String? answersPath;
+//   final String? extraPath;
 
-  const ContentItem({
-    required this.type,
-    required this.filePath,
-    this.answersPath,
-    this.extraPath,
-  });
+//   const ContentItem({
+//     required this.type,
+//     required this.filePath,
+//     this.answersPath,
+//     this.extraPath,
+//   });
 
-  factory ContentItem.fromJson(Map<String, dynamic> json) => ContentItem(
-    type: ContentType.fromString(json['type'] as String?),
-    filePath: json['file_path'] as String,
-    answersPath: json['answers_path'] as String?,
-    extraPath: json['extra_path'] as String?,
-  );
-}
+//   factory ContentItem.fromJson(Map<String, dynamic> json) => ContentItem(
+//     type: ResourceType.fromString(json['type'] as String?),
+//     filePath: json['file_path'] as String,
+//     answersPath: json['answers_path'] as String?,
+//     extraPath: json['extra_path'] as String?,
+//   );
+// }
 
-class SessionContent {
-  final int lectureId;
-  final List<ContentItem> content;
+// class SessionContent {
+//   final int lectureId;
+//   final List<ContentItem> content;
 
-  const SessionContent({required this.lectureId, required this.content});
+//   const SessionContent({required this.lectureId, required this.content});
 
-  factory SessionContent.fromJson(Map<String, dynamic> json) => SessionContent(
-    lectureId: json['lecture_id'] as int,
-    content: (json['content'] as List<dynamic>)
-        .map((e) => ContentItem.fromJson(e as Map<String, dynamic>))
-        .toList(),
-  );
-}
+//   factory SessionContent.fromJson(Map<String, dynamic> json) => SessionContent(
+//     lectureId: json['lecture_id'] as int,
+//     content: (json['content'] as List<dynamic>)
+//         .map((e) => ContentItem.fromJson(e as Map<String, dynamic>))
+//         .toList(),
+//   );
+// }
 enum ProcessingLifecycle {
   idle,
   starting,

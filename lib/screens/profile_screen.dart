@@ -68,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     //   context,
     //   MaterialPageRoute(builder: (context) => TeacherLecturesScreen()),
     // );
-    Navigator.pushNamed(context, AppRoutes.teacherLectures);
+    Navigator.pushNamed(context, AppRoutes.lectureHistory);
   }
 
   void _changeVoiceSample() {

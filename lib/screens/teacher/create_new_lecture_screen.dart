@@ -5,9 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import'../../constants/constants.dart';
+import '../../constants/constants.dart';
 import '../../services/avatar_service.dart';
 import '../../services/course_service.dart';
 import '../../services/lecture_service.dart';
@@ -133,8 +134,25 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
 
   // ─── Flow handlers ────────────────────────────────────────────────────────
 
+  // Future<void> _handlePreparedFlow() async {
+  //     final appState = context.read<AppStateProvider>();
+  //   final lectureResponse = await LectureService.createLectureDraft(
+  //     appState: appState,
+  //     title: lectureTitle!,
+  //     courseCode: courseCode!,
+  //     filePath: _selectedFiles.first.path!,
+  //   );
+  //   appState.setLectureId(lectureResponse.lectureId);
+  //   await AvatarService.checkAvatarStatus(appState);
+  //   if (!mounted) return;
+  //   Navigator.pushNamed(
+  //     context,
+  //     appState.isFirstTimeLogin ? AppRoutes.createAvatar : AppRoutes.lectureSetup,
+  //   );
+  // }
   Future<void> _handlePreparedFlow() async {
-      final appState = context.read<AppStateProvider>();
+    final appState = context.read<AppStateProvider>();
+    final lectureState = context.read<LectureStateProvider>();
     final lectureResponse = await LectureService.createLectureDraft(
       appState: appState,
       title: lectureTitle!,
@@ -142,12 +160,41 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       filePath: _selectedFiles.first.path!,
     );
     appState.setLectureId(lectureResponse.lectureId);
-    await AvatarService.checkAvatarStatus(appState);
+
+    // Start prepared session to get sessionId
+    final sessionResponse = await LectureService.startPreparedSession(
+      appState,
+      lectureResponse.lectureId,
+    );
+    lectureState.setSessionId(sessionResponse.sessionId);
+    lectureState.setLectureId(appState.lectureId);
+    lectureState.setLectureType('prepared');
+
+    // ← Save the mapping for both types
+    await StorageHelper.saveLectureSessionId(
+      lectureResponse.lectureId,
+      sessionResponse.sessionId,
+    );
+    await StorageHelper.saveLectureType(lectureResponse.lectureId, 'prepared');
+
     if (!mounted) return;
     Navigator.pushNamed(
       context,
-      appState.isFirstTimeLogin ? AppRoutes.createAvatar : AppRoutes.lectureSetup,
+      AppRoutes.lectureprocessing,
+      arguments: {
+        'sessionId': sessionResponse.sessionId,
+        'lectureType': 'prepared',
+      },
     );
+
+    // await AvatarService.checkAvatarStatus(appState);
+    // if (!mounted) return;
+    // Navigator.pushNamed(
+    //   context,
+    //   appState.isFirstTimeLogin
+    //       ? AppRoutes.createAvatar
+    //       : AppRoutes.lectureSetup,
+    // );
   }
 
   void _handleGeneratedFlow() {
@@ -160,10 +207,9 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       context,
       listen: false,
     );
-     lectureState.setLectureTitle(lectureTitle!);
-     lectureState.setCourseCode(courseCode!);
-     lectureState.setLectureType('generated'); 
-
+    lectureState.setLectureTitle(lectureTitle!);
+    lectureState.setCourseCode(courseCode!);
+    lectureState.setLectureType('generated');
 
     final items = [
       ..._selectedFiles.map(
@@ -176,7 +222,10 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       ),
       ..._lectureUrls
           .where((url) => url.trim().isNotEmpty)
-          .map((url) => ResourceItem(fileName: url, filePath: url, resourceType: 'url')),
+          .map(
+            (url) =>
+                ResourceItem(fileName: url, filePath: url, resourceType: 'url'),
+          ),
     ];
 
     resourceProvider.clear();
@@ -186,7 +235,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
         lectureTitle: lectureTitle!,
         courseCode: courseCode!,
       );
-      
+
       Navigator.pushNamed(context, AppRoutes.insertQueries);
     } catch (e) {
       _showError(e.toString().replaceFirst("Exception: ", ""));
@@ -249,7 +298,9 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                   children: [
                     _buildInputTypeSelector(),
                     const SizedBox(height: AppStyles.spacingL),
-                    _buildFileUpload(selectedInputType == 'generated'? true : false),
+                    _buildFileUpload(
+                      selectedInputType == 'generated' ? true : false,
+                    ),
                     const SizedBox(height: AppStyles.spacingL),
                     if (selectedInputType == 'generated') ...[
                       _buildUrlSection(),
@@ -260,7 +311,9 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
                       const SizedBox(height: AppStyles.spacingL),
                       MessageDisplay(
                         isSuccess: _isSuccess,
-                        massegeBanner: _isSuccess ? 'Lecture Created Successfully' : 'Creation Failed',
+                        massegeBanner: _isSuccess
+                            ? 'Lecture Created Successfully'
+                            : 'Creation Failed',
                         message: _bannerMessage,
                         onDismiss: () => setState(() => _showBanner = false),
                       ),
@@ -291,16 +344,25 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     );
   }
 
-  Widget _buildFileUpload(bool allowMultiple ) {
+  Widget _buildFileUpload(bool allowMultiple) {
     return FileUploadWidget(
       controller: _fileUploadController,
       label: 'Lecture Content',
-      supportedFormats: const ['pdf', 'pptx', 'ppt', 'jpg', 'jpeg', 'png', 'gif', 'webp'],
+      supportedFormats: const [
+        'pdf',
+        'pptx',
+        'ppt',
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'webp',
+      ],
       isRequired: true,
       headerText: 'DRAG & DROP OR BROWSE FILES',
       subheaderText: 'PDF, PPTX, PPT, JPG, JPEG, PNG, GIF, WEBP',
       onFilesSelected: _onFilesSelected,
-      allowMultiple:allowMultiple ,
+      allowMultiple: allowMultiple,
     );
   }
 
@@ -364,17 +426,21 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
             hintText: 'Enter Lecture Title',
             label: 'Lecture Title',
             keyboardType: TextInputType.text,
-            validator: (value) =>
-                (value == null || value.isEmpty) ? 'Lecture title is required' : null,
+            validator: (value) => (value == null || value.isEmpty)
+                ? 'Lecture title is required'
+                : null,
             onSaved: (value) => lectureTitle = value,
           ),
           const SizedBox(height: AppStyles.spacingL),
           CustomDropdown(
-            label: _courseItems.isEmpty ? 'No course available' : 'Select Course Code',
+            label: _courseItems.isEmpty
+                ? 'No course available'
+                : 'Select Course Code',
             items: _courseItems,
             onChanged: (value) => setState(() => courseCode = value),
-            validator: (value) =>
-                (value == null || value.isEmpty) ? 'Course code is required' : null,
+            validator: (value) => (value == null || value.isEmpty)
+                ? 'Course code is required'
+                : null,
           ),
           const SizedBox(height: AppStyles.spacingL),
           CustomButton(

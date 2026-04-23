@@ -43,50 +43,58 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
   }
 
   Future<void> _submitFeedback() async {
-  if (_feedbackController.text.isNotEmpty) {
-    setState(() => _isLoading = true);
+    if (_feedbackController.text.isNotEmpty) {
+      setState(() => _isLoading = true);
 
-    final feedback = _feedbackController.text.trim();
-    final appState = context.read<AppStateProvider>();
-    final lectureState = context.read<LectureStateProvider>();
+      final feedback = _feedbackController.text.trim();
+      final appState = context.read<AppStateProvider>();
+      final lectureState = context.read<LectureStateProvider>();
 
-    try {
-      await LectureService.rejectWithFeedback(
-        appState,
-        lectureState.sessionId,
-        feedback,
-      );
-
-      if (!mounted) return;
-
-      Navigator.pushNamed(context, AppRoutes.lectureprocessing);
-    } catch (e) {
-      if (mounted) {
-        CustomErrorHandler.show(
-          context,
-          message: 'Failed to submit feedback. Please try again.',
-          type: ErrorType.fail,
-          duration: const Duration(seconds: 4),
+      try {
+        await LectureService.rejectWithFeedback(
+          appState,
+          lectureState.sessionId,
+          feedback,
         );
+
+        if (!mounted) return;
+
+        Navigator.pushNamed(
+          context,
+          AppRoutes.lectureprocessing,
+          arguments: {
+            'sessionId': lectureState.sessionId,
+            'lectureType': 'generated',
+          },
+        );
+      } catch (e) {
+        if (mounted) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Failed to submit feedback. Please try again.',
+            type: ErrorType.fail,
+            duration: const Duration(seconds: 4),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    } else {
+      CustomErrorHandler.show(
+        context,
+        message: 'Feedback cannot be empty',
+        type: ErrorType.fail,
+        duration: const Duration(seconds: 4),
+      );
     }
-  } else {
-    CustomErrorHandler.show(
-      context,
-      message: 'Feedback cannot be empty',
-      type: ErrorType.fail,
-      duration: const Duration(seconds: 4),
-    );
   }
-}
 
   void _deleteLecture() {
     // Handle lecture deletion
     print('Lecture deleted');
+    LectureService.deleteLecture(appState: context.read<AppStateProvider>(), lectureId: context.read<LectureStateProvider>().lectureId);
   }
 
   Future<void> _addQuickSuggestion(String prompt) async {
@@ -95,12 +103,12 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 1200));
+      // await Future.delayed(const Duration(milliseconds: 1200));
 
       // Simulated API response - You can replace this with real API call later
-      List<String> suggestions = await _getSuggestionsFromApi(prompt).then(
-        (response) =>
-            response.split('\n').where((s) => s.trim().isNotEmpty).toList(),
+      List<String> suggestions = await LectureService.getFeedbackSuggestions(
+        context.read<AppStateProvider>(),
+        context.read<LectureStateProvider>().sessionId,
       );
 
       // Add all suggestions to the feedback

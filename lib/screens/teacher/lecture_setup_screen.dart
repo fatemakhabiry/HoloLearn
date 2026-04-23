@@ -5,7 +5,7 @@ import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
+import '../../state/processing_notifier.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
@@ -40,6 +40,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   bool _showBanner = false;
   bool _success = false;
   String? errorMessage;
+  bool _hasCheckedRescheduleMode = false;
 
   @override
   void initState() {
@@ -57,43 +58,55 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
     }
   }
 
-  // ✅ Add flag to prevent multiple checks
-  bool _hasCheckedRescheduleMode = false;
+  // void _checkRescheduleMode() {
+  //   final lectureState = Provider.of<LectureStateProvider>(
+  //     context,
+  //     listen: false,
+  //   );
 
+  //   print('🔍 Checking reschedule mode...');
+  //   print('   Lecture ID: ${lectureState.lectureId}');
+  //   print('   Date: ${lectureState.lectureDate}');
+  //   print('   Start Time: ${lectureState.lectureStartTime}');
+
+  //   if (lectureState.lectureId > 0 && lectureState.sessionId == 0) {
+  //     setState(() {
+  //       isRescheduleMode = true;
+  //     });
+
+  //     print('✅ Reschedule mode ACTIVATED');
+
+  //     // Pre-fill date if available
+  //     if (lectureState.lectureDate.isNotEmpty) {
+  //       selectedDate = lectureState.lectureDate;
+  //       _dateController.text = _formatDateForDisplay(lectureState.lectureDate);
+
+  //       print('   Pre-filling date: $selectedDate');
+
+  //       // ✅ Fetch slots after setting date
+  //       Future.microtask(() => _fetchAvailableSlots());
+  //     }
+  //   } else {
+  //     print('ℹ️ Normal mode (not rescheduling)');
+  //   }
+  // }
   void _checkRescheduleMode() {
     final lectureState = Provider.of<LectureStateProvider>(
       context,
       listen: false,
     );
 
-    print('🔍 Checking reschedule mode...');
-    print('   Lecture ID: ${lectureState.lectureId}');
-    print('   Date: ${lectureState.lectureDate}');
-    print('   Start Time: ${lectureState.lectureStartTime}');
+    if (!lectureState.isRescheduling) return; // crystal clear
 
-    if (lectureState.lectureId > 0) {
-      setState(() {
-        isRescheduleMode = true;
-      });
+    setState(() => isRescheduleMode = true);
 
-      print('✅ Reschedule mode ACTIVATED');
-
-      // Pre-fill date if available
-      if (lectureState.lectureDate.isNotEmpty) {
-        selectedDate = lectureState.lectureDate;
-        _dateController.text = _formatDateForDisplay(lectureState.lectureDate);
-
-        print('   Pre-filling date: $selectedDate');
-
-        // ✅ Fetch slots after setting date
-        Future.microtask(() => _fetchAvailableSlots());
-      }
-    } else {
-      print('ℹ️ Normal mode (not rescheduling)');
+    if (lectureState.lectureDate.isNotEmpty) {
+      selectedDate = lectureState.lectureDate;
+      _dateController.text = _formatDateForDisplay(lectureState.lectureDate);
+      Future.microtask(() => _fetchAvailableSlots());
     }
   }
 
-  // ✅ Fix the time parsing helper
   TimeOfDay _parseTime(String timeString) {
     try {
       // Handle format "HH:mm" or "HH:mm:ss"
@@ -187,7 +200,6 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                     _parseTime(lectureState.lectureEndTime).hour &&
                 slot.endTime.minute ==
                     _parseTime(lectureState.lectureEndTime).minute,
-
           );
           if (matchingSlot != null) {
             selectedSlot = matchingSlot;
@@ -284,6 +296,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
 
       // ✅ Clear lecture state before navigating
       await lectureState.clearLectureState();
+    Provider.of<ProcessingNotifier>(context, listen: false).dismiss();
 
       // Navigate back after success
       Future.delayed(const Duration(seconds: 2), () {

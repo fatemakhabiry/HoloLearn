@@ -8,12 +8,15 @@ import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
 import '../../state/providers/app_state_provider.dart';
 
-
 class LectureProcessingScreen extends StatefulWidget {
   final int sessionId;
+  final String lectureType; // ← add
 
-  const LectureProcessingScreen({super.key, required this.sessionId});
-
+  const LectureProcessingScreen({
+    super.key,
+    required this.sessionId,
+    this.lectureType = 'generated', // ← default to generated
+  });
   @override
   State<LectureProcessingScreen> createState() =>
       _LectureProcessingScreenState();
@@ -123,15 +126,21 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
             });
           });
         }
+        if (job.isTerminal && _gearController.isAnimating) {
+          _gearController.stop();
+        }
+        if (job.isTerminal) {
+          _dotsTimer?.cancel();
+        }
 
         // Auto-navigate on done
-        if (job.isDone) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, AppRoutes.lecturepreview);
-            }
-          });
-        }
+        // if (job.isDone) {
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     if (mounted) {
+        //       Navigator.pushReplacementNamed(context, AppRoutes.lecturepreview);
+        //     }
+        //   });
+        // }
 
         return Scaffold(
           backgroundColor: AppColors.lightBackground,
@@ -189,7 +198,11 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: Text(
-                      job.stageTitle.isEmpty
+                      job.isTerminal
+                          ? job.stageTitle.isEmpty
+                                ? ''
+                                : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.Title}'
+                          : job.stageTitle.isEmpty
                           ? 'Your request is being processed$dots'
                           : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.Title}$dots',
                       key: job.stageTitle.isEmpty
@@ -273,6 +286,15 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                     ),
 
                   const Spacer(),
+                  CustomButton(
+                    text: 'Back to Dashboard',
+                    fullWidth: true,
+                    buttonType: ButtonType.primary,
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.teacherDashboard,
+                    ),
+                  ),
 
                   // Review / View button on awaiting approval or done
                   // if (job.isAwaitingApproval || job.isDone)
@@ -287,27 +309,50 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                   //       fullWidth: true,
                   //       onPressed: ()=>Navigator.pushNamed(context, AppRoutes.lecturepreview)),
                   //     ),
-                  CustomButton(
-                    text: 'Back to Dashboard',
-                    fullWidth: true,
-                    onPressed: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.teacherDashboard,
-                    ),
-                  ),
-                  if (job.isAwaitingApproval || job.isDone)...[
-                    const SizedBox(height: AppStyles.spacingM),
-                  CustomButton(
-                    text: job.isAwaitingApproval
-                        ? 'Review Lecture'
-                        : 'View Lecture',
-                    fullWidth: true,
-                    buttonType: ButtonType.secondary,
-                    onPressed: () =>
-                        Navigator.pushNamed(context, AppRoutes.lecturepreview),
-                  ),
-                  ],
-                  const SizedBox(height: AppStyles.spacingL),
+                  // if (widget.lectureType == 'generated') ...[
+                    if (job.isAwaitingApproval) ...[
+                      const SizedBox(height: AppStyles.spacingM),
+                      CustomButton(
+                        text: 'Review Lecture',
+                        fullWidth: true,
+                        buttonType: ButtonType.secondary,
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.lecturepreview,
+                          arguments: false,
+                         // draft review
+                        ),
+                      ),
+                    ] else if (job.isDone) ...[
+                      const SizedBox(height: AppStyles.spacingM),
+                      CustomButton(
+                        text: 'View Content',
+                        fullWidth: true,
+                        buttonType: ButtonType.secondary,
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.lecturepreview,
+                          arguments: true, // content ready
+                        ),
+                      ),
+                    ],
+                  // ] 
+                //   else if (widget.lectureType == 'prepared' &&
+                //       job.isDone) ...[
+                //     const SizedBox(height: AppStyles.spacingM),
+                //     CustomButton(
+                //       text: 'Schedule Lecture',
+                //       fullWidth: true,
+                //       buttonType: ButtonType.secondary,
+                //       onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                //         context,
+                //         AppRoutes.lectureSetup,
+                //         (route) =>
+                //             route.settings.name == AppRoutes.teacherDashboard,
+                //       ),
+                //     ),
+                //   ],
+                //   const SizedBox(height: AppStyles.spacingL),
                 ],
               ),
             ),
