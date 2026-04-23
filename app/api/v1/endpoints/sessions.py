@@ -1468,41 +1468,84 @@ _ALLOWED_EXTENSIONS = {
     "video":    {".mp4", ".mov", ".avi", ".mkv"},
     "audio":    {".wav", ".mp3", ".m4a"},
     "image":    {".jpg", ".jpeg", ".png", ".webp"},
+    "website":  set(),   # URL only — no file extension needed
     "other":    {".pdf", ".pptx", ".docx", ".txt", ".mp4", ".wav", ".jpg", ".png"},
 }
 
 
 @router.post("/upload-resource")
 async def upload_resource(
-    file:          UploadFile  = File(...),
-    resource_type: str         = Form(...),
-    query:         str         = Form(default=""),
-    teacher:       User        = Depends(get_current_teacher),
+    resource_type: str                  = Form(...),
+    query:         str                  = Form(default=""),
+    file:          Optional[UploadFile] = File(None),
+    url:           Optional[str]        = Form(None),
+    teacher:       User                 = Depends(get_current_teacher),
 ):
     """
-    Upload a single resource file from the mobile app.
-    Accepts resource_type in any casing (pdf, PDF, Pdf all work).
-    """
-    # Normalize to lowercase for extension lookup
-    resource_type_lower = resource_type.lower()
+    Add a resource before calling POST /session/start.
 
+    Accepts either a file upload OR a URL — not both.
+
+    Multipart fields
+    ----------------
+    resource_type : pdf | pptx | docx | video | audio | image | website | other
+    query         : relevance hint for the agent (can be empty)
+    file          : file picked from the device  (use this OR url)
+    url           : website / drive / any URL    (use this OR file)
+
+    Response
+    --------
+    {
+      "file_path":     "<saved path or url>",
+      "resource_type": "pdf",
+      "query":         "chapter 3 summary",
+      "source":        "file" | "url",
+      "filename":      "chapter3.pdf",   (file only)
+      "size_bytes":    204800            (file only)
+    }
+    """
+    # ── Must provide exactly one of file or url ───────────────────
+    if not file and not url:
+        raise HTTPException(status_code=400, detail="Provide either a file or a url.")
+    if file and url:
+        raise HTTPException(status_code=400, detail="Provide either a file or a url, not both.")
+
+    # ── Normalize resource_type ───────────────────────────────────
+    resource_type_lower = resource_type.lower()
     allowed_types = set(_ALLOWED_EXTENSIONS.keys())
     if resource_type_lower not in allowed_types:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid resource_type '{resource_type}'. "
-                   f"Allowed: {sorted(allowed_types)}",
+            detail=f"Invalid resource_type '{resource_type}'. Allowed: {sorted(allowed_types)}",
         )
 
+    # ── URL path ──────────────────────────────────────────────────
+    if url:
+        url = url.strip()
+        if not (url.startswith("http://") or url.startswith("https://")):
+            raise HTTPException(
+                status_code=400,
+                detail="url must start with http:// or https://",
+            )
+        return {
+            "file_path":     url,
+            "resource_type": resource_type_lower,
+            "query":         query,
+            "source":        "url",
+            "filename":      None,
+            "size_bytes":    None,
+        }
+
+    # ── File upload path ──────────────────────────────────────────
     original_name = file.filename or "upload"
-    ext = Path(original_name).suffix.lower()
-    allowed_exts = _ALLOWED_EXTENSIONS.get(resource_type_lower, set())
+    ext           = Path(original_name).suffix.lower()
+    allowed_exts  = _ALLOWED_EXTENSIONS.get(resource_type_lower, set())
 
     if ext not in allowed_exts:
         raise HTTPException(
             status_code=400,
-            detail=f"File extension '{ext}' is not allowed for "
-                   f"resource_type '{resource_type}'. Allowed: {sorted(allowed_exts)}",
+            detail=f"Extension '{ext}' not allowed for '{resource_type_lower}'. "
+                   f"Allowed: {sorted(allowed_exts)}",
         )
 
     uploads_dir  = Path(settings.UPLOADS_DIR) if settings.UPLOADS_DIR else Path("uploads")
@@ -1522,8 +1565,9 @@ async def upload_resource(
 
     return {
         "file_path":     str(save_path.resolve()),
-        "resource_type": resource_type_lower,   # return lowercase to client
+        "resource_type": resource_type_lower,
         "query":         query,
+        "source":        "file",
         "filename":      original_name,
         "size_bytes":    len(content),
     }
@@ -1688,21 +1732,21 @@ async def start_prepared_session(
 # ── Progress metadata map ──────────────────────────────────────────────────────
 _STEP_PROGRESS = {
     "starting": {
-        "percent":     5,
+        "percent":     15,
         "step_number": 1,
         "total_steps": 3,
         "step_label":  "Starting",
         "description": "Initializing your session…",
     },
     "generating_lecture": {
-        "percent":     40,
+        "percent":     30,
         "step_number": 1,
         "total_steps": 3,
         "step_label":  "Processing Content",
         "description": "Our AI is analyzing your uploaded materials to build the lecture structure.",
     },
     "awaiting_approval": {
-        "percent":     50,
+        "percent":     45,
         "step_number": 1,
         "total_steps": 3,
         "step_label":  "Awaiting Your Review",
@@ -1710,13 +1754,13 @@ _STEP_PROGRESS = {
     },
     "regenerating": {
         "percent":     60,
-        "step_number": 1,
+        "step_number": 2,
         "total_steps": 3,
         "step_label":  "Regenerating Lecture",
         "description": "Applying your feedback and regenerating the lecture…",
     },
     "generating_content": {
-        "percent":     80,
+        "percent":     75,
         "step_number": 2,
         "total_steps": 3,
         "step_label":  "Generating Materials",

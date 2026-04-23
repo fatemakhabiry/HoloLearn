@@ -17,6 +17,9 @@ from app.models.course import Course
 from app.models.teacher import Teacher
 from app.models.lecture_pipeline import LecturePipeline, PipelineStatus
 from app.models.generated_content import GeneratedContent, ContentType
+from app.models.agent_session import AgentSession
+from app.models.lecture_version import LectureVersion
+from app.models.resource import Resource
 from app.api.deps import get_current_user, get_current_teacher
 from app.schemas.schedule_schemas import (
     ConfirmPublishResponse,
@@ -494,17 +497,33 @@ async def delete_lecture(
             detail="You can only delete your own lectures"
         )
     
-    # Free all schedules
+    # ── 1. Free all schedules (don't delete — just unlink) ────────
     schedules = session.exec(
         select(Schedule).where(Schedule.lecture_id == lecture_id)
     ).all()
-    
     for schedule in schedules:
         schedule.lecture_id = None
         schedule.status = "available"
         session.add(schedule)
-    
-    # Delete lecture
+
+    # ── 2. Delete child rows that have NOT NULL FK to lectures ────
+    for row in session.exec(select(AgentSession).where(AgentSession.lecture_id == lecture_id)).all():
+        session.delete(row)
+
+    for row in session.exec(select(LectureVersion).where(LectureVersion.lecture_id == lecture_id)).all():
+        session.delete(row)
+
+    for row in session.exec(select(GeneratedContent).where(GeneratedContent.lecture_id == lecture_id)).all():
+        session.delete(row)
+
+    for row in session.exec(select(Resource).where(Resource.lecture_id == lecture_id)).all():
+        session.delete(row)
+
+    pipeline = session.get(LecturePipeline, lecture_id)
+    if pipeline:
+        session.delete(pipeline)
+
+    # ── 3. Delete the lecture itself ──────────────────────────────
     session.delete(lecture)
     session.commit()
 
