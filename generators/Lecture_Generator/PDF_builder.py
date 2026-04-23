@@ -49,13 +49,13 @@ def build_styles():
         name='SlideBody',
         parent=styles['BodyText'],
         fontSize=14, textColor=colors.HexColor('#1a1a2e'),
-        alignment=TA_JUSTIFY, spaceAfter=6, leading=14,
+        alignment=TA_JUSTIFY, spaceAfter=8, leading=20,
     ))
     styles.add(ParagraphStyle(
         name='SlideBullet',
         parent=styles['BodyText'],
         fontSize=14, textColor=colors.HexColor('#1a1a2e'),
-        leftIndent=14, spaceAfter=5, leading=14,
+        leftIndent=14, spaceAfter=8, leading=20,
     ))
     styles.add(ParagraphStyle(
         name='SlideObjective',
@@ -114,9 +114,9 @@ def build_styles():
         parent=styles['BodyText'],
         fontSize=12, textColor=colors.HexColor('#4a0000'),
         leftIndent=10, rightIndent=10,
-        spaceAfter=7, leading=13,
+        spaceAfter=5, leading=15,
         backColor=colors.HexColor('#fff3e0'),
-        borderPadding=6,
+        borderPadding=8,
     ))
     styles.add(ParagraphStyle(
         name='TOCItem',

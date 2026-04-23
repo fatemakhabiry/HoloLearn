@@ -35,6 +35,26 @@ def _call_openrouter_sync(
     )
     return completion.choices[0].message.content
 
+# Groq Client
+def _call_groq_sync(
+    prompt: str,
+    api_key: str,
+    model: str = "llama-3.3-70b-versatile",
+    max_tokens: int = 8000,
+    temperature: float = 0.5,
+) -> str:
+    client = OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=api_key,
+    )
+    completion = client.chat.completions.create(
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return completion.choices[0].message.content
+
 
 # LectureGenerator
 
@@ -70,6 +90,13 @@ class LectureGenerator:
             max_tokens=self.max_tokens,
             temperature=self.temperature,
         )
+        # return _call_groq_sync(
+        #     prompt=prompt,
+        #     api_key=self.api_key,
+        #     model=self.model_name,
+        #     max_tokens=self.max_tokens,
+        #     temperature=self.temperature,
+        # )
 
     # Content extraction
     
@@ -89,13 +116,13 @@ CRITICAL INSTRUCTIONS FOR MATHEMATICAL CONTENT:
 - PRESERVE ALL subscripts, superscripts, and special characters
 - Include the mathematical logic and reasoning behind equations
 - Maintain the sequence of mathematical steps in derivations
+- Make sure any mathematical content is retrieved in latex format
 
 Guidelines:
 - Focus ONLY on information directly relevant to the query
 - Maintain COMPLETE accuracy for all mathematical content
 - Organize information logically
 - Include important details, examples, and explanations
-- Include ALL equations, formulas, and mathematical expressions mentioned
 - Include step-by-step mathematical derivations when present
 - Preserve technical terms and mathematical definitions
 - Note key concepts and mathematical relationships
@@ -104,15 +131,15 @@ FORMATTING FOR EQUATIONS:
 - Keep equations on separate lines when appropriate
 - Preserve multi-line derivations
 - Maintain equation numbering if present
-- Keep mathematical notation intact"""
+- Keep mathematical notation intact and preserve it in latex format"""
 
         user_message = (
             "Source Type: " + source_type + "\n\nQuery: " + query + "\n\nSource Text:\n" + text + "\n\n"
             "Extract and organize the relevant information that addresses the query.\n"
             "IMPORTANT: Include ALL mathematical equations, formulas, and derivations found in the source that relate to the query.\n"
-            "Provide a clear, structured summary that preserves ALL mathematical content.\n"
+            "Provide a clear, structured summary that preserves ALL mathematical content in latex format.\n"
             "IMPORTANT: In case of conceptual lectures, make sure all the topics are covered as per the query, "
-            "and make sure to NOT include any mathematical content if not present in the source text."
+            "Make sure to NOT include any mathematical content if not present in the source text."
         )
 
         full_prompt = system_instructions + "\n\n" + user_message
@@ -135,7 +162,7 @@ FORMATTING FOR EQUATIONS:
             combined_text = "\n\n".join(extracted_parts)
             synthesis_prompt = (
                 "You are synthesizing extracted information into a coherent summary.\n"
-                "CRITICAL: Preserve ALL mathematical equations, formulas, and derivations exactly as they appear. "
+                "CRITICAL: Preserve ALL mathematical equations, formulas, and derivations exactly as they appear and output them in latex format. "
                 "Make sure when encountering the * sign in a mathematical expression, it is retained as is.\n\n"
                 "Combine these extracted sections into a single, well-organized summary; "
                 "Maintaining both Conceptual clarity and Mathematical accuracy.\n"
@@ -162,26 +189,44 @@ FORMATTING FOR EQUATIONS:
     
     def generate_lecture_structure(self, combined_content: str, lecture_topic: str,
                                     image_entries: List[Dict] | None = None) -> Dict[str, Any]:
+        # # Build an optional image-hint block so the LLM knows images are present
+        # image_hint = ""
+        # if image_entries:
+        #     hint_lines = [
+        #         "\nIMAGE RESOURCES AVAILABLE:",
+        #         "The following user-supplied images will be placed on the right side of "
+        #         "the first " + str(len(image_entries)) + " main-content section slide(s).",
+        #         "When writing those sections, keep explanations self-contained in text as well, "
+        #         "but you MAY reference the image naturally (e.g. 'as illustrated in the figure').",
+        #     ]
+        #     for idx, img in enumerate(image_entries, 1):
+        #         hint_lines.append(f"  Image {idx}: {img.get('caption', img.get('path', ''))}")
+        #     image_hint = "\n".join(hint_lines) + "\n"
         # Build an optional image-hint block so the LLM knows images are present
         image_hint = ""
         if image_entries:
             hint_lines = [
                 "\nIMAGE RESOURCES AVAILABLE:",
-                "The following user-supplied images will be placed on the right side of "
-                "the first " + str(len(image_entries)) + " main-content section slide(s).",
-                "When writing those sections, keep explanations self-contained in text as well, "
+                "The following user-supplied images are available to be placed on the right side of "
+                "MAIN_CONTENT section slides ONLY (never on the Title, Learning Objectives, or Introduction slides).",
+                "Each image must be matched to the MAIN_CONTENT section whose subject matter best matches "
+                "the image caption — do NOT assign an image to a section just because it appears first.",
+                "Use the caption as the primary signal: read each section title and content, then place "
+                "the image beside the section it best illustrates (semantically).",
+                "Keep all explanations self-contained in text as well, "
                 "but you MAY reference the image naturally (e.g. 'as illustrated in the figure').",
+                "Images and their captions:",
             ]
             for idx, img in enumerate(image_entries, 1):
                 hint_lines.append(f"  Image {idx}: {img.get('caption', img.get('path', ''))}")
             image_hint = "\n".join(hint_lines) + "\n"
-
-        lecture_prompt = """You are an expert educator and instructional designer creating professional university-level lectures with strong mathematical content.
+ 
+        lecture_prompt = """You are an expert educator and instructional designer creating professional university-level lectures with strong mathematical content or strong conceptual focus.
 
 CRITICAL REQUIREMENTS FOR MATHEMATICAL CONTENT:
-- Include ALL mathematical equations from source materials
+- Include ALL mathematical equations from source materials EXACTLY as they appear, and preserve them in LATEX format
 - DO NOT include any mathematical content that is NOT present in the source materials
-- Show step-by-step mathematical derivations
+- Show step-by-step mathematical derivations in LATEX format
 - Explain the mathematical logic and reasoning
 - Include formulas with clear explanations
 - Provide mathematical proofs when relevant
@@ -211,7 +256,7 @@ Generate a complete lecture with the following EXACT structure:
 [Write an engaging, descriptive title]
 
 # LEARNING_OBJECTIVES:
-1. [First objective - include mathematical concepts]
+1. [First objective - include mathematical concepts (no equations)]
 2. [Second objective]
 3. [Third objective]
 4. [Fourth objective]
@@ -242,7 +287,8 @@ Generate a complete lecture with the following EXACT structure:
 [Detailed explanation]
 
 # MATHEMATICAL_DERIVATIONS:
-[INCLUDE THIS SECTION ONLY IF the source materials contain explicit mathematical derivations]
+[INCLUDE THIS SECTION ONLY IF the source materials contain explicit mathematical derivations. If QUERY is conceptual , OMIT this section entirely.]
+[Make sure any mathematical notation is preserved in latex format]
 Step 1: ...
 Step 2: ...
 

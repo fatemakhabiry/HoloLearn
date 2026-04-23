@@ -141,21 +141,21 @@ def generate_lecture(
 
 # Entry point
 
-# if __name__ == "__main__":
-#     pdf = generate_lecture(
-#         lecture_topic="Logistic Regression",
-#         output_pdf_path="output/Logistic Regression Slides Trinity.pdf",
-#         openrouter_api_key=os.getenv("openrouter_lecture"),
-#         sources={
-#             "pdf": [
-#                 r"main_notes_text.txt",
-#                 "Explain logistic regression",
-#                 r"logistic_rgression_text.txt",
-#                 "Summarize the key equations of logistic regression"
-#             ],
-#                 "image": [
-#                     r"LR.png", "Example plot showing logistic regression curve",
-#                 ],
-#         }
-#     )
-#     print("\n Generated PDF: " + pdf)
+if __name__ == "__main__":
+    pdf = generate_lecture(
+        lecture_topic="Naive Bayes Classifier",
+        output_pdf_path="output/Naive Bayes Classifier Slides trinity openrouter edited.pdf",
+        openrouter_api_key=os.getenv("openrouter_lecture"),
+        sources={
+            "pdf": [
+                r"main_notes_text.txt",
+                "Explain Naive Bayes classification, focusing on the key concepts, equations, and mathematical derivations.",
+                # r"logistic_rgression_text.txt",
+                # "Summarize the key equations of logistic regression"
+            ],
+                "image": [
+                r"naive bayes.webp", "Naive Bayes as a classifier" 
+                ],
+        }
+    )
+    print("\n Generated PDF: " + pdf)
