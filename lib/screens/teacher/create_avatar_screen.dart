@@ -8,7 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import'../../constants/constants.dart';
+import '../../constants/constants.dart';
 import '../../services/avatar_service.dart';
 import '../../state/providers/app_state_provider.dart';
 
@@ -270,67 +270,72 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
         title: "Create Hologram Avatar",
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppStyles.spacingL),
-        child: Column(
-          children: [
-            // Two step cards
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: LoadingOverlay(
+        isLoading: isLoading,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppStyles.spacingL),
+            child: Column(
               children: [
-                // STEP 1 Card
-                Expanded(
-                  child: UpoladCard(
-                    stepNumber: '1',
-                    icon: Icons.mic,
-                    primaryButtonText: 'RECORD VOICE',
-                    onPrimaryPressed: _recordVoice,
-                    secondaryButtonText: 'UPLOAD RECORD',
-                    onSecondaryPressed: _uploadRecord,
-                    subtext: 'Used only for avatar voice synthesis',
-                    hasFile: hasRecordedVoice,
-                  ),
-                ),
-                const SizedBox(width: AppStyles.spacingM),
+                // Two step cards
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // STEP 1 Card
+                    Expanded(
+                      child: UpoladCard(
+                        stepNumber: '1',
+                        icon: Icons.mic,
+                        primaryButtonText: 'RECORD VOICE',
+                        onPrimaryPressed: _recordVoice,
+                        secondaryButtonText: 'UPLOAD RECORD',
+                        onSecondaryPressed: _uploadRecord,
+                        subtext: 'Used only for avatar voice synthesis',
+                        hasFile: hasRecordedVoice,
+                      ),
+                    ),
+                    const SizedBox(width: AppStyles.spacingM),
 
-                // STEP 2 Card
-                Expanded(
-                  child: UpoladCard(
-                    stepNumber: '2',
-                    icon: Icons.photo,
-                    iconLabel: 'PHOTO',
-                    primaryButtonText: 'UPLOAD PHOTO',
-                    onPrimaryPressed: _uploadPhoto,
-                    subtext: 'Used as basis for 3D avatar model',
-                    hasFile: hasUploadedPhoto,
-                    isDashed: true,
-                  ),
+                    // STEP 2 Card
+                    Expanded(
+                      child: UpoladCard(
+                        stepNumber: '2',
+                        icon: Icons.photo,
+                        iconLabel: 'PHOTO',
+                        primaryButtonText: 'UPLOAD PHOTO',
+                        onPrimaryPressed: _uploadPhoto,
+                        subtext: 'Used as basis for 3D avatar model',
+                        hasFile: hasUploadedPhoto,
+                        isDashed: true,
+                      ),
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: AppStyles.spacingXL),
+
+                // Finish button
+                CustomButton(
+                  text: 'FINISH & GENERATE AVATAR',
+                  onPressed: _finishAndGenerate,
+                  buttonType: ButtonType.primary,
+                  fullWidth: true,
+                  isLoading: isLoading,
+                ),
+                const SizedBox(height: AppStyles.spacingXL),
+
+                if (message != null) ...[
+                  const SizedBox(height: AppStyles.spacingL),
+                  MessageDisplay(
+                    isSuccess: false,
+                    massegeBanner: "Error",
+                    message: message!,
+                    onDismiss: () => setState(() => message = null),
+                  ),
+                ],
               ],
             ),
-
-            const SizedBox(height: AppStyles.spacingXL),
-
-            // Finish button
-            CustomButton(
-              text: 'FINISH & GENERATE AVATAR',
-              onPressed: _finishAndGenerate,
-              buttonType: ButtonType.primary,
-              fullWidth: true,
-              isLoading: isLoading,
-            ),
-            const SizedBox(height: AppStyles.spacingXL),
-
-            if (message != null) ...[
-              const SizedBox(height: AppStyles.spacingL),
-              MessageDisplay(
-                isSuccess: false,
-                massegeBanner: "Error",
-                message: message!,
-                onDismiss: () => setState(() => message = null),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

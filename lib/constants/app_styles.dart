@@ -85,7 +85,7 @@ class AppStyles {
     fontFamily: AppFonts.primary,
     fontSize: AppFonts.fontSizeS,
     fontWeight: AppFonts.medium,
-    color: AppColors.darkBlue,
+    color: AppColors.secondaryColor,
     decoration: TextDecoration.none,
   );
 

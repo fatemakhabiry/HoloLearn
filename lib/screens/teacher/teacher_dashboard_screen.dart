@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
-import '../../models/lecture_models.dart';
 import '../../models/schedule_models.dart';
 import '../../services/schedule_service.dart';
 import '../../state/processing_notifier.dart';

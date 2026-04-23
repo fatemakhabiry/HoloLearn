@@ -14,7 +14,7 @@ class ProcessingNotifier extends ChangeNotifier {
   ProcessingNotifier({
     int pollIntervalSeconds = 3,
     this.useDemoMode = false,
-  }) : _pollEvery = Duration(seconds: max(1, pollIntervalSeconds));
+  }) : _pollEvery = Duration(seconds: max(30, pollIntervalSeconds));
 
   // ── State ─────────────────────────────────────────────────────────────────
   LectureProcessingModel _job = const LectureProcessingModel();
@@ -36,7 +36,7 @@ class ProcessingNotifier extends ChangeNotifier {
   bool get isDone => _job.isDone;
   bool get isAwaitingApproval => _job.isAwaitingApproval;
   bool get isTerminal => _job.isTerminal;
-  String get Title => _job.Title;
+  String get Title => _job.title;
 
 
   // ── Init from storage ─────────────────────────────────────────────────────

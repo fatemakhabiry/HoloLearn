@@ -30,28 +30,16 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
   bool _isLoading = true;
 
   void _handleDecline() {
+    setState(() {
+      _isLoading = true;
+    });
     Navigator.pushNamed(context, AppRoutes.refinecontent);
   }
 
-  // void _handleApprove() async{
-  //   try {
-  //     final lectureState = context.read<LectureStateProvider>();
-  //     final appState = context.read<AppStateProvider>();
-  //     await LectureService.approve(lectureState.sessionId, appState);
-
-  //     Navigator.pushNamed(context, AppRoutes.lectureprocessing);
-  //   } catch (e) {
-  //     if (mounted) {
-  //       CustomErrorHandler.show(
-  //         context,
-  //         message: 'Failed to start lecture processing. Please try again.',
-  //         type: ErrorType.fail,
-  //         duration: const Duration(seconds: 4),
-  //       );
-  //     }
-  //   }
-  // }
   void _handleApprove() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final lectureState = context.read<LectureStateProvider>();
       final appState = context.read<AppStateProvider>();
@@ -65,7 +53,9 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
         context,
         listen: false,
       ).startForSession(lectureState.sessionId, appState);
-
+      setState(() {
+        _isLoading = false;
+      });
       Navigator.pushNamed(
         context,
         AppRoutes.lectureprocessing,
@@ -76,6 +66,9 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
       );
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         CustomErrorHandler.show(
           context,
           message: 'Failed to approve lecture. Please try again.',
@@ -228,10 +221,11 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
 
   Widget _buildLecture() {
     final body;
+
     if (_hasError) {
       body = _buildError();
     } else if (_pdfBytes == null) {
-      body = const Center(child: CircularProgressIndicator());
+      body = const SizedBox();
     } else {
       body = SfPdfViewer.memory(
         _pdfBytes!,
@@ -239,33 +233,29 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
         onDocumentLoadFailed: (_) => _onLoadFailed(),
       );
     }
-    //  _hasError
-    //       ? _buildError()
-    //       : SfPdfViewer.memory(
-    //           _pdfBytes!,
-    //           controller: _pdfController,
-    //           onDocumentLoadFailed: (_) => _onLoadFailed(),
-    //         );
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Lecture Preview', showBackButton: true),
 
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadLecture,
-              child: _hasError
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.8,
-                          child: body,
-                        ),
-                      ],
-                    )
-                  : body,
-            ),
+      body: LoadingOverlay(
+        isLoading: _isLoading,
+        child: Center(
+          child: RefreshIndicator(
+            onRefresh: _loadLecture,
+            child: _hasError
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.8,
+                        child: body,
+                      ),
+                    ],
+                  )
+                : body,
+          ),
+        ),
+      ),
 
       bottomNavigationBar: (_isLoading || _hasError)
           ? null
@@ -310,23 +300,29 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
     return Scaffold(
       appBar: CustomAppBar(title: 'Content Preview', showBackButton: true),
 
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadContent,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(AppStyles.spacingM),
-                children: [
+      body: LoadingOverlay(
+        isLoading: _isLoading,
+        child: Center(
+          child: RefreshIndicator(
+            onRefresh: _loadContent,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppStyles.spacingM),
+              children: [
+                if (_hasError)
+                  _buildError()
+                else
                   SelectableText(
                     text,
                     style: AppStyles.bodyMedium.copyWith(height: 1.5),
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
+        ),
+      ),
 
-      bottomNavigationBar: _isLoading
+      bottomNavigationBar: _isLoading || _hasError
           ? null
           : SafeArea(
               child: Padding(

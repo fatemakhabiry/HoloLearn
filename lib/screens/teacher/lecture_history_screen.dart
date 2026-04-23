@@ -94,6 +94,9 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
       confirmButtonText: 'Yes, Delete',
       cancelButtonText: 'No',
       onConfirm: () {
+        setState(() {
+          isLoading = true;
+        });
         try {
           final appState = Provider.of<AppStateProvider>(
             context,
@@ -112,8 +115,11 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
                 );
                 await StorageHelper.clearLectureType(
                   myLectures[index].lectureId!,
-                ); 
+                );
                 // Refresh data after deletion
+                setState(() {
+                  isLoading = false;
+                });
                 fetchData();
                 CustomErrorHandler.show(
                   context,
@@ -134,6 +140,9 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
                 // });
               })
               .catchError((e) {
+                setState(() {
+                  isLoading = false;
+                });
                 CustomErrorHandler.show(
                   context,
                   message: 'Failed to delete lecture: ${e.toString()}',
@@ -141,6 +150,9 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
                 );
               });
         } catch (e) {
+          setState(() {
+            isLoading = false;
+          });
           CustomErrorHandler.show(
             context,
             message: 'Error: ${e.toString()}',
@@ -211,102 +223,108 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
     );
   }
 
-  void _handleViewContent(int index) async{
-  final lecture = myLectures[index];
+  void _handleViewContent(int index) async {
+    final lecture = myLectures[index];
 
-  if (lecture.lectureId == null) {
-    CustomErrorHandler.show(
-      context,
-      message: 'Cannot view content: Lecture ID is missing',
-      type: ErrorType.fail,
-    );
-    return;
-  }
-else {
-      // For prepared lectures, we can directly navigate to content
-  lecture.lectureType=await StorageHelper.getLectureType( lecture.lectureId!);
-
-  StorageHelper.getSessionIdForLecture(lecture.lectureId!).then((sessionId) {
-    if (!mounted) return;
-
-    if (sessionId == null) {
+    if (lecture.lectureId == null) {
       CustomErrorHandler.show(
         context,
-        message: 'Content not available yet.',
-        type: ErrorType.info,
+        message: 'Cannot view content: Lecture ID is missing',
+        type: ErrorType.fail,
       );
       return;
-    }
+    } else {
+      // For prepared lectures, we can directly navigate to content
+      lecture.lectureType = await StorageHelper.getLectureType(
+        lecture.lectureId!,
+      );
 
-    Navigator.pushNamed(
-      context,
-      AppRoutes.lectureContent,
-      arguments: lecture,
-    );
-  });
-}
-}
+      StorageHelper.getSessionIdForLecture(lecture.lectureId!).then((
+        sessionId,
+      ) {
+        if (!mounted) return;
+
+        if (sessionId == null) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Content not available yet.',
+            type: ErrorType.info,
+          );
+          return;
+        }
+
+        Navigator.pushNamed(
+          context,
+          AppRoutes.lectureContent,
+          arguments: lecture,
+        );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: 'My Lecture History'),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: loadTokenAndFetchData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppStyles.spacingL),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Display My Lectures from API
-                          if (myLectures.isEmpty)
-                            Text(
-                              'No lecture history available.',
-                              style: AppStyles.bodyMedium.copyWith(
-                                color: AppColors.textLight,
+      body: LoadingOverlay(
+        isLoading: isLoading,
+        child: Center(
+          child: RefreshIndicator(
+            onRefresh: loadTokenAndFetchData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(AppStyles.spacingL),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Display My Lectures from API
+                        if (myLectures.isEmpty)
+                          Text(
+                            'No lecture history available.',
+                            style: AppStyles.bodyMedium.copyWith(
+                              color: AppColors.textLight,
+                            ),
+                            textAlign: TextAlign.center,
+                          )
+                        else
+                          ...myLectures.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final lecture = entry.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppStyles.spacingM,
                               ),
-                              textAlign: TextAlign.center,
-                            )
-                          else
-                            ...myLectures.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final lecture = entry.value;
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppStyles.spacingM,
-                                ),
-                                child: LectureScheduleCard(
-                                  lectureTitle: lecture.lectureTitle,
-                                  date: lecture.formattedDate == ''
-                                      ? 'Drafted'
-                                      : lecture.formattedDate,
-                                  timeRange: lecture.timeRange == ''
-                                      ? ''
-                                      : lecture.timeRange,
-                                  status: lecture.status,
-                                  lectureType: lecture.lectureType, // ← add
-                                  editButtonText: 'RESCHEDULE',
-                                  cancelButtonText: 'DELETE ',
-                                  onEdit: () => _handleReschedule(index),
-                                  onCancel: () => _handleDelete(index),
-                                  onViewContent: () =>
-                                      _handleViewContent(index),
-                                ),
-                              );
-                            }).toList(),
-                        ],
-                      ),
-                    ],
-                  ),
+                              child: LectureScheduleCard(
+                                lectureTitle: lecture.lectureTitle,
+                                date: lecture.formattedDate == ''
+                                    ? 'Drafted'
+                                    : lecture.formattedDate,
+                                timeRange: lecture.timeRange == ''
+                                    ? ''
+                                    : lecture.timeRange,
+                                status: lecture.status,
+                                lectureType: lecture.lectureType, // ← add
+                                editButtonText: 'RESCHEDULE',
+                                cancelButtonText: 'DELETE ',
+                                onEdit: () => _handleReschedule(index),
+                                onCancel: () => _handleDelete(index),
+                                onViewContent: () => _handleViewContent(index),
+                              ),
+                            );
+                          }).toList(),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
 }

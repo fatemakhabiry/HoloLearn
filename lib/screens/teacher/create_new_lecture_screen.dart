@@ -285,7 +285,9 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: const CustomAppBar(title: 'Create Lecture', showBackButton: true),
-      body: Center(
+      body:LoadingOverlay(
+        isLoading: _isLoading,
+        child:  Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -324,7 +326,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
             ),
           ),
         ),
-      ),
+      ),),
     );
   }
 
@@ -447,7 +449,6 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
             text: selectedInputType == 'prepared'
                 ? 'AVATAR OPTIONS & SCHEDULING'
                 : 'NEXT:INSERT RESOURCES QUERIES',
-            isLoading: _isLoading,
             fullWidth: true,
             onPressed: _handleNext,
           ),

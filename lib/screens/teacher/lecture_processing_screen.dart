@@ -201,10 +201,10 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                       job.isTerminal
                           ? job.stageTitle.isEmpty
                                 ? ''
-                                : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.Title}'
+                                : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.title}'
                           : job.stageTitle.isEmpty
                           ? 'Your request is being processed$dots'
-                          : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.Title}$dots',
+                          : 'Step ${job.currentStep} of ${job.totalSteps}: ${job.title}$dots',
                       key: job.stageTitle.isEmpty
                           ? const ValueKey('processing')
                           : ValueKey(job.stageTitle),

@@ -7,7 +7,7 @@ class AppColors {
   static const Color primaryColor = Color(0xFF2562EB);
 
   /// Secondary blue - Used for accents and secondary elements
-  static const Color darkBlue = Color(0xFF433EA0);
+  static const Color secondaryColor = Color(0xFF433EA0);
 
   /// Light background - Used for cards, containers, and light surfaces
   static const Color lightBackground = Color(0xFFE8EFFF);

@@ -335,23 +335,7 @@ class StartSessionResponse {
     required this.status,
   });
 
-// factory StartSessionResponse.fromJson(Map<String, dynamic> json) {
-//   return StartSessionResponse(
-//     sessionId: json['session_id'] is int
-//         ? json['session_id']
-//         : int.tryParse(json['session_id'].toString()) ?? 0,
-
-//     lectureId: json['lecture_id'] is int
-//         ? json['lecture_id']
-//         : int.tryParse(json['lecture_id'].toString()) ?? 0,
-
-//     threadId: json['thread_id']?.toString() ?? '',
-//     status: json['status']?.toString() ?? '',
-//   );
-// }
 factory StartSessionResponse.fromJson(dynamic json) {
-  print("🔥 fromJson CALLED WITH TYPE: ${json.runtimeType}");
-  print("🔥 VALUE: $json");
 
   if (json is! Map<String, dynamic>) {
     throw Exception("fromJson expected Map but got ${json.runtimeType}");
@@ -481,7 +465,7 @@ class LectureProcessingModel {
   bool get isAwaitingApproval =>
       lifecycle == ProcessingLifecycle.awaitingApproval;
   bool get isDone => lifecycle == ProcessingLifecycle.completed;
-  String get Title => _title(stageTitle);
+  String get title => _title(stageTitle);
 
   // Add to LectureProcessingJob
   static ProcessingLifecycle parseLifecycle(String? s) => _parseLifecycle(s);

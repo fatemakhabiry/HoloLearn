@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/storage_helper.dart';
 
@@ -45,10 +46,14 @@ class AppStateProvider extends ChangeNotifier {
     if (savedEmail == null || savedPassword == null) return false;
 
     try {
-       await AuthService.login(
+      final data= await AuthService.login(
         email: savedEmail,
         password: savedPassword,
       );
+      setEmail(data['user']['email']);
+      setUserName(data['user']['full_name']);
+      setUserRole(data['user']['role']);
+      setAccessToken(data['access_token']);
       return true;
     } catch (_) {
       return false;

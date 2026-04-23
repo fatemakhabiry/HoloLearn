@@ -28,7 +28,7 @@ class CustomErrorHandler {
         icon = Icons.check_circle_outline;
         break;
       case ErrorType.info:
-        backgroundColor = AppColors.darkBlue;
+        backgroundColor = AppColors.secondaryColor;
         icon = Icons.info_outline;
         break;
     }

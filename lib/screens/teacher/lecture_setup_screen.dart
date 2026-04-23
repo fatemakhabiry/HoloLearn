@@ -25,7 +25,7 @@ class LectureSetupScreen extends StatefulWidget {
 
 class _LectureSetupScreenState extends State<LectureSetupScreen> {
   String selectedAvatar = 'standard';
-  bool isLoading = false;
+  bool _isLoading = false;
   bool isFetchingSlots = false;
   bool isRescheduleMode = false; // ✅ NEW: Track if we're rescheduling
   final TextEditingController _dateController = TextEditingController();
@@ -38,7 +38,6 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
 
   String message = "";
   bool _showBanner = false;
-  bool _success = false;
   String? errorMessage;
   bool _hasCheckedRescheduleMode = false;
 
@@ -58,38 +57,6 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
     }
   }
 
-  // void _checkRescheduleMode() {
-  //   final lectureState = Provider.of<LectureStateProvider>(
-  //     context,
-  //     listen: false,
-  //   );
-
-  //   print('🔍 Checking reschedule mode...');
-  //   print('   Lecture ID: ${lectureState.lectureId}');
-  //   print('   Date: ${lectureState.lectureDate}');
-  //   print('   Start Time: ${lectureState.lectureStartTime}');
-
-  //   if (lectureState.lectureId > 0 && lectureState.sessionId == 0) {
-  //     setState(() {
-  //       isRescheduleMode = true;
-  //     });
-
-  //     print('✅ Reschedule mode ACTIVATED');
-
-  //     // Pre-fill date if available
-  //     if (lectureState.lectureDate.isNotEmpty) {
-  //       selectedDate = lectureState.lectureDate;
-  //       _dateController.text = _formatDateForDisplay(lectureState.lectureDate);
-
-  //       print('   Pre-filling date: $selectedDate');
-
-  //       // ✅ Fetch slots after setting date
-  //       Future.microtask(() => _fetchAvailableSlots());
-  //     }
-  //   } else {
-  //     print('ℹ️ Normal mode (not rescheduling)');
-  //   }
-  // }
   void _checkRescheduleMode() {
     final lectureState = Provider.of<LectureStateProvider>(
       context,
@@ -208,9 +175,12 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
         }
 
         if (availableSlots.isEmpty) {
-          _showBanner = true;
-          _success = false;
-          message = "No available time slots for this date";
+          CustomErrorHandler.show(
+            context,
+            message: "No available time slots for this date",
+            type: ErrorType.fail,
+            duration: Duration(seconds: 5),
+          );
         }
       });
     } on ClientException {
@@ -226,9 +196,12 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
         if (mounted) {
           setState(() {
             isFetchingSlots = false;
-            _showBanner = true;
-            _success = false;
-            message = errorMessage!;
+            CustomErrorHandler.show(
+              context,
+              message: errorMessage!,
+              type: ErrorType.fail,
+              duration: Duration(seconds: 5),
+            );
             availableSlots = [];
           });
         }
@@ -245,7 +218,6 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
     if (!_formKey.currentState!.validate()) {
       setState(() {
         _showBanner = true;
-        _success = false;
         message = "Please fill all required fields correctly!";
       });
       return;
@@ -256,14 +228,13 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
     if (selectedSlot == null) {
       setState(() {
         _showBanner = true;
-        _success = false;
         message = "Please select a time slot";
       });
       return;
     }
 
     setState(() {
-      isLoading = true;
+      _isLoading = true;
       _showBanner = false;
     });
 
@@ -289,32 +260,31 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
 
       setState(() {
         message = response.message;
-        _showBanner = true;
-        _success = true;
-        isLoading = false;
+        _isLoading = false;
       });
 
       // ✅ Clear lecture state before navigating
       await lectureState.clearLectureState();
-    Provider.of<ProcessingNotifier>(context, listen: false).dismiss();
-
+      Provider.of<ProcessingNotifier>(context, listen: false).dismiss();
+      setState(() {
+        message = response.message;
+        _isLoading = false;
+      });
       // Navigate back after success
-      Future.delayed(const Duration(seconds: 2), () {
+        CustomErrorHandler.show(
+          context,
+          message: "Lecture Published Succesfully",
+          type: ErrorType.success,
+        );
+
         if (mounted) {
-          // Navigator.pushAndRemoveUntil(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => const TeacherDashboardScreen(),
-          //   ),
-          //   (route) => false,
-          // );
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.teacherDashboard,
             (route) => false,
           );
-        }
-      });
+      }
+
     } on ClientException {
       errorMessage = 'Cannot connect to server. Check internet or URL.';
     } on SocketException {
@@ -327,17 +297,15 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
       if (errorMessage != null) {
         if (mounted) {
           setState(() {
-            _showBanner = true;
-            _success = false;
             message = errorMessage!;
-            isLoading = false;
+            _isLoading = false;
           });
         }
         errorMessage = null;
       }
       if (mounted) {
         setState(() {
-          isLoading = false;
+          _isLoading = false;
         });
       }
     }
@@ -351,199 +319,202 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
         title: isRescheduleMode ? "Reschedule Lecture" : "Lecture Setup",
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppStyles.spacingL),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppStyles.spacingL),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                    boxShadow: AppStyles.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Avatar Options
-                      RadioOptionsGroup(
-                        sectionTitle: 'AVATAR OPTIONS',
-                        selectedId: selectedAvatar,
-                        options: AvatarOptions.options,
-                        onOptionSelected: (id) {
-                          setState(() {
-                            selectedAvatar = id;
-                          });
-                        },
+      body: LoadingOverlay(
+        isLoading: _isLoading,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppStyles.spacingL),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                        boxShadow: AppStyles.cardShadow,
                       ),
-                      const SizedBox(height: AppStyles.spacingL),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Avatar Options
+                          RadioOptionsGroup(
+                            sectionTitle: 'AVATAR OPTIONS',
+                            selectedId: selectedAvatar,
+                            options: AvatarOptions.options,
+                            onOptionSelected: (id) {
+                              setState(() {
+                                selectedAvatar = id;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
 
-                      // Scheduling Section Header
-                      Text(
-                        'SCHEDULING',
-                        style: AppStyles.labelStyle.copyWith(
-                          fontWeight: AppFonts.bold,
-                          fontSize: AppFonts.fontSizeXS,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: AppStyles.spacingM),
-
-                      // Date Picker
-                      CustomTextFormField(
-                        label: "Date",
-                        hintText: "DD/MM/YYYY",
-                        controller: _dateController,
-                        readOnly: true,
-                        onTap: () => _pickDate(context),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Date is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppStyles.spacingL),
-
-                      // Time Slot Dropdown
-                      if (isFetchingSlots)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppStyles.spacingM),
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryColor,
+                          // Scheduling Section Header
+                          Text(
+                            'SCHEDULING',
+                            style: AppStyles.labelStyle.copyWith(
+                              fontWeight: AppFonts.bold,
+                              fontSize: AppFonts.fontSizeXS,
+                              letterSpacing: 1.2,
                             ),
                           ),
-                        )
-                      else
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RichText(
-                              text: const TextSpan(
-                                text: 'Time Slot',
-                                style: AppStyles.labelStyle,
-                                children: [
-                                  TextSpan(
-                                    text: ' *',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: AppStyles.spacingM),
-                            DropdownButtonFormField<String>(
-                              value: selectedTimeSlot,
-                              hint: Text(
-                                selectedDate == null
-                                    ? 'Please select a date first'
-                                    : 'Select time slot',
-                                style: AppStyles.bodyMedium.copyWith(
-                                  color: AppColors.textLight,
-                                ),
-                              ),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: AppColors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppStyles.radiusM,
-                                  ),
-                                  borderSide: BorderSide(
-                                    color: AppColors.gray.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppStyles.radiusM,
-                                  ),
-                                  borderSide: BorderSide(
-                                    color: AppColors.gray.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppStyles.radiusM,
-                                  ),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.primaryColor,
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: AppStyles.spacingM,
-                                  vertical: AppStyles.spacingM,
-                                ),
-                              ),
-                              items: availableTimeSlotsFormatted.map((
-                                String slot,
-                              ) {
-                                return DropdownMenuItem<String>(
-                                  value: slot,
-                                  child: Text(
-                                    slot,
-                                    style: AppStyles.bodyMedium,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: availableTimeSlotsFormatted.isEmpty
-                                  ? null
-                                  : (value) {
-                                      setState(() {
-                                        selectedTimeSlot = value;
-                                        selectedSlot = availableSlots
-                                            .firstWhere(
-                                              (slot) =>
-                                                  slot.formattedTimeSlot ==
-                                                  value,
-                                            );
-                                      });
-                                    },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Time slot is required';
-                                }
-                                return null;
-                              },
-                              style: AppStyles.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      const SizedBox(height: AppStyles.spacingL),
+                          const SizedBox(height: AppStyles.spacingM),
 
-                      // Confirm Button
-                      CustomButton(
-                        text: isRescheduleMode
-                            ? 'CONFIRM & RESCHEDULE LECTURE'
-                            : 'CONFIRM & PUBLISH LECTURE',
-                        fullWidth: true,
-                        isLoading: isLoading,
-                        onPressed: _publishLecture,
+                          // Date Picker
+                          CustomTextFormField(
+                            label: "Date",
+                            hintText: "DD/MM/YYYY",
+                            controller: _dateController,
+                            readOnly: true,
+                            onTap: () => _pickDate(context),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Date is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
+
+                          // Time Slot Dropdown
+                          if (isFetchingSlots)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(
+                                  AppStyles.spacingM,
+                                ),
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: const TextSpan(
+                                    text: 'Time Slot',
+                                    style: AppStyles.labelStyle,
+                                    children: [
+                                      TextSpan(
+                                        text: ' *',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: AppStyles.spacingM),
+                                DropdownButtonFormField<String>(
+                                  value: selectedTimeSlot,
+                                  hint: Text(
+                                    selectedDate == null
+                                        ? 'Please select a date first'
+                                        : 'Select time slot',
+                                    style: AppStyles.bodyMedium.copyWith(
+                                      color: AppColors.textLight,
+                                    ),
+                                  ),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: AppColors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppStyles.radiusM,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppStyles.radiusM,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: AppColors.gray.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppStyles.radiusM,
+                                      ),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primaryColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: AppStyles.spacingM,
+                                      vertical: AppStyles.spacingM,
+                                    ),
+                                  ),
+                                  items: availableTimeSlotsFormatted.map((
+                                    String slot,
+                                  ) {
+                                    return DropdownMenuItem<String>(
+                                      value: slot,
+                                      child: Text(
+                                        slot,
+                                        style: AppStyles.bodyMedium,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: availableTimeSlotsFormatted.isEmpty
+                                      ? null
+                                      : (value) {
+                                          setState(() {
+                                            selectedTimeSlot = value;
+                                            selectedSlot = availableSlots
+                                                .firstWhere(
+                                                  (slot) =>
+                                                      slot.formattedTimeSlot ==
+                                                      value,
+                                                );
+                                          });
+                                        },
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Time slot is required';
+                                    }
+                                    return null;
+                                  },
+                                  style: AppStyles.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: AppStyles.spacingL),
+
+                          // Confirm Button
+                          CustomButton(
+                            text: isRescheduleMode
+                                ? 'CONFIRM & RESCHEDULE LECTURE'
+                                : 'CONFIRM & PUBLISH LECTURE',
+                            fullWidth: true,
+                            onPressed: _publishLecture,
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
+                        ],
                       ),
-                      const SizedBox(height: AppStyles.spacingL),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // Message Banner
-                if (_showBanner) ...[
-                  const SizedBox(height: AppStyles.spacingL),
-                  MessageDisplay(
-                    isSuccess: _success,
-                    massegeBanner: _success
-                        ? "Lecture Published Successfully"
-                        : "Publication Failed",
-                    message: message,
-                    onDismiss: () => setState(() => _showBanner = false),
-                  ),
-                ],
-              ],
+                    // Message Banner
+                    if (_showBanner) ...[
+                      const SizedBox(height: AppStyles.spacingM),
+                      MessageDisplay(
+                        isSuccess: false,
+                        message: message,
+                        onDismiss: () => setState(() => _showBanner = false ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

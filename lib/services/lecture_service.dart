@@ -483,16 +483,47 @@ class LectureService {
 
     // 🔁 Loop over each resource
     for (var resource in request.resources) {
-      final uploaded = await _uploadResource(resource, appState);
-      print('3dina al upload w raga3na b: $uploaded\n');
-      updatedResources.add(
-        LectureResource(
-          resourceExtension: uploaded['resource_type'] as String,
-          filePath: uploaded['file_path'] as String,
-          query: uploaded['query'] as String,
-        ),
-      );
+      if (resource.resourceExtension == 'url') {
+        updatedResources.add(
+          LectureResource(
+            resourceExtension: 'website',
+            filePath: resource.filePath,
+            query: resource.query,
+          ),
+        );
+      } else {
+        final uploaded = await _uploadResource(resource, appState);
+        print('3dina al upload w raga3na b: $uploaded\n');
+        updatedResources.add(
+          LectureResource(
+            resourceExtension: uploaded['resource_type'] as String,
+            filePath: uploaded['file_path'] as String,
+            query: uploaded['query'] as String,
+          ),
+        );
+      }
     }
+    // updatedResources = await Future.wait(
+    //   request.resources.map((resource) async {
+    //     if (resource.resourceExtension == 'url') {
+    //       return LectureResource(
+    //         resourceExtension: 'website',
+    //         filePath: resource.filePath,
+    //         query: resource.query,
+    //       );
+    //     } else {
+    //       final uploaded = await _uploadResource(resource, appState);
+
+    //       print('Uploaded: $uploaded');
+
+    //       return LectureResource(
+    //         resourceExtension: uploaded['resource_type'] as String,
+    //         filePath: uploaded['file_path'] as String,
+    //         query: uploaded['query'] as String,
+    //       );
+    //     }
+    //   }),
+    // );
     print("b3t al files w d5lt flstart\n");
     // 🧱 Build new request with updated resources
     final updatedRequest = StartSessionRequest(
@@ -613,7 +644,7 @@ class LectureService {
           body: jsonEncode({'feedback': feedback}),
         )
         .timeout(ApiConfig.connectionTimeout);
- print(res);
+    print(res);
     _checkStatus(res);
   }
 
@@ -802,37 +833,38 @@ class LectureService {
     return res.bodyBytes;
   }
 
-static Future<List<String>> getFeedbackSuggestions(
-  AppStateProvider appState,
-  int sessionId,
-) async {
-  try {
-    final response = await _client.get(
-      Uri.parse(
-        ApiConfig.getUrl(
-          ApiConfig.getFeedbackSuggestionsEndpoint
-            .replaceAll('{session_id}', sessionId.toString()),
+  static Future<List<String>> getFeedbackSuggestions(
+    AppStateProvider appState,
+    int sessionId,
+  ) async {
+    try {
+      final response = await _client.get(
+        Uri.parse(
+          ApiConfig.getUrl(
+            ApiConfig.getFeedbackSuggestionsEndpoint.replaceAll(
+              '{session_id}',
+              sessionId.toString(),
+            ),
+          ),
         ),
-      ),
-      headers: _headers(appState.accessToken),
-    );
+        headers: _headers(appState.accessToken),
+      );
 
-    _checkStatus(response);
+      _checkStatus(response);
 
-    final decoded = jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
 
-    if (decoded is Map<String, dynamic>) {
-      final suggestions = decoded['suggestions'];
+      if (decoded is Map<String, dynamic>) {
+        final suggestions = decoded['suggestions'];
 
-      if (suggestions is List) {
-        return suggestions.map((e) => e.toString()).toList();
+        if (suggestions is List) {
+          return suggestions.map((e) => e.toString()).toList();
+        }
       }
+
+      throw Exception('Invalid response format');
+    } catch (e) {
+      throw Exception('Failed to fetch feedback suggestions: $e');
     }
-
-    throw Exception('Invalid response format');
-  } catch (e) {
-    throw Exception('Failed to fetch feedback suggestions: $e');
   }
-}
-
 }

@@ -182,7 +182,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
         appState,
       );
       print('Response: $response');
-      print("5rgt mlservice" );
+      print("5rgt mlservice");
 
       lectureState.setSessionId(response.sessionId);
       lectureState.setLectureId(response.lectureId);
@@ -192,17 +192,16 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
         response.lectureId,
         response.sessionId,
       );
-      await StorageHelper.saveLectureType(
-        response.lectureId,
-        'generated',
-      );
+      await StorageHelper.saveLectureType(response.lectureId, 'generated');
       if (!mounted) return;
       Navigator.pushNamed(
         context,
         AppRoutes.lectureprocessing,
-        arguments: {'sessionId': lectureState.sessionId,'lectureType': 'generated',},
+        arguments: {
+          'sessionId': lectureState.sessionId,
+          'lectureType': 'generated',
+        },
       );
-
     } on SocketException {
       error_message = 'No internet connection.';
     } on TimeoutException {
@@ -232,219 +231,217 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: const CustomAppBar(title: "Insert Queries", showBackButton: true),
-      body: isFetchingResources
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // ── Scrollable content ─────────────────────────────────────
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async => _loadResources(),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(AppStyles.spacingL),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ── Heading ──────────────────────────────────────
-                          Text(
-                            'Specify your\nlecture\nrequirements',
-                            style: AppStyles.h1,
+      body: LoadingOverlay(
+        isLoading: isFetchingResources || isGenerating,
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ── Scrollable content ─────────────────────────────────────
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async => _loadResources(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppStyles.spacingL),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Heading ──────────────────────────────────────
+                        Text(
+                          'Specify your\nlecture\nrequirements',
+                          style: AppStyles.h1,
+                        ),
+                        const SizedBox(height: AppStyles.spacingS),
+                        Container(
+                          width: 48,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor,
+                            borderRadius: BorderRadius.circular(
+                              AppStyles.radiusPill,
+                            ),
                           ),
-                          const SizedBox(height: AppStyles.spacingS),
-                          Container(
-                            width: 48,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              borderRadius: BorderRadius.circular(
-                                AppStyles.radiusPill,
+                        ),
+                        const SizedBox(height: AppStyles.spacingL),
+
+                        // ── Empty state ───────────────────────────────────
+                        if (resources.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppStyles.spacingXXL,
+                              ),
+                              child: Text(
+                                'No resources found.\nGo back and upload files.',
+                                textAlign: TextAlign.center,
+                                style: AppStyles.bodyMedium.copyWith(
+                                  color: AppColors.gray,
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: AppStyles.spacingL),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ── Resource cards ────────────────────────────────
+                              ...resources.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final resource = entry.value;
+                                final typeColor = _colorForType(
+                                  resource.resourceType,
+                                );
 
-                          // ── Empty state ───────────────────────────────────
-                          if (resources.isEmpty)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppStyles.spacingXXL,
-                                ),
-                                child: Text(
-                                  'No resources found.\nGo back and upload files.',
-                                  textAlign: TextAlign.center,
-                                  style: AppStyles.bodyMedium.copyWith(
-                                    color: AppColors.gray,
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppStyles.spacingM,
                                   ),
-                                ),
-                              ),
-                            ),
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // ── Resource cards ────────────────────────────────
-                                ...resources.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final resource = entry.value;
-                                  final typeColor = _colorForType(
-                                    resource.resourceType,
-                                  );
-
-                                  return Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: AppStyles.spacingM,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(
+                                      AppStyles.spacingL,
                                     ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(
-                                        AppStyles.spacingL,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        AppStyles.radiusXL,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          AppStyles.radiusXL,
+                                      boxShadow: AppStyles.cardShadow,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // File info row
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 48,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                color: typeColor.withOpacity(
+                                                  0.12,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppStyles.radiusM,
+                                                    ),
+                                              ),
+                                              child: Icon(
+                                                _iconForType(
+                                                  resource.resourceType,
+                                                ),
+                                                color: typeColor,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: AppStyles.spacingM,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    resource.fileName,
+                                                    style: AppStyles.bodyMedium
+                                                        .copyWith(
+                                                          fontWeight:
+                                                              AppFonts.semiBold,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    resource.fileSize != null
+                                                        ? 'Added just now • ${_formatSize(resource.fileSize)}'
+                                                        : 'Added just now',
+                                                    style: AppStyles.caption,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: AppStyles.spacingL,
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                _deleteResource(index);
+                                              },
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                                color: AppColors.primaryColor,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        boxShadow: AppStyles.cardShadow,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // File info row
-                                          Row(
-                                            children: [
-                                              Container(
-                                                width: 48,
-                                                height: 48,
-                                                decoration: BoxDecoration(
-                                                  color: typeColor.withOpacity(
-                                                    0.12,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        AppStyles.radiusM,
-                                                      ),
-                                                ),
-                                                child: Icon(
-                                                  _iconForType(
-                                                    resource.resourceType,
-                                                  ),
-                                                  color: typeColor,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              const SizedBox(
-                                                width: AppStyles.spacingM,
-                                              ),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      resource.fileName,
-                                                      style: AppStyles
-                                                          .bodyMedium
-                                                          .copyWith(
-                                                            fontWeight: AppFonts
-                                                                .semiBold,
-                                                          ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      resource.fileSize != null
-                                                          ? 'Added just now • ${_formatSize(resource.fileSize)}'
-                                                          : 'Added just now',
-                                                      style: AppStyles.caption,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(
-                                                width: AppStyles.spacingL,
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  _deleteResource(index);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  color: AppColors.primaryColor,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(
-                                            height: AppStyles.spacingM,
-                                          ),
+                                        const SizedBox(
+                                          height: AppStyles.spacingM,
+                                        ),
 
-                                          // Query label
-                                          Text(
-                                            _labelForType(
-                                              resource.resourceType,
-                                            ),
-                                            style: AppStyles.labelStyle
-                                                .copyWith(
-                                                  fontWeight: AppFonts.bold,
-                                                  fontSize: AppFonts.fontSizeXS,
-                                                  letterSpacing: 1.2,
-                                                ),
+                                        // Query label
+                                        Text(
+                                          _labelForType(resource.resourceType),
+                                          style: AppStyles.labelStyle.copyWith(
+                                            fontWeight: AppFonts.bold,
+                                            fontSize: AppFonts.fontSizeXS,
+                                            letterSpacing: 1.2,
                                           ),
-                                          const SizedBox(
-                                            height: AppStyles.spacingS,
-                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: AppStyles.spacingS,
+                                        ),
 
-                                          // Query field
-                                          CustomTextFormField(
-                                            controller: _controllers[index],
-                                            maxLines: 2,
-                                            isFieldRequired: true,
-                                            hintText: _hintForType(
-                                              resource.resourceType,
-                                            ),
-                                            validator: (value) {
-                                              if (value == null ||
-                                                  value.trim().isEmpty) {
-                                                return 'This field cannot be empty';
-                                              }
-                                              return null;
-                                            },
+                                        // Query field
+                                        CustomTextFormField(
+                                          controller: _controllers[index],
+                                          maxLines: 2,
+                                          isFieldRequired: true,
+                                          hintText: _hintForType(
+                                            resource.resourceType,
                                           ),
-                                        ],
-                                      ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.trim().isEmpty) {
+                                              return 'This field cannot be empty';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ],
                                     ),
-                                  );
-                                }),
-                              ],
-                            ),
+                                  ),
+                                );
+                              }),
+                            ],
                           ),
-                          const SizedBox(height: AppStyles.spacingXXL),
-                          CustomButton(
-                            text: 'GENERATE LECTURE',
-                            fullWidth: true,
-                            prefixIcon: Icon(
-                              Icons.auto_awesome_outlined,
-                              color: AppColors.white,
-                            ),
-                            isLoading: isGenerating,
-                            onPressed: resources.isEmpty
-                                ? () {}
-                                : _handleGenerate,
+                        ),
+                        const SizedBox(height: AppStyles.spacingXXL),
+                        CustomButton(
+                          text: 'GENERATE LECTURE',
+                          fullWidth: true,
+                          prefixIcon: Icon(
+                            Icons.auto_awesome_outlined,
+                            color: AppColors.white,
                           ),
-                        ],
-                      ),
+                          onPressed: resources.isEmpty
+                              ? () {}
+                              : _handleGenerate,
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
 
-                // ── S
-              ],
-            ),
+              // ── S
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

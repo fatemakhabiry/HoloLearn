@@ -22,7 +22,7 @@ class ResourceItem {
     if (ext == 'pptx' || ext == 'ppt') return 'pptx';
     if (ext == 'mp4' || ext == 'avi' || ext == 'mkv') return 'video';
     if (ext == 'jpg' || ext == 'png' || ext == 'gif'||ext=='jpeg') return 'image';
-    return 'website';
+    return 'url';
   }
 
   /// Safely parse size_bytes whether it's an int, a Map, or null

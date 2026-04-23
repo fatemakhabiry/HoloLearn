@@ -90,14 +90,17 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
 
     try {
       // ── Call your existing service method ──────────────────────────────
-
-      final bytes = await LectureService.getLectureGeneratedResourceBytes(
-        _sessionId,
-        type,
-        appState,
-      );
-      // ───────────────────────────────────────────────────────────────────
-
+      final bytes;
+      if (type == GenContentType.lecture) {
+         bytes= await LectureService.getLecturePdfBytes(_sessionId, appState);
+      } else {
+         bytes = await LectureService.getLectureGeneratedResourceBytes(
+          _sessionId,
+          type,
+          appState,
+        );
+        // ───────────────────────────────────────────────────────────────────
+      }
       final file = await LocalFileService.save(_lectureId, type, bytes);
 
       if (mounted) setState(() => _cached[type] = true);

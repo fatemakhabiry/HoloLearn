@@ -1,8 +1,8 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-  // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
-      'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
+  "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
+      // 'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
 
   // ===== Authentication Endpoints =====
   static const String loginEndpoint = '/auth/login';

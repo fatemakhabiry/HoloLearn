@@ -4,15 +4,13 @@ import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
-
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import'../../constants/constants.dart';
+import '../../constants/constants.dart';
 import '../../services/lecture_service.dart';
 import '../../models/availability_models.dart';
 import '../../services/availability_service.dart';
 import '../../state/providers/app_state_provider.dart';
-
 
 class EditLectureScreen extends StatefulWidget {
   final int scheduleId;
@@ -292,12 +290,15 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
 
       if (!mounted) return;
       setState(() {
-        message = response.message;
-        showBanner = true;
-        success = true;
+        // message = response.message;
         isLoading = false;
       });
-
+      CustomErrorHandler.show(
+        context,
+        message: "Editted succesfully",
+        type: ErrorType.success,
+        duration: Duration(seconds: 3),
+      );
       // Navigate back after success
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
@@ -310,12 +311,15 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          showBanner = true;
-          success = false;
-          message =
-              'Error updating lecture: ${e.toString().replaceAll('Exception: ', '')}';
           isLoading = false;
         });
+        CustomErrorHandler.show(
+          context,
+          message:
+              'Error updating lecture: ${e.toString().replaceAll('Exception: ', '')}',
+          type: ErrorType.fail,
+          duration: Duration(seconds: 3),
+        );
       }
     }
   }
@@ -325,9 +329,9 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       appBar: CustomAppBar(title: 'Edit Lecture'),
-      body: isFetchingLecture
-          ? Center(child: CircularProgressIndicator(color: AppColors.primaryColor))
-          : Center(
+      body: LoadingOverlay(
+        isLoading: isFetchingLecture||isLoading,
+        child: Center(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(AppStyles.spacingL),
@@ -591,10 +595,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                           if (showBanner) ...[
                             const SizedBox(height: AppStyles.spacingL),
                             MessageDisplay(
-                              isSuccess: success,
-                              massegeBanner: success
-                                  ? "Lecture Updated Successfully"
-                                  : "Update Failed",
+                              isSuccess: false,
                               message: message,
                               onDismiss: () =>
                                   setState(() => showBanner = false),
@@ -607,6 +608,6 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                 ),
               ),
             ),
-    );
+    ),);
   }
 }

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 
 import '../../widgets/widgets.dart';
-import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
 import '../../models/schedule_models.dart';
 import '../../services/schedule_service.dart';
