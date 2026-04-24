@@ -4,7 +4,7 @@ Extracts text content from PowerPoint presentations.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 import json
 import time
@@ -12,7 +12,6 @@ import re
 import tempfile
 import shutil
 
-# Import our utilities
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from utils.configs import OUTPUT_DIR, LOGS_DIR
@@ -31,10 +30,16 @@ try:
 except ImportError:
     _WIN32COM_AVAILABLE = False
 
+# Shape type constants (python-pptx / OOXML)
+_SHAPE_PICTURE = 13
+_SHAPE_MEDIA   = 15
+_SHAPE_CHART   = 3
+_SHAPE_TABLE   = 17
+
 
 class PPTXExtractor:
     """Extract text from PowerPoint files"""
-    
+
     def __init__(self):
         if not _PPTX_AVAILABLE:
             raise ImportError(
@@ -45,23 +50,14 @@ class PPTXExtractor:
         self.base_output_dir = OUTPUT_DIR
         self.base_logs_dir = LOGS_DIR
 
-        # Ensure base directories exist
         self.base_output_dir.mkdir(parents=True, exist_ok=True)
         self.base_logs_dir.mkdir(parents=True, exist_ok=True)
-    
-    def _convert_ppt_to_pptx(self, ppt_path: Path) -> Optional[Path]:
-        """
-        Convert a legacy .ppt file to .pptx using PowerPoint COM (Windows)
-        or LibreOffice as a fallback.
 
-        Returns:
-            Path to a temporary .pptx file, or None if conversion failed.
-            Caller is responsible for deleting the temp file.
-        """
+    def _convert_ppt_to_pptx(self, ppt_path: Path) -> Optional[Path]:
+        """Convert legacy .ppt → .pptx via PowerPoint COM or LibreOffice."""
         tmp_dir = Path(tempfile.mkdtemp())
         pptx_path = tmp_dir / (ppt_path.stem + ".pptx")
 
-        # --- Try win32com (requires Microsoft Office installed) ---
         if _WIN32COM_AVAILABLE:
             try:
                 import pythoncom
@@ -71,8 +67,7 @@ class PPTXExtractor:
                 presentation = ppt_app.Presentations.Open(
                     str(ppt_path.resolve()), ReadOnly=True, Untitled=False, WithWindow=False
                 )
-                # 24 = ppSaveAsOpenXMLPresentation (.pptx)
-                presentation.SaveAs(str(pptx_path.resolve()), 24)
+                presentation.SaveAs(str(pptx_path.resolve()), 24)  # 24 = ppSaveAsOpenXMLPresentation
                 presentation.Close()
                 ppt_app.Quit()
                 if pptx_path.exists():
@@ -85,12 +80,11 @@ class PPTXExtractor:
                 except Exception:
                     pass
 
-        # --- Fallback: LibreOffice CLI ---
         import subprocess
-        for libreoffice_cmd in ("libreoffice", "soffice"):
+        for cmd in ("libreoffice", "soffice"):
             try:
                 result = subprocess.run(
-                    [libreoffice_cmd, "--headless", "--convert-to", "pptx",
+                    [cmd, "--headless", "--convert-to", "pptx",
                      "--outdir", str(tmp_dir), str(ppt_path.resolve())],
                     capture_output=True, timeout=60
                 )
@@ -99,59 +93,124 @@ class PPTXExtractor:
             except (FileNotFoundError, subprocess.TimeoutExpired):
                 continue
 
-        # Cleanup temp dir if nothing worked
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return None
 
     def _create_resource_name(self, filename: str) -> str:
-        """
-        Create a clean resource name from filename
-        
-        Example: "Lecture 5 - AI Basics.pptx" → "lecture_5_ai_basics"
-        """
-        # Remove extension
-        name = Path(filename).stem
-        
-        # Convert to lowercase
-        name = name.lower()
-        
-        # Replace spaces and special chars with underscore
+        name = Path(filename).stem.lower()
         name = re.sub(r'[^\w\s-]', '', name)
-        name = re.sub(r'[-\s]+', '_', name)
-        
-        # Remove leading/trailing underscores
-        name = name.strip('_')
-        
-        # Limit length
-        if len(name) > 50:
-            name = name[:50]
-        
-        return name or "unnamed_resource"
-    
+        name = re.sub(r'[-\s]+', '_', name).strip('_')
+        return (name[:50] if len(name) > 50 else name) or "unnamed_resource"
+
     def _setup_resource_directories(self, resource_name: str, output_dir_override: Optional[Path] = None) -> tuple:
-        """
-        Create directories for a specific resource
-
-        Args:
-            resource_name: Clean name derived from the input filename.
-            output_dir_override: If provided, use this directory for output
-                instead of creating a resource-specific subfolder.
-
-        Returns:
-            (output_dir, logs_dir) paths
-        """
-        if output_dir_override:
-            resource_output_dir = Path(output_dir_override)
-        else:
-            resource_output_dir = self.base_output_dir / resource_name
-
+        resource_output_dir = Path(output_dir_override) if output_dir_override else self.base_output_dir / resource_name
         resource_logs_dir = self.base_logs_dir / resource_name
-
         resource_output_dir.mkdir(parents=True, exist_ok=True)
         resource_logs_dir.mkdir(parents=True, exist_ok=True)
-
         return resource_output_dir, resource_logs_dir
-    
+
+    # ------------------------------------------------------------------ #
+    #  Structured extraction helpers                                       #
+    # ------------------------------------------------------------------ #
+
+    def _detect_layout_type(self, slide, slide_num: int, total_slides: int) -> str:
+        """Classify a slide's purpose from its layout name, title text, and content."""
+        layout_name = ""
+        try:
+            layout_name = (slide.slide_layout.name or "").lower()
+        except Exception:
+            pass
+
+        title_text = self._get_slide_title(slide).lower()
+
+        summary_kw = ["summary", "conclusion", "recap", "q&a", "questions", "thank", "end"]
+        agenda_kw  = ["agenda", "outline", "contents", "overview", "topics", "table of"]
+        title_kw   = ["title", "cover", "opening", "intro"]
+
+        if slide_num == 1 or any(k in layout_name for k in title_kw):
+            return "title_slide"
+        if any(k in title_text for k in summary_kw):
+            return "summary_slide"
+        if any(k in title_text for k in agenda_kw):
+            return "agenda_slide"
+        if slide_num == total_slides and any(k in title_text for k in summary_kw):
+            return "summary_slide"
+
+        pic_count = sum(1 for s in slide.shapes if getattr(s, 'shape_type', None) == _SHAPE_PICTURE)
+        text_shapes = sum(1 for s in slide.shapes if hasattr(s, 'text') and s.text.strip())
+        if pic_count > 0 and text_shapes <= 1:
+            return "image_slide"
+
+        return "content_slide"
+
+    def _get_slide_title(self, slide) -> str:
+        """Return the title placeholder text, or first text shape text, or empty string."""
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            ph = getattr(shape, 'placeholder_format', None)
+            if ph is not None and ph.idx == 0:  # idx 0 = TITLE placeholder
+                return shape.text_frame.text.strip()
+        return ""
+
+    def _sorted_shapes(self, slide) -> list:
+        """Return slide shapes sorted by vertical then horizontal position (reading order)."""
+        def _key(s):
+            return (s.top if s.top is not None else 0,
+                    s.left if s.left is not None else 0)
+        return sorted(slide.shapes, key=_key)
+
+    def _extract_slide_data(self, slide, slide_num: int, total_slides: int,
+                            include_notes: bool) -> dict:
+        """
+        Return a structured dict for one slide:
+        {slide_number, title, body (list of {text, level}), notes, layout_type, has_media}
+        """
+        title = self._get_slide_title(slide)
+        layout_type = self._detect_layout_type(slide, slide_num, total_slides)
+
+        has_media = any(
+            getattr(s, 'shape_type', None) in (_SHAPE_PICTURE, _SHAPE_MEDIA, _SHAPE_CHART)
+            for s in slide.shapes
+        )
+
+        body_items: List[dict] = []
+        for shape in self._sorted_shapes(slide):
+            if not shape.has_text_frame:
+                continue
+            ph = getattr(shape, 'placeholder_format', None)
+            if ph is not None and ph.idx == 0:
+                continue  # already captured as title
+            for para in shape.text_frame.paragraphs:
+                text = para.text.strip()
+                if text:
+                    body_items.append({"text": text, "level": para.level})
+
+        notes_text = ""
+        if include_notes and slide.has_notes_slide:
+            try:
+                notes_text = slide.notes_slide.notes_text_frame.text.strip()
+            except Exception:
+                pass
+
+        return {
+            "slide_number": slide_num,
+            "title": title,
+            "body": body_items,
+            "notes": notes_text,
+            "layout_type": layout_type,
+            "has_media": has_media,
+        }
+
+    def _compute_quality_score(self, text: str, sections: List[dict]) -> float:
+        word_score = min(len(text.split()) / 5000, 1.0)
+        structure_score = min(len(sections) / 10, 1.0)
+        return round(word_score * 0.6 + structure_score * 0.4, 2)
+
+    # ------------------------------------------------------------------ #
+    #  Main extraction                                                     #
+    # ------------------------------------------------------------------ #
+
     def extract(self,
                 pptx_path: str,
                 resource_id: Optional[str] = None,
@@ -159,29 +218,16 @@ class PPTXExtractor:
                 include_notes: bool = True,
                 output_dir: Optional[str] = None) -> Dict[str, Any]:
         """
-        Extract text from a PowerPoint file
+        Extract text from a PowerPoint file.
 
-        Args:
-            pptx_path: Path to PPTX file
-            resource_id: Optional unique identifier (if None, uses filename)
-            clean_text: Whether to clean the extracted text
-            include_notes: Whether to include speaker notes
-            output_dir: Optional shared output directory. When provided,
-                all output files are written here instead of a per-resource subfolder.
-
-        Returns:
-            Dictionary with extraction results and metadata
-
-        Example:
-            extractor = PPTXExtractor()
-            result = extractor.extract("slides.pptx")
-            # Creates: output/slides/text.txt and output/slides/metadata.json
+        Returns dict with: success, resource_name, resource_id, text_file,
+        metadata_file, structured_file, output_dir, logs_dir, extracted_text,
+        slides_data, sections, content_quality_score, metadata.
         """
         start_time = time.time()
         pptx_path = Path(pptx_path)
-        _tmp_dir_to_cleanup = None  # track temp dir for .ppt conversion
+        _tmp_dir_to_cleanup = None
 
-        # Auto-convert legacy .ppt to .pptx
         if pptx_path.suffix.lower() == ".ppt":
             converted = self._convert_ppt_to_pptx(pptx_path)
             if converted is None:
@@ -191,103 +237,90 @@ class PPTXExtractor:
                 return self._create_error_result(
                     resource_name,
                     "Cannot convert .ppt file: install Microsoft Office (win32com) or LibreOffice.",
-                    out_dir,
-                    pptx_path.name
+                    out_dir, pptx_path.name
                 )
             _tmp_dir_to_cleanup = converted.parent
             pptx_path = converted
 
-        # Create resource name from filename
         resource_name = self._create_resource_name(pptx_path.name)
-
-        # Setup directories
         override = Path(output_dir) if output_dir else None
         output_dir, logs_dir = self._setup_resource_directories(resource_name, output_dir_override=override)
-        
-        # Initialize error handler for this specific resource
+
         error_handler = ErrorHandler(f"pptx_{resource_name}")
-        # Move log file to resource-specific directory
         error_handler.log_file = logs_dir / "extraction.log"
         error_handler.logger = error_handler._setup_logger()
-        
-        # Validate file
+
         if not pptx_path.exists():
             error_msg = f"PPTX file not found: {pptx_path}"
-            error_handler.log_error(
-                FileNotFoundError(error_msg),
-                context="Validating PPTX file",
-                metadata={"path": str(pptx_path)}
-            )
-            return self._create_error_result(
-                resource_name, error_msg, output_dir, pptx_path.name
-            )
-        
-        # Check file size
+            error_handler.log_error(FileNotFoundError(error_msg), context="Validating PPTX file",
+                                    metadata={"path": str(pptx_path)})
+            return self._create_error_result(resource_name, error_msg, output_dir, pptx_path.name)
+
         file_size = pptx_path.stat().st_size
         file_size_mb = file_size / (1024 * 1024)
-        
-        error_handler.log_info(
-            f"Starting PPTX extraction: {pptx_path.name}",
-            metadata={
-                "size_mb": f"{file_size_mb:.2f}",
-                "resource_name": resource_name,
-                "output_dir": str(output_dir)
-            }
-        )
-        
+
+        error_handler.log_info(f"Starting PPTX extraction: {pptx_path.name}",
+                               metadata={"size_mb": f"{file_size_mb:.2f}",
+                                         "resource_name": resource_name,
+                                         "output_dir": str(output_dir)})
+
         try:
-            # Open PowerPoint presentation
             prs = Presentation(pptx_path)
-            
-            # Extract text from all slides
-            extracted_text = ""
-            slide_count = len(prs.slides)
+            total_slides = len(prs.slides)
+            slides_data: List[dict] = []
             slides_with_notes = 0
-            
+            media_slide_count = 0
+
             for slide_num, slide in enumerate(prs.slides, 1):
-                # Add slide header
+                slide_dict = self._extract_slide_data(slide, slide_num, total_slides, include_notes)
+                slides_data.append(slide_dict)
+                if slide_dict["notes"]:
+                    slides_with_notes += 1
+                if slide_dict["has_media"]:
+                    media_slide_count += 1
+
+            # Build flat extracted_text from slides_data (reading-order guaranteed)
+            extracted_text = ""
+            for sd in slides_data:
                 extracted_text += f"\n{'='*60}\n"
-                extracted_text += f"SLIDE {slide_num}\n"
+                extracted_text += f"SLIDE {sd['slide_number']} [{sd['layout_type']}]\n"
                 extracted_text += f"{'='*60}\n\n"
-                
-                # Extract text from shapes (text boxes, titles, content)
-                slide_text = []
-                for shape in slide.shapes:
-                    if hasattr(shape, "text") and shape.text.strip():
-                        slide_text.append(shape.text.strip())
-                
-                if slide_text:
-                    extracted_text += '\n'.join(slide_text)
-                    extracted_text += "\n"
-                else:
+
+                if sd["title"]:
+                    extracted_text += sd["title"] + "\n\n"
+
+                for item in sd["body"]:
+                    indent = "  " * item["level"]
+                    extracted_text += f"{indent}{item['text']}\n"
+
+                if not sd["title"] and not sd["body"]:
                     extracted_text += "[No text content on this slide]\n"
-                
-                # Extract speaker notes if requested
-                if include_notes and slide.has_notes_slide:
-                    notes_text = slide.notes_slide.notes_text_frame.text.strip()
-                    if notes_text:
-                        extracted_text += f"\n[SPEAKER NOTES]\n"
-                        extracted_text += notes_text + "\n"
-                        slides_with_notes += 1
-                
+
+                if sd["notes"]:
+                    extracted_text += f"\n[SPEAKER NOTES]\n{sd['notes']}\n"
+
                 extracted_text += "\n"
-            
-            # Clean text if requested
+
             if clean_text:
                 extracted_text = self.text_cleaner.clean_text(
-                    extracted_text,
-                    remove_urls=False,  # Keep URLs
-                    remove_emails=False,  # Keep emails
-                    fix_spacing=True
+                    extracted_text, remove_urls=False, remove_emails=False, fix_spacing=True
                 )
-            
-            # Remove duplicate lines (slides often have duplicates)
             extracted_text = self.text_cleaner.remove_duplicate_lines(extracted_text)
-            
-            # Calculate processing time
+
+            # Derive lecture-ready sections from slides (one section per slide with a title)
+            sections = [
+                {
+                    "title": sd["title"] or f"Slide {sd['slide_number']}",
+                    "body": " ".join(item["text"] for item in sd["body"]),
+                    "type": sd["layout_type"],
+                    "source_location": {"slide": sd["slide_number"]},
+                }
+                for sd in slides_data
+            ]
+
+            quality_score = self._compute_quality_score(extracted_text, sections)
             processing_time = time.time() - start_time
-            
-            # Create metadata
+
             metadata = {
                 "resource_name": resource_name,
                 "resource_id": resource_id or resource_name,
@@ -299,73 +332,62 @@ class PPTXExtractor:
                 "processing_time_seconds": round(processing_time, 2),
                 "status": "success",
                 "error_message": None,
-                "slide_count": slide_count,
+                "slide_count": total_slides,
                 "slides_with_notes": slides_with_notes,
+                "media_slide_count": media_slide_count,
                 "character_count": len(extracted_text),
-                "included_notes": include_notes
+                "included_notes": include_notes,
+                "content_quality_score": quality_score,
             }
-            
-            # Save text file
+
             text_file = output_dir / "text.txt"
             text_file.write_text(extracted_text, encoding='utf-8')
             metadata["extracted_text_path"] = str(text_file)
-            
-            # Save metadata file
+
             metadata_file = output_dir / "metadata.json"
             metadata_file.write_text(json.dumps(metadata, indent=2), encoding='utf-8')
-            
-            error_handler.log_success(
-                f"PPTX extracted successfully: {pptx_path.name}",
-                metadata={
-                    "slides": slide_count,
-                    "chars": len(extracted_text),
-                    "time": f"{processing_time:.2f}s",
-                    "output": str(output_dir)
-                }
-            )
-            
+
+            structured = {"slides": slides_data, "sections": sections}
+            structured_file = output_dir / "structured.json"
+            structured_file.write_text(json.dumps(structured, indent=2, ensure_ascii=False), encoding='utf-8')
+
+            error_handler.log_success(f"PPTX extracted successfully: {pptx_path.name}",
+                                      metadata={"slides": total_slides, "media_slides": media_slide_count,
+                                                "time": f"{processing_time:.2f}s"})
+
             return {
                 "success": True,
                 "resource_name": resource_name,
                 "resource_id": resource_id or resource_name,
                 "text_file": str(text_file),
                 "metadata_file": str(metadata_file),
+                "structured_file": str(structured_file),
                 "output_dir": str(output_dir),
                 "logs_dir": str(logs_dir),
+                "extracted_text": extracted_text,
+                "slides_data": slides_data,
+                "sections": sections,
+                "content_quality_score": quality_score,
                 "metadata": metadata,
-                "extracted_text": extracted_text
             }
-            
+
         except Exception as e:
             processing_time = time.time() - start_time
-
-            error_handler.log_error(
-                e,
-                context=f"Extracting PPTX: {pptx_path.name}",
-                metadata={"resource_name": resource_name}
-            )
-
-            return self._create_error_result(
-                resource_name,
-                str(e),
-                output_dir,
-                pptx_path.name,
-                file_size,
-                processing_time
-            )
+            error_handler.log_error(e, context=f"Extracting PPTX: {pptx_path.name}",
+                                    metadata={"resource_name": resource_name})
+            return self._create_error_result(resource_name, str(e), output_dir,
+                                             pptx_path.name, file_size, processing_time)
         finally:
             if _tmp_dir_to_cleanup:
                 shutil.rmtree(_tmp_dir_to_cleanup, ignore_errors=True)
-    
+
     def _create_error_result(self,
-                           resource_name: str,
-                           error_message: str,
-                           output_dir: Path,
-                           filename: str = "unknown",
-                           file_size: int = 0,
-                           processing_time: float = 0) -> Dict[str, Any]:
-        """Create error result when extraction fails"""
-        
+                             resource_name: str,
+                             error_message: str,
+                             output_dir: Path,
+                             filename: str = "unknown",
+                             file_size: int = 0,
+                             processing_time: float = 0) -> Dict[str, Any]:
         metadata = {
             "resource_name": resource_name,
             "filename": filename,
@@ -375,32 +397,27 @@ class PPTXExtractor:
             "file_size_bytes": file_size,
             "processing_time_seconds": round(processing_time, 2),
             "status": "failed",
-            "error_message": error_message
+            "error_message": error_message,
         }
-        
-        # Save metadata even for failed extraction
         metadata_file = output_dir / "metadata.json"
         metadata_file.write_text(json.dumps(metadata, indent=2), encoding='utf-8')
-        
         return {
             "success": False,
             "resource_name": resource_name,
             "text_file": None,
             "metadata_file": str(metadata_file),
+            "structured_file": None,
             "output_dir": str(output_dir),
-            "metadata": metadata,
             "extracted_text": "",
-            "error": error_message
+            "slides_data": [],
+            "sections": [],
+            "content_quality_score": 0.0,
+            "metadata": metadata,
+            "error": error_message,
         }
-    
+
     def extract_metadata_only(self, pptx_path: str) -> Dict[str, Any]:
-        """
-        Extract only metadata without extracting text
-        Useful for quick file info
-        
-        Returns:
-            Dictionary with PPTX metadata
-        """
+        """Extract only metadata without extracting text."""
         _tmp_dir = None
         try:
             pptx_path = Path(pptx_path)
@@ -410,12 +427,10 @@ class PPTXExtractor:
                     return {}
                 _tmp_dir = converted.parent
                 pptx_path = converted
+
             prs = Presentation(pptx_path)
-            
-            # Count slides with notes
-            slides_with_notes = sum(1 for slide in prs.slides if slide.has_notes_slide)
-            
-            metadata = {
+            slides_with_notes = sum(1 for s in prs.slides if s.has_notes_slide)
+            return {
                 "filename": pptx_path.name,
                 "resource_name": self._create_resource_name(pptx_path.name),
                 "slide_count": len(prs.slides),
@@ -427,18 +442,11 @@ class PPTXExtractor:
                     "author": prs.core_properties.author or "N/A",
                     "subject": prs.core_properties.subject or "N/A",
                     "created": str(prs.core_properties.created) if prs.core_properties.created else "N/A",
-                    "modified": str(prs.core_properties.modified) if prs.core_properties.modified else "N/A"
-                }
+                    "modified": str(prs.core_properties.modified) if prs.core_properties.modified else "N/A",
+                },
             }
-            
-            return metadata
-
         except Exception as e:
-            error_handler = ErrorHandler("pptx_metadata")
-            error_handler.log_error(
-                e,
-                context=f"Extracting metadata from {pptx_path}"
-            )
+            ErrorHandler("pptx_metadata").log_error(e, context=f"Extracting metadata from {pptx_path}")
             return {}
         finally:
             if _tmp_dir:
@@ -448,54 +456,41 @@ class PPTXExtractor:
 # Example usage and testing
 if __name__ == "__main__":
     from utils.file_picker import FilePicker
-    
+
     print("=== Testing PPTX Extractor ===\n")
-    
-    # Initialize extractor
+
     extractor = PPTXExtractor()
-    
-    # Use file picker to select PPTX
+
     picker = FilePicker()
     print("Please select a PowerPoint file...")
     test_pptx = picker.pick_pptx()
     picker.close()
-    
+
     if test_pptx:
         print(f"\n✓ Selected: {Path(test_pptx).name}\n")
-        
+
         print("1. Extracting metadata only...")
         metadata = extractor.extract_metadata_only(test_pptx)
-        print(f"   Resource name: {metadata.get('resource_name', 'N/A')}")
         print(f"   Slides: {metadata.get('slide_count', 'N/A')}")
-        print(f"   Slides with notes: {metadata.get('slides_with_notes', 'N/A')}")
-        print(f"   Size: {metadata.get('file_size_mb', 'N/A')} MB")
-        print(f"   Title: {metadata.get('core_properties', {}).get('title', 'N/A')}")
-        print(f"   Author: {metadata.get('core_properties', {}).get('author', 'N/A')}\n")
-        
+        print(f"   Slides with notes: {metadata.get('slides_with_notes', 'N/A')}\n")
+
         print("2. Full extraction (with speaker notes)...")
-        result = extractor.extract(
-            pptx_path=test_pptx,
-            clean_text=True,
-            include_notes=True
-        )
-        
+        result = extractor.extract(pptx_path=test_pptx, clean_text=True, include_notes=True)
+
         if result['success']:
             print(f"   ✓ Success!")
-            print(f"   Resource name: {result['resource_name']}")
-            print(f"   Output directory: {result['output_dir']}")
-            print(f"   Logs directory: {result['logs_dir']}")
-            print(f"   Text file: {result['text_file']}")
-            print(f"   Metadata file: {result['metadata_file']}")
             print(f"   Slides: {result['metadata']['slide_count']}")
-            print(f"   Slides with notes: {result['metadata']['slides_with_notes']}")
-            print(f"   Characters: {result['metadata']['character_count']}")
-            print(f"   Processing time: {result['metadata']['processing_time_seconds']}s")
-            
-            print(f"\n   Preview (first 400 chars):")
-            print("   " + "-" * 50)
-            preview = result['extracted_text'][:400]
-            print(f"   {preview}...")
-            print("   " + "-" * 50)
+            print(f"   Media slides: {result['metadata']['media_slide_count']}")
+            print(f"   Quality score: {result['content_quality_score']}")
+            print(f"   Structured file: {result['structured_file']}")
+
+            print("\n   Slide layout breakdown:")
+            layout_counts: Dict[str, int] = {}
+            for sd in result['slides_data']:
+                lt = sd['layout_type']
+                layout_counts[lt] = layout_counts.get(lt, 0) + 1
+            for lt, count in layout_counts.items():
+                print(f"     {lt}: {count}")
         else:
             print(f"   ✗ Failed: {result['error']}")
     else:
