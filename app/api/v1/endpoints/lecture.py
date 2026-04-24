@@ -533,12 +533,12 @@ async def delete_lecture(
 
 
 # ============================================
-# 7: Prepare Pipeline
+# 7: Start Pipeline
+# (combines prepare-pipeline + trigger-pipeline)
 # ============================================
 
 from pydantic import BaseModel
 
-# ── Fixed pipeline defaults (not exposed to caller) ──────────────────────────
 _PIPELINE_DEFAULTS = dict(
     num_steps      = 20,
     audio_cfg      = 4.0,
@@ -549,57 +549,43 @@ _PIPELINE_DEFAULTS = dict(
 )
 
 
-class PreparePipelineResponse(BaseModel):
-    lecture_id:     int
-    lecture_type:   str
-    script_path:    str
-    status:         str
-    avatar_backend: str
-    message:        str
-
-
 @router.post(
-    "/{lecture_id}/prepare-pipeline",
-    response_model=PreparePipelineResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Bridge: reads script from generated_content → creates/updates LecturePipeline",
+    "/{lecture_id}/start-pipeline",
+    response_model=LecturePipelineTriggerResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Reads script → creates LecturePipeline → dispatches job to AI server",
 )
-def prepare_pipeline(
+async def start_pipeline(
     lecture_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_teacher),
 ):
     """
-    Connects the agent session output to the avatar pipeline.
+    Single endpoint that combines prepare + trigger in one call.
 
-    Works for **any** lecture type (PREPARED or GENERATED) as long as a script
-    row exists in generated_content for that lecture.
+    Steps performed internally:
+      1. Verify lecture ownership
+      2. Read script from generated_content (must exist)
+      3. Create / reset LecturePipeline record with fixed defaults
+      4. Verify teacher onboarding_status = 'ready'
+      5. Dispatch job to AI server via HTTP
+      6. Set lecture + pipeline status → GENERATING
 
-    Prerequisites (must be done first):
-      1. POST /session/start           → agent generates content
-      2. POST /session/{id}/approve    → lecture approved
-      → agent saves script to generated_content table
+    Prerequisites:
+      - Agent session must be done (script saved in generated_content)
+      - Teacher onboarding_status must be 'ready' (set by AI server)
 
-    What this endpoint does:
-      - Verifies lecture ownership (any type accepted)
-      - Reads GeneratedContent where content_type = 'script' for this lecture
-      - Creates or updates a LecturePipeline record with fixed default params:
-            num_steps=20, audio_cfg=4.0, text_cfg=4.0, seed=42,
-            preset="engaging_narration", avatar_backend="local"
-      - Returns confirmation so teacher can call trigger-pipeline next
-
-    No request body required — all pipeline params are fixed in the backend.
+    Returns 202 immediately — video generation runs on AI server (~5–25 min).
     """
 
-    # ── 1. Verify lecture exists and belongs to this teacher ──────────────
+    # ── 1. Lecture exists and belongs to this teacher ─────────────
     lecture = session.get(Lecture, lecture_id)
     if not lecture:
         raise HTTPException(status_code=404, detail=f"Lecture {lecture_id} not found.")
-
     if lecture.teacher_id != current_user.user_id:
-        raise HTTPException(status_code=403, detail="You can only prepare your own lectures.")
+        raise HTTPException(status_code=403, detail="You can only start pipeline for your own lectures.")
 
-    # ── 2. Read script from generated_content ────────────────────────────
+    # ── 2. Read script from generated_content ─────────────────────
     script = session.exec(
         select(GeneratedContent).where(
             GeneratedContent.lecture_id   == lecture_id,
@@ -613,156 +599,53 @@ def prepare_pipeline(
             detail="Script not found in generated_content. "
                    "Run the agent session and approve the lecture first.",
         )
-
     if not Path(script.file_path).exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Script file not found on disk: {script.file_path}. "
-                   "The agent may need to re-run.",
+            detail=f"Script file not found on disk: {script.file_path}.",
         )
 
-    # ── 3. Create or update LecturePipeline with fixed defaults ──────────
+    # ── 3. Create / reset LecturePipeline ─────────────────────────
     pipeline = session.get(LecturePipeline, lecture_id)
-
     if not pipeline:
         pipeline = LecturePipeline(lecture_id=lecture_id, **_PIPELINE_DEFAULTS)
     else:
-        # Reset to fixed defaults on every call (no drift from old values)
+        if pipeline.status == PipelineStatus.GENERATING:
+            raise HTTPException(
+                status_code=409,
+                detail="Pipeline is already generating. Wait for it to finish or fail first.",
+            )
         for field, value in _PIPELINE_DEFAULTS.items():
             setattr(pipeline, field, value)
 
     pipeline.script_path = script.file_path
     pipeline.status      = PipelineStatus.QUEUED
-
     session.add(pipeline)
     session.commit()
     session.refresh(pipeline)
 
-    return PreparePipelineResponse(
-        lecture_id=lecture_id,
-        lecture_type=lecture.lecture_type.value,
-        script_path=script.file_path,
-        status=pipeline.status.value,
-        avatar_backend=pipeline.avatar_backend,
-        message=f"Pipeline ready. Call POST /lecture/{lecture_id}/trigger-pipeline to start video generation.",
-    )
-
-
-# ============================================
-# 8: Trigger Pipeline (already exists below)
-# ============================================
-
-# # app/api/v1/endpoints/lecture.py
-# from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
-# from fastapi.responses import FileResponse
-# from pydantic import BaseModel
-# from sqlmodel import SQLModel, Session, select
-# from typing import Optional, List
-# from datetime import time, date, datetime
-# from pathlib import Path
-# from arq import create_pool
-# from arq.connections import RedisSettings
-# import os
-
-# ============================================
-# 7: Trigger Pipeline
-# ============================================
-
-@router.post(
-    "/{lecture_id}/trigger-pipeline",
-    response_model=LecturePipelineTriggerResponse,
-    status_code=status.HTTP_202_ACCEPTED
-)
-async def trigger_lecture_pipeline(
-    lecture_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Trigger avatar video generation for a GENERATED lecture.
-
-    Requires:
-    - Lecture exists with lecture_type = GENERATED
-    - Teacher onboarding_status = 'ready'
-    - LecturePipeline record exists with script_path set and file on disk
-    - Pipeline status is not already GENERATING or COMPLETED
-
-    Returns 202 immediately — generation runs in background (5–25 min).
-    """
-
-    # Check 1: Lecture exists
-    lecture = session.get(Lecture, lecture_id)
-    if not lecture:
-        raise HTTPException(status_code=404, detail=f"Lecture {lecture_id} not found")
-
-    # Check 2: Caller owns the lecture
-    if lecture.teacher_id != current_user.user_id:
-        raise HTTPException(status_code=403, detail="You can only trigger generation for your own lectures")
-
-    # Check 3: Teacher onboarding must be ready (set by AI server after preprocessing)
+    # ── 4. Teacher onboarding must be ready ───────────────────────
     teacher = session.get(Teacher, lecture.teacher_id)
     if not teacher or teacher.onboarding_status != "ready":
         current_onboarding = teacher.onboarding_status if teacher else "no teacher record"
         raise HTTPException(
             status_code=409,
             detail=f"Teacher onboarding not complete. "
-                   f"onboarding_status: '{current_onboarding}'. Must be 'ready'."
+                   f"onboarding_status: '{current_onboarding}'. Must be 'ready'.",
         )
 
-    # Check 4: LecturePipeline record must exist
-    pipeline = session.get(LecturePipeline, lecture_id)
-    if not pipeline:
-        raise HTTPException(
-            status_code=400,
-            detail="No LecturePipeline record found for this lecture. "
-                   "Upstream module must create it and set script_path first."
-        )
-
-    # Check 6: script_path must be set
-    if not pipeline.script_path:
-        raise HTTPException(
-            status_code=400,
-            detail="pipeline.script_path is not set. "
-                   "Upstream module must write the script and set script_path first."
-        )
-
-    # Check 7: Script file must exist on disk
-    if not Path(pipeline.script_path).exists():
-        raise HTTPException(
-            status_code=400,
-            detail=f"Script file not found on disk: {pipeline.script_path}"
-        )
-
-    # Check 8: Not already running or completed
-    if pipeline.status in (PipelineStatus.GENERATING, PipelineStatus.COMPLETED):
-        raise HTTPException(
-            status_code=409,
-            detail=f"Cannot trigger. Pipeline status is already '{pipeline.status.value}'. "
-                   f"Only QUEUED or FAILED pipelines can be triggered."
-        )
-
-    # All checks passed — dispatch job to AI server via HTTP
+    # ── 5. Config check ────────────────────────────────────────────
     if not settings.AI_SERVER_URL:
-        raise HTTPException(
-            status_code=503,
-            detail="AI_SERVER_URL is not configured. Set it in .env to point to the AI server's ngrok URL.",
-        )
+        raise HTTPException(status_code=503, detail="AI_SERVER_URL is not configured in .env.")
     if not settings.BACKEND_PUBLIC_URL:
-        raise HTTPException(
-            status_code=503,
-            detail="BACKEND_PUBLIC_URL is not configured. Set it in .env to your laptop's ngrok URL.",
-        )
+        raise HTTPException(status_code=503, detail="BACKEND_PUBLIC_URL is not configured in .env.")
     if not settings.INTERNAL_API_TOKEN:
-        raise HTTPException(
-            status_code=503,
-            detail="INTERNAL_API_TOKEN is not configured. Set it in .env.",
-        )
+        raise HTTPException(status_code=503, detail="INTERNAL_API_TOKEN is not configured in .env.")
 
-    base = settings.BACKEND_PUBLIC_URL.rstrip("/")
+    base  = settings.BACKEND_PUBLIC_URL.rstrip("/")
     token = settings.INTERNAL_API_TOKEN
 
     def _file_url(path: str) -> str:
-        """Build a signed download URL for the AI server to fetch a file from this laptop."""
         return f"{base}/api/v1/internal/files?path={path}"
 
     payload = {
@@ -782,6 +665,7 @@ async def trigger_lecture_pipeline(
         "token":        token,
     }
 
+    # ── 6. Dispatch to AI server ───────────────────────────────────
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
@@ -797,15 +681,12 @@ async def trigger_lecture_pipeline(
     except httpx.ConnectError:
         raise HTTPException(
             status_code=502,
-            detail=f"Could not reach AI server at {settings.AI_SERVER_URL}. Is ngrok running on friend's PC?",
+            detail=f"Could not reach AI server at {settings.AI_SERVER_URL}. Is ngrok running?",
         )
     except httpx.TimeoutException:
-        raise HTTPException(
-            status_code=504,
-            detail="AI server did not respond within 15 seconds.",
-        )
+        raise HTTPException(status_code=504, detail="AI server did not respond within 15 seconds.")
 
-    # Update status so frontend polling sees it immediately
+    # ── 7. Update status ───────────────────────────────────────────
     lecture.status  = LectureStatus.GENERATING
     pipeline.status = PipelineStatus.GENERATING
     session.add(lecture)
