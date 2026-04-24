@@ -1023,16 +1023,26 @@ router = APIRouter()
 # ── Request / Response models ──────────────────────────────────────────────────
 
 class ResourceIn(BaseModel):
-    resource_type: ResourceType
+    resource_type: str    # ← str not ResourceType so validator runs first
     file_path:     str
     query:         str
 
     @field_validator("resource_type", mode="before")
     @classmethod
     def normalize_resource_type(cls, v):
-        """Accept any casing from the client — normalize to uppercase."""
         if isinstance(v, str):
             return v.upper()
+        return v
+
+    @field_validator("resource_type", mode="after")
+    @classmethod
+    def validate_resource_type(cls, v):
+        valid = {rt.value for rt in ResourceType}
+        if v not in valid:
+            raise ValueError(
+                f"Invalid resource_type '{v}'. "
+                f"Allowed: {sorted(valid)}"
+            )
         return v
 
 
@@ -1595,7 +1605,7 @@ async def start_generated_session(
     for r in body.resources:
         row = Resource(
             lecture_id    = lecture.lecture_id,
-            resource_type = r.resource_type,
+            resource_type = ResourceType(r.resource_type),
             file_path     = r.file_path,
             query         = r.query,
         )
