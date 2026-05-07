@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../constants/constants.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 import '../../services/password_reset_service.dart';
 
 class ResetPasswordPage extends StatefulWidget {
@@ -25,7 +25,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   String message = ""; //not required
   bool _obscureText1 = true;
   bool _obscureText2 = true;
-  bool is_loading = false;
+  bool isloading = false;
   bool status = false;
   String? error_message = null;
   @override
@@ -47,7 +47,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     message = "";
     // 1️⃣ Start loading
     setState(() {
-      is_loading = true;
+      isloading = true;
       message = '';
     });
     try {
@@ -87,7 +87,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       }
       if (mounted) {
         setState(() {
-          is_loading = false;
+          isloading = false;
         });
       }
     }
@@ -97,125 +97,133 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
-      backgroundColor: AppColors.lightBackground,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppStyles.spacingL),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppStyles.spacingL),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                      boxShadow: AppStyles.cardShadow,
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // New Password textfield
-                          CustomTextFormField(
-                            controller: _newPasswordController,
-                            suffixIcon: IconsButton(
-                              size: 24,
-                              iconColor: Colors.grey,
-                              backgroundColor: Colors.transparent,
-                              icon: _obscureText1
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              onPressed: () {
-                                setState(() => _obscureText1 = !_obscureText1);
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: LoadingOverlay(
+        isLoading: isloading,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppStyles.spacingL),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                        boxShadow: AppStyles.cardShadow,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // New Password textfield
+                            CustomTextFormField(
+                              controller: _newPasswordController,
+                              suffixIcon: IconsButton(
+                                size: 24,
+                                iconColor: Colors.grey,
+                                backgroundColor: Colors.transparent,
+                                icon: _obscureText1
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                onPressed: () {
+                                  setState(
+                                    () => _obscureText1 = !_obscureText1,
+                                  );
+                                },
+                              ),
+                              hintText: ' ',
+                              label: "New Password",
+                              keyboardType: TextInputType.emailAddress,
+                              obscureText: _obscureText1,
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                return null;
                               },
                             ),
-                            hintText: ' ',
-                            label: "New Password",
-                            keyboardType: TextInputType.emailAddress,
-                            obscureText: _obscureText1,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty ||
-                                  value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          // Confirm password textfield
-                          CustomTextFormField(
-                            suffixIcon: IconsButton(
-                              size: 24,
-                              iconColor: Colors.grey,
-                              backgroundColor: Colors.transparent,
-                              icon: _obscureText2
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              onPressed: () {
-                                setState(() => _obscureText2 = !_obscureText2);
+                            const SizedBox(height: AppStyles.spacingL),
+                            // Confirm password textfield
+                            CustomTextFormField(
+                              suffixIcon: IconsButton(
+                                size: 24,
+                                iconColor: Colors.grey,
+                                backgroundColor: Colors.transparent,
+                                icon: _obscureText2
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                onPressed: () {
+                                  setState(
+                                    () => _obscureText2 = !_obscureText2,
+                                  );
+                                },
+                              ),
+                              hintText: ' ',
+                              label: "Confirm Password",
+                              obscureText: _obscureText2,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _newPasswordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) => password2 = value,
+                            ),
+                            const SizedBox(height: AppStyles.spacingL),
+                            // Reset Button
+                            CustomButton(
+                              text: 'Reset Password',
+                              fullWidth: true,
+                              isLoading: isloading,
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  _formKey.currentState!.save();
+                                  await _handleResetPassword();
+                                } else {
+                                  setState(() {
+                                    status = false;
+                                    message =
+                                        "Please fill all fields correctly!";
+                                  });
+                                }
                               },
                             ),
-                            hintText: ' ',
-                            label: "Confirm Password",
-                            obscureText: _obscureText2,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _newPasswordController.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) => password2 = value,
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          // Reset Button
-                          CustomButton(
-                            text: 'Reset Password',
-                            fullWidth: true,
-                            isLoading: is_loading,
-                            onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
-                                await _handleResetPassword();
-                              } else {
-                                setState(() {
-                                  status = false;
-                                  message = "Please fill all fields correctly!";
-                                });
-                              }
-                            },
-                          ),
-                          // Back to login Link
-                          const SizedBox(height: AppStyles.spacingS),
-                          CustomButton(
-                            text: "Back To Login",
-                            onPressed: _backToLogin,
-                            buttonType: ButtonType.secondary,
-                            fullWidth: true,
-                          ),
-                        ],
+                            // Back to login Link
+                            const SizedBox(height: AppStyles.spacingS),
+                            CustomButton(
+                              text: "Back To Login",
+                              onPressed: _backToLogin,
+                              buttonType: ButtonType.secondary,
+                              fullWidth: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppStyles.spacingS),
-                  // Display message
-                  if (message.isNotEmpty) ...[
-                    const SizedBox(height: AppStyles.spacingL),
-                    MessageDisplay(
-                      isSuccess: status,
-                      massegeBanner: status ? "L" : "Error",
-                      message: message,
-                      onDismiss: () => setState(() => message = ''),
-                    ),
+                    const SizedBox(height: AppStyles.spacingS),
+                    // Display message
+                    if (message.isNotEmpty) ...[
+                      const SizedBox(height: AppStyles.spacingL),
+                      MessageDisplay(
+                        isSuccess: status,
+                        massegeBanner: status ? "L" : "Error",
+                        message: message,
+                        onDismiss: () => setState(() => message = ''),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

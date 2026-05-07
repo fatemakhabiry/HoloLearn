@@ -26,7 +26,7 @@ class ContentTileWidget extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppStyles.spacingL),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color:Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(AppStyles.radiusXL),
             boxShadow: AppStyles.cardShadow,
           ),

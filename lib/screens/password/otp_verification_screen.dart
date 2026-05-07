@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../constants/constants.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 import '../../services/password_reset_service.dart';
 
 class OtpVerficationScreen extends StatefulWidget {
@@ -199,7 +199,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
       body: Center(
         child: SingleChildScrollView(
@@ -223,7 +223,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color:Theme.of(context).scaffoldBackgroundColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                       boxShadow: AppStyles.cardShadow,
                     ),
@@ -252,7 +252,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                             Text(
                               widget.email,
                               style: AppStyles.link.copyWith(
-                                color: AppColors.primaryColor,
+                                color:AppColors.primaryColor ,
                                 fontWeight: AppFonts.semiBold,
                               ),
                             ),

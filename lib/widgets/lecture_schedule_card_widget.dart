@@ -3,6 +3,7 @@ import 'package:hololearn/widgets/button_widget.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_fonts.dart';
 import '../constants/app_styles.dart';
+import '../constants/app_themes.dart';
 
 class LectureScheduleCard extends StatelessWidget {
   final String lectureTitle;
@@ -39,7 +40,7 @@ bool _hasContent() =>
     return Container(
       padding: const EdgeInsets.all(AppStyles.spacingM),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppStyles.radiusM),
         boxShadow: AppStyles.cardShadow,
       ),
@@ -49,14 +50,14 @@ bool _hasContent() =>
           // Lecture Title
           Text(
             lectureTitle,
-            style: AppStyles.bodyLarge.copyWith(fontWeight: AppFonts.bold),
+            style: AppStyles.bodyLarge.copyWith(fontWeight: AppFonts.bold,color: context.textPrimary),
           ),
           const SizedBox(height: AppStyles.spacingS),
 
           // Date and Time
           Text(
             '$date . $timeRange',
-            style: AppStyles.bodyMedium.copyWith(color: AppColors.textLight),
+            style: AppStyles.bodyMedium.copyWith(color:  context.textSecondary),
           ),
 
           const SizedBox(height: AppStyles.spacingL),
@@ -93,7 +94,7 @@ bool _hasContent() =>
                   text: 'VIEW CONTENT',
                   prefixIcon: Icon(
                     Icons.folder_open_outlined,
-                    color: AppColors.white,
+                    color:Theme.of(context).cardColor,
                   ),
                   onPressed: onViewContent!,
                   buttonType: ButtonType.primary,

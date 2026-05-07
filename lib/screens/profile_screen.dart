@@ -7,11 +7,12 @@ import 'package:record/record.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../providers/theme_provider.dart';
 import '../widgets/widgets.dart';
 import '../routes/app_routes.dart';
 import '../constants/constants.dart';
 import '../services/avatar_service.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -62,7 +63,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
+  void _logout(){
+        CustomConfirmationDialog.show(
+      context,
+      title: 'Log Out',
+      message: 'Are you sure you want to Log Out from your Account?',
+      confirmButtonText: 'yes',
+      onConfirm: () {
+        Navigator.pop(context);
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+        appState.clearAuth();
+        Navigator.pushNamed(context, AppRoutes.login);
+      },
+    );
 
+  }
   void _lectureHistory() {
     // Navigator.push(
     //   context,
@@ -355,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icons.camera_alt,
                   color: AppColors.primaryColor,
                 ),
-                title: const Text('Camera', style: AppStyles.h3),
+                title:  Text('Camera', style: AppStyles.h3.copyWith(color: context.textPrimary)),
                 onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
               ),
               ListTile(
@@ -363,7 +378,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icons.photo_library,
                   color: AppColors.primaryColor,
                 ),
-                title: const Text('Gallery', style: AppStyles.h3),
+                title: Text(
+                  'Gallery',
+                  style: AppStyles.h3.copyWith(color: context.textPrimary),
+                ),
                 onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
               ),
             ],
@@ -512,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title:
             "${appState.userRole == 'teacher' ? 'Teacher' : 'Student'} Profile",
@@ -527,9 +545,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(AppStyles.spacingXL),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                boxShadow: AppStyles.cardShadow,
+                boxShadow: context.cardShadow,
               ),
               child: Column(
                 children: [
@@ -539,14 +557,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryColor, width: 3),
+                      border: Border.all(
+                        color: AppColors.primaryColor,
+                        width: 3,
+                      ),
                     ),
                     child: CircleAvatar(
                       radius: 48,
+                      backgroundColor:Colors.transparent,
                       child: Icon(
                         Icons.person,
                         size: 50,
-                        color: AppColors.primaryColor,
+                        color:AppColors.primaryColor,
                       ),
                     ),
                   ),
@@ -556,7 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Name
                   Text(
                     userName,
-                    style: AppStyles.h2,
+                    style: AppStyles.h2.copyWith(color: context.textPrimary),
                     textAlign: TextAlign.center,
                   ),
 
@@ -564,7 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Role
                   Text(
                     appState.userRole == 'teacher' ? userRole : 'Student',
-                    style: AppStyles.caption,
+                    style: AppStyles.caption.copyWith(color:context.textSecondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -576,17 +598,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(AppStyles.spacingL),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                boxShadow: AppStyles.cardShadow,
+                boxShadow:context.cardShadow,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    'Appearance',
+                    style: AppStyles.h3.copyWith(color: context.textPrimary),
+                  ),
+                  const SizedBox(height: AppStyles.spacingS),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppStyles.spacingM,
+                          vertical: AppStyles.spacingS,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(
+                            AppStyles.radiusM,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              themeProvider.isDark
+                                  ? Icons.dark_mode_outlined
+                                  : Icons.light_mode_outlined,
+                              color: AppColors.primaryColor,
+                            ),
+                            const SizedBox(width: AppStyles.spacingM),
+                            Expanded(
+                              child: Text(
+                                themeProvider.isDark
+                                    ? 'Dark Mode'
+                                    : 'Light Mode',
+                                style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
+                              ),
+                            ),
+                            Switch(
+                              value: themeProvider.isDark,
+                              onChanged: (_) => themeProvider.toggle(),
+                              trackOutlineColor: MaterialStateProperty.all(Theme.of(context).cardColor),
+                              activeColor: AppColors.primaryColor,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: AppStyles.spacingL),
                   if (appState.userRole == 'teacher') ...[
                     Text(
                       "Lecture Settings",
-                      style: AppStyles.h3.copyWith(color: AppColors.textLight),
+                      style: AppStyles.h3.copyWith(color: context.textPrimary),
                     ),
                     const SizedBox(height: AppStyles.spacingS),
                     CustomTextFormField(
@@ -602,7 +671,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: AppStyles.spacingL),
                   Text(
                     "Account Settings",
-                    style: AppStyles.h3.copyWith(color: AppColors.textLight),
+                    style: AppStyles.h3.copyWith(color: context.textPrimary),
                   ),
                   const SizedBox(height: AppStyles.spacingS),
                   CustomTextFormField(
@@ -622,11 +691,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
+                                    const SizedBox(height: AppStyles.spacingS),
+                  CustomTextFormField(
+                    prefixIcon: Icon(
+                      Icons.logout_sharp,
+                      color: AppColors.primaryColor,
+                    ),
+                    hintText: 'Log out',
+                    readOnly: true,
+                    suffixIcon: TextButton(
+                      onPressed: _logout,
+                      child: Text(
+                        'logout',
+                        style: AppStyles.h3.copyWith(
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
                   if (appState.userRole == 'teacher') ...[
                     const SizedBox(height: AppStyles.spacingL),
                     Text(
                       "Avatar Settings",
-                      style: AppStyles.h3.copyWith(color: AppColors.textLight),
+                      style: AppStyles.h3.copyWith(color: context.textPrimary),
                     ),
                     const SizedBox(height: AppStyles.spacingS),
                     CustomTextFormField(
@@ -649,7 +736,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: AppStyles.spacingS),
                     CustomTextFormField(
-                      prefixIcon: Icon(Icons.mic, color: AppColors.primaryColor),
+                      prefixIcon: Icon(
+                        Icons.mic,
+                        color: AppColors.primaryColor,
+                      ),
                       hintText: 'change voice sample',
                       readOnly: true,
                       suffixIcon: TextButton(

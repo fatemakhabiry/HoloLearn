@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../state/processing_notifier.dart';
+import '../../providers/lecture_state_provider.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class LectureProcessingScreen extends StatefulWidget {
   final int sessionId;
@@ -133,17 +134,18 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
           _dotsTimer?.cancel();
         }
 
-        // Auto-navigate on done
-        // if (job.isDone) {
-        //   WidgetsBinding.instance.addPostFrameCallback((_) {
-        //     if (mounted) {
-        //       Navigator.pushReplacementNamed(context, AppRoutes.lecturepreview);
-        //     }
-        //   });
-        // }
+        if (job.isDone) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context
+                  .read<LectureStateProvider>()
+                  .clearOngoingSession();
+            }
+          });
+        }
 
         return Scaffold(
-          backgroundColor: AppColors.lightBackground,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: CustomAppBar(
             title: 'Lecture Processing',
             showBackButton: false,
@@ -162,7 +164,7 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                       width: 84,
                       height: 84,
                       decoration: BoxDecoration(
-                        color: AppColors.lightBackground,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(AppStyles.radiusM),
                       ),
                       child: const Center(
@@ -183,7 +185,6 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                     builder: (context, _) => CustomProgressBar(
                       progress: _progressBarAnimation.value,
                       progressColor: AppColors.primaryColor,
-                      backgroundColor: AppColors.lightBackground,
                       height: 8,
                       showPercentage: job.progress > 0,
                       percentageStyle: AppStyles.h2.copyWith(
@@ -238,7 +239,7 @@ class _LectureProcessingScreenState extends State<LectureProcessingScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppStyles.spacingL),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                         boxShadow: AppStyles.cardShadow,
                       ),

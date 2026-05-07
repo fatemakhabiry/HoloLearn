@@ -12,7 +12,6 @@ export 'otp_widget.dart';
 export 'reserved_timeslot_widget.dart';
 export 'session_card_widget.dart';
 export 'upload_card_widget.dart';
-export 'resources_query_widget.dart';
 export 'processing_notification_bar_widget.dart';
 export 'content_tile_widget.dart';
 export 'loading_overlay_widget.dart';

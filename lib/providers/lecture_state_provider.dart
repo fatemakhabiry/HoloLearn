@@ -5,10 +5,22 @@ import '../../models/availability_models.dart';
 import '../../utils/storage_helper.dart';
 
 class LectureStateProvider extends ChangeNotifier {
+
+  // ── Two separate session IDs ──────────────────────────────────────────────
+  //
+  // _sessionId       : temporary ID used when fetching a resource file from
+  //                    lecture history (read-only context). Does NOT persist.
+  //
+  // _ongoingSessionId: the live session that is currently being processed
+  //                    (created → preview → approve → processing).
+  //                    Set when a new session starts, cleared ONLY after
+  //                    approve() succeeds. Nullable so screens can gate on it.
+  //
+  int _sessionId = 0;
+  int? _ongoingSessionId; // null  = no session in progress
   String _lectureTitle = '';
   String _courseCode = '';
   int _lectureId = 0;
-  int _sessionId = 0;
   int _teacherId = 0;
   String _lectureDate = '';
   String _lectureStartTime = '';
@@ -17,6 +29,7 @@ class LectureStateProvider extends ChangeNotifier {
   String _lectureStatus = '';
   String _lectureType = '';
   bool _isRescheduling = false;
+  
   // ── Setters ──────────────────────────────────────────────────────────────
 
   Future<void> setLectureTitle(String title) async {
@@ -90,9 +103,29 @@ class LectureStateProvider extends ChangeNotifier {
     await _saveToStorage();
     notifyListeners();
   }
+   Future<void> startOngoingSession(int sessionId) async {
+    _ongoingSessionId = sessionId;
+    // Also set _sessionId so existing code that reads sessionId still works
+    _sessionId = sessionId;
+    await _saveToStorage();
+    await StorageHelper.saveOngoingSessionId(sessionId);
+    notifyListeners();
+  }
+ 
+  /// Clears the ongoing session — call this after approve() succeeds.
+  Future<void> clearOngoingSession() async {
+    _ongoingSessionId = null;
+    await StorageHelper.clearOngoingSessionId();
+    await _saveToStorage();
+    notifyListeners();
+  }
+ 
 
   // ── Getters ──────────────────────────────────────────────────────────────
-
+    /// The ongoing live session. Null when no session is in progress.
+  int? get ongoingSessionId => _ongoingSessionId;
+  /// True when a lecture session is actively being processed.
+  bool get hasOngoingSession => _ongoingSessionId != null;
   String get lectureTitle => _lectureTitle;
   String get courseCode => _courseCode;
   int get lectureId => _lectureId;
@@ -107,31 +140,37 @@ class LectureStateProvider extends ChangeNotifier {
   bool get isRescheduling => _isRescheduling;
   // ── Init / Storage ────────────────────────────────────────────────────────
 
-  Future<void> init() async {
+    Future<void> init() async {
     final state = await StorageHelper.getLectureState();
-    if (state == null) return;
-
-    _lectureTitle = state['lectureTitle'] ?? '';
-    _courseCode = state['courseCode'] ?? '';
-    _lectureId = state['lectureId'] ?? 0;
-    _teacherId = state['teacherId'] ?? 0;
-    _lectureDate = state['lectureDate'] ?? '';
-    _lectureStartTime = state['lectureStartTime'] ?? '';
-    _lectureEndTime = state['lectureEndTime'] ?? '';
-    _lectureLink = state['lectureLink'] ?? '';
-    _lectureStatus = state['lectureStatus'] ?? '';
-    _lectureType = state['lectureType'] ?? '';
-    _isRescheduling = state['isRescheduling'] ?? false;
-
+    if (state != null) {
+      _lectureTitle = state['lectureTitle'] ?? '';
+      _courseCode = state['courseCode'] ?? '';
+      _lectureId = state['lectureId'] ?? 0;
+      _teacherId = state['teacherId'] ?? 0;
+      _lectureDate = state['lectureDate'] ?? '';
+      _lectureStartTime = state['lectureStartTime'] ?? '';
+      _lectureEndTime = state['lectureEndTime'] ?? '';
+      _lectureLink = state['lectureLink'] ?? '';
+      _lectureStatus = state['lectureStatus'] ?? '';
+      _lectureType = state['lectureType'] ?? '';
+      _isRescheduling = state['isRescheduling'] ?? false;
+    }
+ 
+    // Restore sessionId (history lookup)
     final storedSessionId = await StorageHelper.getSessionId();
-
     if (storedSessionId != null) {
       _sessionId = storedSessionId;
     }
-
+ 
+    // Restore ongoingSessionId independently
+    final storedOngoing = await StorageHelper.getOngoingSessionId();
+    if (storedOngoing != null) {
+      _ongoingSessionId = storedOngoing;
+    }
+ 
     notifyListeners();
   }
-
+ 
   Future<void> _saveToStorage() async {
     await StorageHelper.saveLectureState({
       'lectureTitle': _lectureTitle,
@@ -146,8 +185,11 @@ class LectureStateProvider extends ChangeNotifier {
       'lectureStatus': _lectureStatus,
       'lectureType': _lectureType,
       'isRescheduling': _isRescheduling,
+      // NOTE: ongoingSessionId is stored separately via StorageHelper
     });
   }
+ 
+
 
   // ── Setters ───────────────────────────────────────────────────────────────
 
@@ -225,7 +267,6 @@ class LectureStateProvider extends ChangeNotifier {
     _courseCode = '';
     _lectureId = 0;
     _sessionId = 0;
-    _sessionId = 0;
     _teacherId = 0;
     _lectureDate = '';
     _lectureStartTime = '';
@@ -234,6 +275,8 @@ class LectureStateProvider extends ChangeNotifier {
     _lectureStatus = '';
     _lectureType = '';
     _isRescheduling = false;
+    // NOTE: clearLectureState does NOT clear ongoingSessionId intentionally.
+    // Call clearOngoingSession() explicitly after approve().
     await _saveToStorage();
     notifyListeners();
   }
@@ -249,6 +292,7 @@ class LectureStateProvider extends ChangeNotifier {
       return '';
     }
   }
+  
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

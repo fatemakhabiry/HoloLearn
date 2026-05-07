@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../models/lecture_models.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 import '../../utils/storage_helper.dart';
 
 class ProcessingNotifier extends ChangeNotifier {

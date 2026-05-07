@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/lecture_models.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exceptions

@@ -18,7 +18,7 @@ class ReservedTimeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppStyles.spacingM),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppStyles.radiusM),
         boxShadow: AppStyles.cardShadow,
       ),

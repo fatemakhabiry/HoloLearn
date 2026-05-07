@@ -9,8 +9,8 @@ import '../../routes/app_routes.dart';
 import '../../models/schedule_models.dart';
 import '../../services/lecture_service.dart';
 import '../../services/schedule_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
 
 class LectureHistoryScreen extends StatefulWidget {
   const LectureHistoryScreen({super.key});
@@ -266,6 +266,7 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: 'My Lecture History'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: LoadingOverlay(
         isLoading: isLoading,
         child: Center(

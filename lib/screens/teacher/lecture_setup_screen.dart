@@ -13,8 +13,8 @@ import '../../models/lecture_models.dart';
 import '../../services/lecture_service.dart';
 import '../../models/availability_models.dart';
 import '../../services/availability_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
 
 class LectureSetupScreen extends StatefulWidget {
   const LectureSetupScreen({super.key});
@@ -63,9 +63,9 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
       listen: false,
     );
 
-    if (!lectureState.isRescheduling) return; // crystal clear
+    // if (!lectureState.isRescheduling) return; // crystal clear
 
-    setState(() => isRescheduleMode = true);
+    setState(() => isRescheduleMode = lectureState.isRescheduling);
 
     if (lectureState.lectureDate.isNotEmpty) {
       selectedDate = lectureState.lectureDate;
@@ -314,7 +314,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: isRescheduleMode ? "Reschedule Lecture" : "Lecture Setup",
         showBackButton: true,
@@ -333,7 +333,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppStyles.spacingL),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                         boxShadow: AppStyles.cardShadow,
                       ),
@@ -360,6 +360,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                               fontWeight: AppFonts.bold,
                               fontSize: AppFonts.fontSizeXS,
                               letterSpacing: 1.2,
+                              color: context.textPrimary
                             ),
                           ),
                           const SizedBox(height: AppStyles.spacingM),
@@ -397,12 +398,12 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 RichText(
-                                  text: const TextSpan(
+                                  text: TextSpan(
                                     text: 'Time Slot',
-                                    style: AppStyles.labelStyle,
+                                    style: AppStyles.labelStyle.copyWith(color: context.textPrimary),
                                     children: [
                                       TextSpan(
-                                        text: ' *',
+                                        text: '  *',
                                         style: TextStyle(color: Colors.red),
                                       ),
                                     ],
@@ -421,7 +422,7 @@ class _LectureSetupScreenState extends State<LectureSetupScreen> {
                                   ),
                                   decoration: InputDecoration(
                                     filled: true,
-                                    fillColor: AppColors.white,
+                                    fillColor: Theme.of(context).cardColor,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(
                                         AppStyles.radiusM,

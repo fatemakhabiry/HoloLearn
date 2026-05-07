@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/schedule_models.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
 
 /// Handles schedule-related operations for teachers and students
 class ScheduleService {

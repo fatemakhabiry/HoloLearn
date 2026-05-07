@@ -172,7 +172,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                 decoration: InputDecoration(
                   counterText: "",
                   filled: true,
-                  fillColor: AppColors.white,
+                  fillColor: Theme.of(context).cardColor,
                   contentPadding: EdgeInsets.zero,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

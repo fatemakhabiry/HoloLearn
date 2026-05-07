@@ -3,7 +3,9 @@ import 'package:provider/provider.dart' ;
 
 import '../routes/app_routes.dart';
 import '../constants/constants.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
+import '../providers/lecture_state_provider.dart';
+import '../state/processing_notifier.dart';
 
 
 class SplashScreen extends StatefulWidget {
@@ -18,9 +20,9 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
         // Show splash for 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      _checkAutoLogin();
-      _initializeApp();
+    Future.delayed(const Duration(seconds: 2), () async {
+      await _initializeApp(); // restore session state first
+      _checkAutoLogin();      // then check login and navigate
     });
 
   }
@@ -52,8 +54,22 @@ Future<void> _checkAutoLogin() async {
   }
 }
   Future<void> _initializeApp() async {
-// 7agat alsessions
+    try {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+      final processingNotifier = Provider.of<ProcessingNotifier>(context, listen: false);
 
+      // Restore lecture state (including ongoingSessionId) from storage
+      await lectureState.init();
+
+      // If a session was in progress when the app was killed, resume polling
+      if (lectureState.hasOngoingSession) {
+        await processingNotifier.resumeIfNeeded(appState);
+      }
+    } catch (e) {
+      // Non-fatal — app can still function without resumed session
+      debugPrint('_initializeApp error: $e');
+    }
   }
 
   @override
@@ -68,31 +84,18 @@ Future<void> _checkAutoLogin() async {
             children: [
               // Logo
               Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.school,
-                  size: 60,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              const SizedBox(height: AppStyles.spacingM),
-
-              // App Name
-              Text(
-                'HoloLearn',
-                style: AppStyles.logo.copyWith(color: AppColors.white),
+                width: 300,
+                height: 300,
+                child: Image(
+                image: AssetImage("images/vertical logo-02.png"),
+              )
               ),
               const SizedBox(height: AppStyles.spacingS),
 
               // Tagline
               Text(
-                'Holographic Learning Platform',
-                style: AppStyles.h1.copyWith(color: AppColors.textLight),
+                'AI-Powered Holographic learning',
+                style: AppStyles.h2.copyWith(color: AppColors.textLight),
                 textAlign: TextAlign.center,
               ),
             ],

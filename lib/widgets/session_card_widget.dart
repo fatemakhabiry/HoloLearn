@@ -46,7 +46,7 @@ class _SessionCardState extends State<SessionCard> {
     return Container(
       padding: const EdgeInsets.all(AppStyles.spacingL),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppStyles.radiusM),
         boxShadow: AppStyles.cardShadow,
       ),

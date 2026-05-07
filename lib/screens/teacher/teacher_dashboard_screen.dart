@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/state/providers/lecture_state_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../widgets/widgets.dart';
@@ -8,7 +7,8 @@ import '../../constants/constants.dart';
 import '../../models/schedule_models.dart';
 import '../../services/schedule_service.dart';
 import '../../state/processing_notifier.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -33,12 +33,26 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   }
 
   // Replace _checkActiveSession
-  void _checkActiveSession() {
+  // void _checkActiveSession() {
+  //   final appState = Provider.of<AppStateProvider>(context, listen: false);
+  //   Provider.of<ProcessingNotifier>(
+  //     context,
+  //     listen: false,
+  //   ).resumeIfNeeded(appState);
+  // }
+    void _checkActiveSession() {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
-    Provider.of<ProcessingNotifier>(
-      context,
-      listen: false,
-    ).resumeIfNeeded(appState);
+    final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
+    final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+ 
+    notifier.resumeIfNeeded(appState);
+ 
+    // Sync ongoingSessionId from the notifier after resume so it is never null
+    // while a session is actively being polled (e.g. after app restart).
+    final activeSessionId = notifier.sessionId;
+    if (activeSessionId != 0 && !notifier.isTerminal) {
+      lectureState.startOngoingSession(activeSessionId);
+    }
   }
 
   @override
@@ -160,7 +174,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   }
 
   void onDone() {
-  //is content=false review lecture
+  //is content=true review script
     Navigator.pushNamed(
           context,
           AppRoutes.lecturepreview,
@@ -180,7 +194,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
       Navigator.pushNamed(
             context,
             AppRoutes.lectureprocessing,
-            arguments: {"sessionId": lecturestate.sessionId, "lectureType": lecturestate.lectureType} ,
+            arguments: {"sessionId": lecturestate.ongoingSessionId, "lectureType": lecturestate.lectureType} ,
           );
   }
   void _handleCancel(ScheduleSlot lecture) {
@@ -270,7 +284,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: "Hologram Sessions",
         showBackButton: false,
@@ -287,126 +301,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Processing notification bar ──────────────────────────
-                      // Consumer<ProcessingNotifier>(
-                      //   builder: (context, notifier, _) {
-                      //     if (!notifier.isActive)
-                      //       return const SizedBox();
-
-                      //     final isFailed =
-                      //         notifier.lifecycle == ProcessingLifecycle.failed;
-                      //     final isAwaiting = notifier.isAwaitingApproval;
-
-                      //     Color barColor = AppColors.primaryColor;
-                      //     if (notifier.isDone) barColor = AppColors.success;
-                      //     if (isFailed) barColor = AppColors.error;
-
-                      //     return Container(
-                      //       width: double.infinity,
-                      //       padding: const EdgeInsets.symmetric(
-                      //         horizontal: AppStyles.spacingL,
-                      //         vertical: AppStyles.spacingS,
-                      //       ),
-                      //       // color:  AppColors.lightBackground,
-                      //       decoration: BoxDecoration(
-                      //         border: Border.all(color: barColor),
-                      //         color:  AppColors.lightBackground,
-                      //         borderRadius: BorderRadius.circular(AppStyles.radiusM),
-                      //       ),
-                      //       child: Row(
-                      //         children: [
-                      //           if (notifier.isDone)
-                      //             Icon(
-                      //               Icons.check_circle,
-                      //               color: barColor,
-                      //               size: 16,
-                      //             )
-                      //           else if (isFailed)
-                      //             Icon(
-                      //               Icons.error_outline,
-                      //               color:barColor,
-                      //               size: 16,
-                      //             )
-                      //           else
-                      //              SizedBox(
-                      //               width: 16,
-                      //               height: 16,
-                      //               child: CircularProgressIndicator(
-                      //                 strokeWidth: 2,
-                      //                 color: barColor,
-                      //               ),
-                      //             ),
-
-                      //           const SizedBox(width: AppStyles.spacingXXL),
-
-                      //           Expanded(
-                      //             child: GestureDetector(
-                      //               onTap: (notifier.isDone || isFailed)
-                      //                   ? null
-                      //                   : () => Navigator.pushNamed(
-                      //                       context,
-                      //                       AppRoutes.lectureprocessing,
-                      //                       arguments: notifier.sessionId,
-                      //                     ),
-                      //               child: Text(
-                      //                 isFailed
-                      //                     ? 'Generation failed. Dismiss to clear.'
-                      //                     : notifier.Title.isEmpty
-                      //                     ? 'Lecture is being generated…'
-                      //                     : notifier.Title,
-                      //                 style: AppStyles.bodyMedium.copyWith(
-                      //                   color: barColor,
-                      //                 ),
-                      //                 overflow: TextOverflow.ellipsis,
-                      //               ),
-                      //             ),
-                      //           ),
-
-                      //           if (isAwaiting)
-                      //             GestureDetector(
-                      //               onTap: () => Navigator.pushNamed(
-                      //                 context,
-                      //                 AppRoutes.lecturepreview,
-                      //               ),
-                      //               child: Container(
-                      //                 margin: const EdgeInsets.only(
-                      //                   right: AppStyles.spacingS,
-                      //                 ),
-                      //                 padding: const EdgeInsets.symmetric(
-                      //                   horizontal: AppStyles.spacingS,
-                      //                   vertical: 4,
-                      //                 ),
-                      //                 decoration: BoxDecoration(
-                      //                   color: barColor.withOpacity(0.2),
-                      //                   borderRadius: BorderRadius.circular(
-                      //                     AppStyles.radiusPill,
-                      //                   ),
-                      //                 ),
-                      //                 child: Text(
-                      //                   'Review',
-                      //                   style: AppStyles.caption.copyWith(
-                      //                     color: barColor,
-                      //                     fontWeight: FontWeight.bold,
-                      //                   ),
-                      //                 ),
-                      //               ),
-                      //             ),
-
-                      //           GestureDetector(
-                      //             onTap: () => notifier.dismiss(),
-                      //             child:  Icon(
-                      //               Icons.close,
-                      //               color: barColor,
-                      //               size: 18,
-                      //             ),
-                      //           ),
-                      // const SizedBox(height: AppStyles.spacingM),
-                      //         ],
-                      //       ),
-                      //     );
-                      //   },
-
-                      // ),
                       ProcessingNotificationBar(
                         onAwait: onAwait,
                         onDone: onDone,
@@ -421,7 +315,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             children: [
                               Text(
                                 'MY SCHEDULED LECTURES',
-                                style: AppStyles.h3,
+                                style: AppStyles.h3.copyWith(color:context.textPrimary),
                               ),
                               // Add Button
                               Container(
@@ -443,7 +337,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                                     }
                                   },
                                   icon: Icons.add,
-                                  iconColor: AppColors.white,
+                                  iconColor:Theme.of(context).cardColor,
                                   backgroundColor: AppColors.primaryColor,
                                   size: 40,
                                 ),

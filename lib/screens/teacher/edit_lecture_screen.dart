@@ -10,7 +10,7 @@ import '../../constants/constants.dart';
 import '../../services/lecture_service.dart';
 import '../../models/availability_models.dart';
 import '../../services/availability_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class EditLectureScreen extends StatefulWidget {
   final int scheduleId;
@@ -280,7 +280,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
     try {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
       // Call update API
-      final response = await LectureService.updateLecture(
+      await LectureService.updateLecture(
         appState: appState,
         oldScheduleId: widget.scheduleId,
         newScheduleId: selectedSlot!.scheduleId,
@@ -327,7 +327,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(title: 'Edit Lecture'),
       body: LoadingOverlay(
         isLoading: isFetchingLecture||isLoading,
@@ -346,7 +346,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppStyles.spacingL),
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(
                                 AppStyles.radiusXL,
                               ),
@@ -409,7 +409,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                             Container(
                               padding: const EdgeInsets.all(AppStyles.spacingL),
                               decoration: BoxDecoration(
-                                color: AppColors.white,
+                                color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(
                                   AppStyles.radiusXL,
                                 ),
@@ -433,7 +433,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                                       AppStyles.spacingM,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.lightBackground,
+                                      color:Theme.of(context).scaffoldBackgroundColor,
                                       borderRadius: BorderRadius.circular(
                                         AppStyles.radiusM,
                                       ),
@@ -469,7 +469,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppStyles.spacingL),
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(
                                 AppStyles.radiusXL,
                               ),
@@ -493,7 +493,7 @@ class _EditLectureScreenState extends State<EditLectureScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppStyles.spacingL),
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(
                                 AppStyles.radiusXL,
                               ),

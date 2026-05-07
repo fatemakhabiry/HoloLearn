@@ -6,7 +6,6 @@ import '../constants/app_styles.dart';
 
 class CustomProgressBar extends StatelessWidget {
   final double progress; // 0.0 to 1.0
-  final Color backgroundColor;
   final Color progressColor;
   final double height;
   final bool showPercentage;
@@ -15,7 +14,6 @@ class CustomProgressBar extends StatelessWidget {
   const CustomProgressBar({
     super.key,
     required this.progress,
-    this.backgroundColor = AppColors.lightBackground,
     this.progressColor = AppColors.primaryColor,
     this.height = 8,
     this.showPercentage = true,
@@ -32,7 +30,7 @@ class CustomProgressBar extends StatelessWidget {
           child: Container(
             height: height,
             decoration: BoxDecoration(
-              color: backgroundColor,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(height / 2),
             ),
             child: ClipRRect(

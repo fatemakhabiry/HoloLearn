@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/constants/app_themes.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
@@ -108,7 +109,7 @@ Future<void> _pickFiles() async {
         Container(
           padding: const EdgeInsets.all(AppStyles.spacingL),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(AppStyles.radiusXL),
             boxShadow: AppStyles.cardShadow,
           ),
@@ -118,7 +119,7 @@ Future<void> _pickFiles() async {
               RichText(
                 text: TextSpan(
                   text: widget.label,
-                  style: AppStyles.labelStyle,
+                  style: AppStyles.labelStyle.copyWith(color: context.textPrimary),
                   children: [
                     if (widget.isRequired)
                       const TextSpan(
@@ -144,11 +145,11 @@ Future<void> _pickFiles() async {
                       Icon(Icons.add, size: 48, color: AppColors.gray.withValues()),
                       const SizedBox(height: AppStyles.spacingM),
                       if (widget.headerText != null) ...[
-                        Text(widget.headerText!, textAlign: TextAlign.center, style: AppStyles.h3),
+                        Text(widget.headerText!, textAlign: TextAlign.center, style: AppStyles.h3.copyWith(color: context.textPrimary)),
                         const SizedBox(height: AppStyles.spacingS),
                       ],
                       if (widget.subheaderText != null) ...[
-                        Text(widget.subheaderText!, textAlign: TextAlign.center, style: AppStyles.caption),
+                        Text(widget.subheaderText!, textAlign: TextAlign.center, style: AppStyles.caption.copyWith(color: context.textSecondary)),
                         const SizedBox(height: AppStyles.spacingS),
                       ],
                     ],

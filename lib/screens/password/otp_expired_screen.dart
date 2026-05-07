@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../constants/constants.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 import '../../services/password_reset_service.dart';
 
 class OtpExpiredScreen extends StatelessWidget {
@@ -22,7 +22,6 @@ class OtpExpiredScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void _backToLogin() {
-
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
 
@@ -31,52 +30,36 @@ class OtpExpiredScreen extends StatelessWidget {
 
       // Validate email is not empty
       if (email.isEmpty) {
-        // Show error and navigate back to forget password
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email not found. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
+        CustomErrorHandler.show(
+          context,
+          message: 'Email not found. Please try again.',
+          type: ErrorType.fail,
         );
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const ForgetPasswordPage()),
-        // );
+
         Navigator.pushReplacementNamed(context, AppRoutes.forgetPassword);
         return;
       }
 
       try {
         await PasswordResetService.resendOTP(email);
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => OtpVerficationScreen(
-        //       email: email,
-        //       linkSentTime: DateTime.now(),
-        //     ),
-        //   ),
-        // );
+
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.otpVerification,
           arguments: {'email': email, 'linkSentTime': DateTime.now()},
         );
       } catch (e) {
-        // Handle error - could show a snackbar or navigate to error screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        CustomErrorHandler.show(
+          context,
+          message:
               'Failed to resend OTP: ${e.toString().replaceFirst('Exception: ', '')}',
-            ),
-            backgroundColor: Colors.red,
-          ),
+          type: ErrorType.fail,
         );
       }
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
       body: Center(
         child: SingleChildScrollView(
@@ -99,7 +82,7 @@ class OtpExpiredScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color:Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                       boxShadow: AppStyles.cardShadow,
                     ),

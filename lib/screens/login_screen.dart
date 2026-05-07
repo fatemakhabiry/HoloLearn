@@ -8,7 +8,7 @@ import '../widgets/widgets.dart';
 import '../routes/app_routes.dart';
 import '../constants/constants.dart';
 import '../services/auth_service.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor:Theme.of(context).scaffoldBackgroundColor,
       body: LoadingOverlay(
         isLoading: is_loading,
         child: Center(
@@ -149,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'HOLOGRAPHIC LEARNING',
                         style: AppStyles.caption.copyWith(
-                          color: AppColors.white,
+                          color: context.isDark?AppColors.darkBackground:AppColors.white,
                           fontWeight: AppFonts.semiBold,
                           letterSpacing: 1.2,
                         ),
@@ -157,14 +157,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: AppStyles.spacingM),
                     // HoloLearn Title
-                    Text('HoloLearn', style: AppStyles.logo),
+                    Text('HoloLearn', style: AppStyles.logo.copyWith(color: context.textPrimary)),
 
                     const SizedBox(height: AppStyles.spacingXS),
                     // Subtitle
                     Text(
                       'Next-generation virtual education',
                       style: AppStyles.bodyMedium.copyWith(
-                        color: AppColors.textLight,
+                        color:  context.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppStyles.spacingXL),
@@ -172,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                     Container(
                       padding: const EdgeInsets.all(AppStyles.spacingL),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                         boxShadow: AppStyles.cardShadow,
                       ),
@@ -244,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                                 Text(
                                   'Remember me',
                                   style: AppStyles.bodyMedium.copyWith(
-                                    color: AppColors.textBlack,
+                                    color: context.textPrimary,
                                   ),
                                 ),
                                 const Spacer(),

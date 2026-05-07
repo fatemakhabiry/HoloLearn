@@ -3,27 +3,26 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  /// Primary blue - Used for main buttons, highlights, and branding
-  static const Color primaryColor = Color(0xFF2562EB);
-
-  /// Secondary blue - Used for accents and secondary elements
+  // ── Brand ──────────────────────────────────────────────────────────────────
+  static const Color primaryColor   = Color(0xFF2562EB);
   static const Color secondaryColor = Color(0xFF433EA0);
 
-  /// Light background - Used for cards, containers, and light surfaces
-  static const Color lightBackground = Color(0xFFE8EFFF);
-
-  /// Neutral gray - Used for subtle text, borders, and disabled states
-  static const Color gray = Color(0xFFB1AAAF);
-
-  /// Text colors for different hierarchy levels
-  static const Color textBlack = Color(0xFF000000);
-  static const Color textBlue = Color(0xFF433EA0);
-  static const Color textLight = Color(0xFFB1AAAF);
-
-  /// White for contrast
-  static const Color white = Color(0xFFFFFFFF);
-
-  /// Error/Warning colors
-  static const Color error = Color(0xFFD32F2F);
+  // ── Semantic ───────────────────────────────────────────────────────────────
+  static const Color error   = Color(0xFFD32F2F);
   static const Color success = Color(0xFF388E3C);
+
+  // ── Light theme ────────────────────────────────────────────────────────────
+  static const Color lightBackground = Color(0xFFE8EFFF); // page / scaffold
+  static const Color white           = Color(0xFFFFFFFF); // card / surface
+  static const Color gray            = Color(0xFFB1AAAF); // border, disabled
+  static const Color textBlack       = Color(0xFF000000); // primary text
+  static const Color textBlue        = Color(0xFF433EA0); // accent text
+  static const Color textLight       = Color(0xFFB1AAAF); // secondary text
+
+  // ── Dark theme ─────────────────────────────────────────────────────────────
+  static const Color darkBackground  = Color(0xFF0F172A); // page / scaffold
+  static const Color darkCard        = Color(0xFF1E293B); // card / surface
+  static const Color darkBorder      = Color(0xFF334155); // border, divider
+  static const Color darkTextSecondary = Color(0xFF94A3B8); // secondary text
+
 }

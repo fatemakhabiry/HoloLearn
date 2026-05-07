@@ -1,4 +1,3 @@
-// lib/widgets/custom_confirmation_dialog.dart
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
@@ -26,7 +25,15 @@ class CustomConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor   = isDark ? AppColors.darkCard : AppColors.white;
+    final textColor = isDark ? AppColors.textLight : AppColors.textBlack;
+
     return AlertDialog(
+      backgroundColor: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+      ),
       title: title != null
           ? Text(
               title!,
@@ -38,7 +45,7 @@ class CustomConfirmationDialog extends StatelessWidget {
         children: [
           Text(
             message,
-            style: AppStyles.h3,
+            style: AppStyles.h3.copyWith(color: textColor),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppStyles.spacingM),
@@ -60,7 +67,6 @@ class CustomConfirmationDialog extends StatelessWidget {
     );
   }
 
-  // Static method to show the dialog easily
   static Future<void> show(
     BuildContext context, {
     required String title,
@@ -85,7 +91,6 @@ class CustomConfirmationDialog extends StatelessWidget {
     );
   }
 
-  // Static method to dismiss the dialog programmatically
   static void dismiss(BuildContext context) {
     Navigator.of(context).pop();
   }

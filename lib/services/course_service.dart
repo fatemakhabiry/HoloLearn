@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/course_models.dart';
-import '../state/providers/app_state_provider.dart';
+import '../providers/app_state_provider.dart';
 
 /// Handles all course-related operations
 class CourseService {

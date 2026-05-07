@@ -9,9 +9,9 @@ import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
 import '../../models/lecture_models.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
-import '../../state/providers/resource_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
+import '../../providers/resource_state_provider.dart';
 
 class InsertQueriesScreen extends StatefulWidget {
   const InsertQueriesScreen({super.key});
@@ -144,12 +144,91 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
-  Future<void> _handleGenerate() async {
+  // Future<void> _handleGenerate() async {
+  //   // Sync typed queries back into resource objects
+  //   for (int i = 0; i < resources.length; i++) {
+  //     resources[i].query = _controllers[i].text.trim();
+  //   }
+
+  //   // final resourceProvider = Provider.of<ResourceStateProvider>(
+  //   //   context,
+  //   //   listen: false,
+  //   // );
+  //   final appState = Provider.of<AppStateProvider>(context, listen: false);
+  //   final lectureState = Provider.of<LectureStateProvider>(
+  //     context,
+  //     listen: false,
+  //   );
+
+  //   setState(() => isGenerating = true);
+
+  //   try {
+  //     final lectureResources = resources
+  //         .map(
+  //           (r) => LectureResource(
+  //             resourceExtension: r.resourceType,
+  //             filePath: r.filePath,
+  //             query: r.query,
+  //           ),
+  //         )
+  //         .toList();
+
+  //     final response = await LectureService.startSession(
+  //       StartSessionRequest(
+  //         title: lectureState.lectureTitle,
+  //         courseCode: lectureState.courseCode,
+  //         resources: lectureResources,
+  //       ),
+  //       appState,
+  //     );
+  //     print('Response: $response');
+  //     print("5rgt mlservice");
+
+  //     lectureState.setSessionId(response.sessionId);
+  //     lectureState.setLectureId(response.lectureId);
+  //     lectureState.setLectureType('generated');
+
+  //     await StorageHelper.saveLectureSessionId(
+  //       response.lectureId,
+  //       response.sessionId,
+  //     );
+  //     await StorageHelper.saveLectureType(response.lectureId, 'generated');
+  //     if (!mounted) return;
+  //     Navigator.pushNamed(
+  //       context,
+  //       AppRoutes.lectureprocessing,
+  //       arguments: {
+  //         'sessionId': lectureState.sessionId,
+  //         'lectureType': 'generated',
+  //       },
+  //     );
+  //   } on SocketException {
+  //     error_message = 'No internet connection.';
+  //   } on TimeoutException {
+  //     error_message = 'Request timed out.';
+  //   } on ApiException catch (e) {
+  //     error_message = e.message;
+  //   } catch (e) {
+  //     error_message = e.toString().replaceFirst('Exception: ', '');
+  //   } finally {
+  //     if (error_message != null && mounted) {
+  //       print(error_message);
+  //       CustomErrorHandler.show(
+  //         context,
+  //         message: error_message!,
+  //         type: ErrorType.fail,
+  //       );
+  //       error_message = null;
+  //     }
+  //     if (mounted) setState(() => isGenerating = false);
+  //   }
+  // }
+Future<void> _handleGenerate() async {
     // Sync typed queries back into resource objects
     for (int i = 0; i < resources.length; i++) {
       resources[i].query = _controllers[i].text.trim();
     }
-
+ 
     // final resourceProvider = Provider.of<ResourceStateProvider>(
     //   context,
     //   listen: false,
@@ -159,9 +238,9 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
       context,
       listen: false,
     );
-
+ 
     setState(() => isGenerating = true);
-
+ 
     try {
       final lectureResources = resources
           .map(
@@ -172,7 +251,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
             ),
           )
           .toList();
-
+ 
       final response = await LectureService.startSession(
         StartSessionRequest(
           title: lectureState.lectureTitle,
@@ -183,11 +262,11 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
       );
       print('Response: $response');
       print("5rgt mlservice");
-
-      lectureState.setSessionId(response.sessionId);
+ 
+      lectureState.startOngoingSession(response.sessionId);
       lectureState.setLectureId(response.lectureId);
       lectureState.setLectureType('generated');
-
+ 
       await StorageHelper.saveLectureSessionId(
         response.lectureId,
         response.sessionId,
@@ -223,13 +302,12 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
       if (mounted) setState(() => isGenerating = false);
     }
   }
-
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor:Theme.of(context).scaffoldBackgroundColor,
       appBar: const CustomAppBar(title: "Insert Queries", showBackButton: true),
       body: LoadingOverlay(
         isLoading: isFetchingResources || isGenerating,
@@ -250,7 +328,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                         // ── Heading ──────────────────────────────────────
                         Text(
                           'Specify your\nlecture\nrequirements',
-                          style: AppStyles.h1,
+                          style: AppStyles.h1.copyWith(color:context.textPrimary),
                         ),
                         const SizedBox(height: AppStyles.spacingS),
                         Container(
@@ -276,7 +354,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                                 'No resources found.\nGo back and upload files.',
                                 textAlign: TextAlign.center,
                                 style: AppStyles.bodyMedium.copyWith(
-                                  color: AppColors.gray,
+                                  color: context.textSecondary,
                                 ),
                               ),
                             ),
@@ -303,7 +381,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                                       AppStyles.spacingL,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.white,
+                                      color: Theme.of(context).cardColor,
                                       borderRadius: BorderRadius.circular(
                                         AppStyles.radiusXL,
                                       ),
@@ -350,6 +428,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                                                         .copyWith(
                                                           fontWeight:
                                                               AppFonts.semiBold,
+                                                            color:context.textPrimary
                                                         ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -389,6 +468,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                                             fontWeight: AppFonts.bold,
                                             fontSize: AppFonts.fontSizeXS,
                                             letterSpacing: 1.2,
+                                            color:context.textPrimary
                                           ),
                                         ),
                                         const SizedBox(
@@ -425,7 +505,7 @@ class _InsertQueriesScreenState extends State<InsertQueriesScreen> {
                           fullWidth: true,
                           prefixIcon: Icon(
                             Icons.auto_awesome_outlined,
-                            color: AppColors.white,
+                            color: Theme.of(context).cardColor,
                           ),
                           onPressed: resources.isEmpty
                               ? () {}

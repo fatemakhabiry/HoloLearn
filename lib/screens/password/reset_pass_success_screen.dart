@@ -17,7 +17,7 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(title: "Reset Password", showBackButton: false),
       body: Center(
         child: SingleChildScrollView(
@@ -39,7 +39,7 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                       boxShadow: AppStyles.cardShadow,
                     ),

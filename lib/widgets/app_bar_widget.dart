@@ -22,13 +22,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget? leadingWidget;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Light → primaryColor bg, white text/icons
+    // Dark  → darkCard bg, primaryColor text/icons
+    final bgColor   = isDark ? AppColors.darkCard    : AppColors.primaryColor;
+    final fgColor   = isDark ? AppColors.primaryColor : AppColors.white;
+
+    Widget? leadingWidget;
     if (showBackButton) {
       leadingWidget = IconsButton(
         onPressed: onBackPressed ?? () => Navigator.pop(context),
-        icon: Icons.arrow_back_ios,
-        backgroundColor: AppColors.primaryColor,
+        icon:Icons.arrow_back_ios,
+        iconColor: fgColor,
+        backgroundColor: Colors.transparent,
       );
     }
 
@@ -44,9 +51,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 builder: (context) => const ProfileScreen(),
               ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_circle,
-              color: AppColors.white,
+              color: fgColor,
               size: 40,
             ),
           ),
@@ -58,11 +65,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      backgroundColor: AppColors.primaryColor,
+      backgroundColor: bgColor,
       elevation: 0,
       automaticallyImplyLeading: false,
       leading: leadingWidget,
-      title: Text(title, style: AppStyles.h2.copyWith(color: AppColors.white)),
+      title: Text(
+        title,
+        style: AppStyles.h2.copyWith(color: fgColor),
+      ),
       actions: appBarActions.isNotEmpty ? appBarActions : null,
     );
   }

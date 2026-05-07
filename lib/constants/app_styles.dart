@@ -145,20 +145,35 @@ class AppStyles {
   // ========== INPUT DECORATION ==========
 
   static InputDecoration inputDecoration({
+    required BuildContext context,
     String? label,
     String? hint,
     Widget? prefixIcon,
     Widget? suffixIcon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor   = isDark ? AppColors.darkCard          : AppColors.white;
+    final borderColor = isDark ? AppColors.darkBorder        : AppColors.gray.withOpacity(0.3);
+    final labelColor  = isDark ? AppColors.textLight   : AppColors.textBlack;
+    final hintColor   = isDark ? AppColors.darkTextSecondary : AppColors.textLight;
+
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: labelColor),
       hintText: hint,
+      hintStyle: TextStyle(color: hintColor),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: AppColors.white,
-      border: inputBorder,
-      enabledBorder: inputBorder,
+      fillColor: fillColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        borderSide: BorderSide(color: borderColor, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        borderSide: BorderSide(color: borderColor, width: 1),
+      ),
       focusedBorder: inputBorderFocused,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: spacingM,
@@ -205,4 +220,3 @@ class AppStyles {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
   );
 }
-

@@ -22,12 +22,12 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   String? email;
   String message = ""; //not required
   bool status = false;
-  bool is_loading = false;
+  bool isloading = false;
   String? error_message = null;
 
   void _requestotp() async {
     setState(() {
-      is_loading = true;
+      isloading = true;
       message = "";
     });
     try {
@@ -57,7 +57,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       }
       if (mounted) {
         setState(() {
-          is_loading = false;
+          isloading = false;
         });
       }
     }
@@ -67,105 +67,108 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Forget Password", showBackButton: false),
-      backgroundColor: AppColors.lightBackground,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppStyles.spacingL),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MessageDisplay(
-                    massegeBanner: '',
-                    message:
-                        'To reset your password, please fill out the form below. We will send you an OTP to your email address within a few minutes.',
-                    isInfo: true,
-                    showIcon: false,
-                  ),
-                  const SizedBox(
-                    height: AppStyles.spacingM,
-                  ), // for space between logo and title
-                  // Login Form Card
-                  Container(
-                    padding: const EdgeInsets.all(AppStyles.spacingL),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                      boxShadow: AppStyles.cardShadow,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: LoadingOverlay(
+        isLoading: isloading,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MessageDisplay(
+                      massegeBanner: '',
+                      message:
+                          'To reset your password, please fill out the form below. We will send you an OTP to your email address within a few minutes.',
+                      isInfo: true,
+                      showIcon: false,
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CustomTextFormField(
-                            hintText: '',
-                            label: "Email Address",
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Email is required';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Enter a valid email';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) => email = value,
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          // Submit Button
-                          CustomButton(
-                            text: 'Submit',
-                            fullWidth: true,
-                            isLoading: is_loading,
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
-                                status = true;
-                                _requestotp();
-                              } else {
-                                setState(() {
-                                  status = false;
-                                  message = "Please fill all fields correctly!";
-                                  // here we are not go to any page just show the error message
-                                });
-                              }
-                            },
-                          ),
-                          // Back to login Link
-                          const SizedBox(height: AppStyles.spacingS),
-                          CustomButton(
-                            text: "Back To Login",
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(
-                                context,
-                                AppRoutes.login,
-                              );
-                            },
-                            buttonType: ButtonType.secondary,
-                            fullWidth: true,
-                          ),
-                        ],
+                    const SizedBox(
+                      height: AppStyles.spacingM,
+                    ), // for space between logo and title
+                    // Login Form Card
+                    Container(
+                      padding: const EdgeInsets.all(AppStyles.spacingL),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                        boxShadow: AppStyles.cardShadow,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CustomTextFormField(
+                              hintText: '',
+                              label: "Email Address",
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Email is required';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Enter a valid email';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) => email = value,
+                            ),
+                            const SizedBox(height: AppStyles.spacingL),
+                            // Submit Button
+                            CustomButton(
+                              text: 'Submit',
+                              fullWidth: true,
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  _formKey.currentState!.save();
+                                  status = true;
+                                  _requestotp();
+                                } else {
+                                  setState(() {
+                                    status = false;
+                                    message =
+                                        "Please fill all fields correctly!";
+                                    // here we are not go to any page just show the error message
+                                  });
+                                }
+                              },
+                            ),
+                            // Back to login Link
+                            const SizedBox(height: AppStyles.spacingS),
+                            CustomButton(
+                              text: "Back To Login",
+                              onPressed: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  AppRoutes.login,
+                                );
+                              },
+                              buttonType: ButtonType.secondary,
+                              fullWidth: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppStyles.spacingM),
-                  // Display message
-                  if (message.isNotEmpty) ...[
-                    const SizedBox(height: AppStyles.spacingL),
-                    MessageDisplay(
-                      isSuccess: status,
-                      massegeBanner: status
-                          ? "Sent Successfuly"
-                          : "Failed to Send!",
-                      message: message,
-                      onDismiss: () => setState(() => message = ''),
-                    ),
+                    const SizedBox(height: AppStyles.spacingM),
+                    // Display message
+                    if (message.isNotEmpty) ...[
+                      const SizedBox(height: AppStyles.spacingL),
+                      MessageDisplay(
+                        isSuccess: status,
+                        massegeBanner: status
+                            ? "Sent Successfuly"
+                            : "Failed to Send!",
+                        message: message,
+                        onDismiss: () => setState(() => message = ''),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

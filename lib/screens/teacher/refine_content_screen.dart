@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/services/storage_service.dart';
-import 'package:hololearn/utils/storage_helper.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/local_file_service.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
+import '../../utils/storage_helper.dart';
+import '../../services/local_file_service.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
 
 class RefineContentScreen extends StatefulWidget {
   const RefineContentScreen({Key? key});
@@ -45,7 +44,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
       try {
         await LectureService.rejectWithFeedback(
           appState,
-          lectureState.sessionId,
+          lectureState.ongoingSessionId!,
           feedback,
         );
 
@@ -55,7 +54,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
           context,
           AppRoutes.lectureprocessing,
           arguments: {
-            'sessionId': lectureState.sessionId,
+            'sessionId': lectureState.ongoingSessionId!,
             'lectureType': 'generated',
           },
         );
@@ -100,6 +99,10 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
       LocalFileService.clearLecture(lectureState.lectureId);
       await StorageHelper.clearLectureSessionId(lectureState.lectureId);
       await StorageHelper.clearLectureType(lectureState.lectureId);
+      await StorageHelper.clearLectureSessionId(lectureState.lectureId);
+      await StorageHelper.clearOngoingSessionId();
+
+
 
       setState(() {
         _isLoading = false;
@@ -170,6 +173,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Refine Content", showBackButton: true),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: Center(
@@ -188,7 +192,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
                   ),
                   const SizedBox(height: AppStyles.spacingM),
 
-                  Text("Improve your lesson material", style: AppStyles.h1),
+                  Text("Improve your lesson material", style: AppStyles.h1.copyWith(color: context.textPrimary)),
                   const SizedBox(height: AppStyles.spacingS),
                   Text(
                     "Provide specific feedback to adjust the complexity, tone, or specific examples used in the generated educational content.",
@@ -199,6 +203,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
                     "YOUR FEEDBACK",
                     style: AppStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: context.textSecondary
                     ),
                   ),
                   const SizedBox(height: AppStyles.spacingS),
@@ -226,6 +231,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
                         "Quick Suggestions",
                         style: AppStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: context.textPrimary
                         ),
                       ),
                     ],
@@ -250,7 +256,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
                             ),
                             boxShadow: AppStyles.cardShadow,
                           ),
-                          child: Text(suggestion, style: AppStyles.bodyMedium),
+                          child: Text(suggestion, style: AppStyles.bodyMedium.copyWith(color: context.textPrimary)),
                         ),
                       );
                     }).toList(),
@@ -262,7 +268,7 @@ class _RefineContentScreenState extends State<RefineContentScreen> {
                     prefixIcon: Icon(
                       Icons.auto_awesome_outlined,
                       size: 20,
-                      color: AppColors.white,
+                      color: Theme.of(context).cardColor,
                     ),
 
                     onPressed: _submitFeedback,

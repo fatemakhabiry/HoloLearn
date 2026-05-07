@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_styles.dart';
+import '../constants/app_themes.dart';
 
 class CustomTextFormField extends StatelessWidget {
   final String? label;
@@ -42,7 +43,7 @@ class CustomTextFormField extends StatelessWidget {
           RichText(
             text: TextSpan(
               text: label,
-              style: AppStyles.labelStyle,
+              style: AppStyles.labelStyle.copyWith(color: context.textPrimary),
               children: isFieldRequired
                   ? const [
                       TextSpan(
@@ -63,10 +64,10 @@ class CustomTextFormField extends StatelessWidget {
           readOnly: readOnly,
           keyboardType: keyboardType,
           decoration: AppStyles.inputDecoration(
+            context: context,
             hint: hintText,
-            prefixIcon: prefixIcon,  // ✅ Pass it here
+            prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
-            
           ),
           obscureText: obscureText,
         ),

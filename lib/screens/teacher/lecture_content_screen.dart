@@ -11,7 +11,7 @@ import '../../widgets/widgets.dart';
 import '../../constants/constants.dart';
 import '../../models/lecture_models.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class LectureContentScreen extends StatefulWidget {
   final ScheduleSlot lecture;
@@ -131,7 +131,7 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: widget.lecture.lectureTitle,
         showBackButton: true,
@@ -149,7 +149,7 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppStyles.spacingL),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                     boxShadow: AppStyles.cardShadow,
                   ),

@@ -9,7 +9,7 @@ import '../../widgets/widgets.dart';
 import '../../constants/constants.dart';
 import '../../models/schedule_models.dart';
 import '../../services/schedule_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 
 class StudentDashboardScreen extends StatefulWidget {

@@ -41,7 +41,7 @@ class UpoladCard extends StatelessWidget {
       height: 550,
       padding: const EdgeInsets.all(AppStyles.spacingL),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
         boxShadow: AppStyles.cardShadow,
       ),

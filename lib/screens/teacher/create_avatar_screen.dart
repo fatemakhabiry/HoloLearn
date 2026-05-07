@@ -10,7 +10,7 @@ import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
 import '../../services/avatar_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class CreateAvatarScreen extends StatefulWidget {
   const CreateAvatarScreen({super.key});
@@ -140,7 +140,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
                   Icons.camera_alt,
                   color: AppColors.primaryColor,
                 ),
-                title: const Text('Camera', style: AppStyles.h3),
+                title: Text('Camera', style: AppStyles.h3.copyWith(color: context.textPrimary)),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
@@ -148,7 +148,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
                   Icons.photo_library,
                   color: AppColors.primaryColor,
                 ),
-                title: const Text('Gallery', style: AppStyles.h3),
+                title: Text('Gallery', style: AppStyles.h3.copyWith(color: context.textPrimary)),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -265,7 +265,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: "Create Hologram Avatar",
         showBackButton: true,

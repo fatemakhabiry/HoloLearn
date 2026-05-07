@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 
 enum ButtonType {
-  primary, // blue button
-  secondary, //white button
-  outlined,
+  primary,  // light: primary bg + white text  | dark: primary bg + dark text
+  secondary, // light: white bg + primary text  | dark: darkCard bg + primary text
+  outlined, // light: transparent + primary border | dark: transparent + primary border + dark bg
 }
 
 class CustomButton extends StatelessWidget {
@@ -17,6 +16,7 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+
   const CustomButton({
     super.key,
     required this.text,
@@ -30,9 +30,29 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget button;
-    Widget buttonChild = Row(
-      // mainAxisSize: MainAxisSize.min,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ── Per-type colors ───────────────────────────────────────────────────
+    final Color bgColor;
+    final Color textColor;
+
+    switch (buttonType) {
+      case ButtonType.primary:
+        bgColor   = AppColors.primaryColor;
+        textColor = isDark ? AppColors.darkBackground : AppColors.white;
+        break;
+      case ButtonType.secondary:
+        bgColor   = isDark ? AppColors.darkCard : AppColors.white;
+        textColor = AppColors.primaryColor;
+        break;
+      case ButtonType.outlined:
+        bgColor   = isDark ? AppColors.darkCard : Colors.transparent;
+        textColor = AppColors.primaryColor;
+        break;
+    }
+
+    // ── Button child ──────────────────────────────────────────────────────
+    final buttonChild = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (prefixIcon != null) ...[
@@ -40,10 +60,8 @@ class CustomButton extends StatelessWidget {
           const SizedBox(width: AppStyles.spacingS),
         ],
         Text(
-          isLoading ? "Loading..." : text,
-          style: buttonType == ButtonType.primary
-              ? AppStyles.button
-              : AppStyles.button.copyWith(color: AppColors.primaryColor),
+          isLoading ? 'Loading...' : text,
+          style: AppStyles.button.copyWith(color: textColor),
         ),
         if (suffixIcon != null) ...[
           const SizedBox(width: AppStyles.spacingS),
@@ -52,19 +70,29 @@ class CustomButton extends StatelessWidget {
       ],
     );
 
+    // ── Build button ──────────────────────────────────────────────────────
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppStyles.radiusM),
+    );
+
+    Widget button;
+
     switch (buttonType) {
       case ButtonType.primary:
-        button = ElevatedButton(
-          onPressed: onPressed,
-          style: AppStyles.primaryButton,
-          child: buttonChild,
-        );
-        break;
-
       case ButtonType.secondary:
         button = ElevatedButton(
           onPressed: onPressed,
-          style: AppStyles.secondaryButton,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: bgColor,
+            foregroundColor: textColor,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppStyles.spacingL,
+              vertical: AppStyles.spacingM,
+            ),
+            shape: shape,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+          ),
           child: buttonChild,
         );
         break;
@@ -72,7 +100,16 @@ class CustomButton extends StatelessWidget {
       case ButtonType.outlined:
         button = OutlinedButton(
           onPressed: onPressed,
-          style: AppStyles.outlinedButton,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: bgColor,
+            foregroundColor: textColor,
+            side: const BorderSide(color: AppColors.primaryColor, width: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppStyles.spacingL,
+              vertical: AppStyles.spacingM,
+            ),
+            shape: shape,
+          ),
           child: buttonChild,
         );
         break;
@@ -82,7 +119,8 @@ class CustomButton extends StatelessWidget {
   }
 }
 
-// Keep your other widgets as they are useful
+// ── IconsButton ───────────────────────────────────────────────────────────────
+
 class IconsButton extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData icon;
@@ -116,6 +154,8 @@ class IconsButton extends StatelessWidget {
   }
 }
 
+// ── CustomDropdown ────────────────────────────────────────────────────────────
+
 class CustomDropdown extends StatelessWidget {
   final String label;
   final bool isFieldRequired;
@@ -140,52 +180,44 @@ class CustomDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor  = isDark ? AppColors.darkCard   : AppColors.white;
+    final textColor  = isDark ? AppColors.textLight : AppColors.textBlack;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.gray.withOpacity(0.3);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
           text: TextSpan(
             text: label,
-            style: AppStyles.labelStyle,
+            style: AppStyles.labelStyle.copyWith(color: textColor),
             children: isFieldRequired
-                ? [
-                    TextSpan(
-                      text: ' *',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ]
+                ? [const TextSpan(text: ' *', style: TextStyle(color: Colors.red))]
                 : null,
           ),
         ),
-        SizedBox(height: AppStyles.spacingM),
+        const SizedBox(height: AppStyles.spacingM),
         DropdownButtonFormField<String>(
           value: selectedValue,
           validator: validator,
-          // enabled: enabled,
+          dropdownColor: fillColor,
+          style: AppStyles.bodyMedium.copyWith(color: textColor),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.white,
+            fillColor: fillColor,
             hintText: hintText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppStyles.radiusM),
-              borderSide: BorderSide(
-                color: AppColors.gray.withOpacity(0.3),
-                width: 1,
-              ),
+              borderSide: BorderSide(color: borderColor, width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppStyles.radiusM),
-              borderSide: BorderSide(
-                color: AppColors.gray.withOpacity(0.3),
-                width: 1,
-              ),
+              borderSide: BorderSide(color: borderColor, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppStyles.radiusM),
-              borderSide: const BorderSide(
-                color: AppColors.primaryColor,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: AppColors.primaryColor, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppStyles.spacingM,
@@ -195,11 +227,10 @@ class CustomDropdown extends StatelessWidget {
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item, style: AppStyles.bodyMedium),
+              child: Text(item, style: AppStyles.bodyMedium.copyWith(color: textColor)),
             );
           }).toList(),
           onChanged: enabled ? onChanged : null,
-          style: AppStyles.bodyMedium,
         ),
       ],
     );

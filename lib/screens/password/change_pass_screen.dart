@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../constants/constants.dart';
 import '../../widgets/widgets.dart';
 import '../../services/password_reset_service.dart';
-import '../../state/providers/app_state_provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -26,7 +26,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureText1 = true;
   bool _obscureText2 = true;
   bool _obscureText3 = true;
-  bool is_loading = false;
+  bool isloading = false;
   bool status = false;
   String? error_message = null;
   @override
@@ -38,7 +38,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Future<void> _handleChangePassword() async {
     // 1️⃣ Start loading
     setState(() {
-      is_loading = true;
+      isloading = true;
     });
 
     try {
@@ -92,7 +92,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
       if (mounted) {
         setState(() {
-          is_loading = false;
+          isloading = false;
         });
       }
     }
@@ -102,145 +102,153 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: "Change Password", showBackButton: true),
-      backgroundColor: AppColors.lightBackground,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppStyles.spacingL),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppStyles.spacingL),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                      boxShadow: AppStyles.cardShadow,
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // New Password textfield
-                          CustomTextFormField(
-                            suffixIcon: IconsButton(
-                              size: 24,
-                              iconColor: Colors.grey,
-                              backgroundColor: Colors.transparent,
-                              icon: _obscureText3
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              onPressed: () {
-                                setState(() => _obscureText3 = !_obscureText3);
+      body: LoadingOverlay(
+        isLoading: isloading,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppStyles.spacingL),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
+                        boxShadow: AppStyles.cardShadow,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // New Password textfield
+                            CustomTextFormField(
+                              suffixIcon: IconsButton(
+                                size: 24,
+                                iconColor: Colors.grey,
+                                backgroundColor: Colors.transparent,
+                                icon: _obscureText3
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                onPressed: () {
+                                  setState(
+                                    () => _obscureText3 = !_obscureText3,
+                                  );
+                                },
+                              ),
+                              hintText: ' ',
+                              label: "Old Password",
+                              keyboardType: TextInputType.emailAddress,
+                              obscureText: _obscureText3,
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) => oldPassword = value,
+                            ),
+                            const SizedBox(height: AppStyles.spacingL),
+                            CustomTextFormField(
+                              controller: _newPasswordController,
+                              suffixIcon: IconsButton(
+                                size: 24,
+                                iconColor: Colors.grey,
+                                backgroundColor: Colors.transparent,
+                                icon: _obscureText1
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                onPressed: () {
+                                  setState(
+                                    () => _obscureText1 = !_obscureText1,
+                                  );
+                                },
+                              ),
+                              hintText: ' ',
+                              label: "New Password",
+                              keyboardType: TextInputType.emailAddress,
+                              obscureText: _obscureText1,
+                              validator: (value) {
+                                if (value == null ||
+                                    value.isEmpty ||
+                                    value.length < 8) {
+                                  return 'Password must be at least 8 characters';
+                                }
+                                return null;
                               },
                             ),
-                            hintText: ' ',
-                            label: "Old Password",
-                            keyboardType: TextInputType.emailAddress,
-                            obscureText: _obscureText3,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty ||
-                                  value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) => oldPassword = value,
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          CustomTextFormField(
-                            controller: _newPasswordController,
-                            suffixIcon: IconsButton(
-                              size: 24,
-                              iconColor: Colors.grey,
-                              backgroundColor: Colors.transparent,
-                              icon: _obscureText1
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              onPressed: () {
-                                setState(() => _obscureText1 = !_obscureText1);
+                            const SizedBox(height: AppStyles.spacingL),
+                            // Confirm password textfield
+                            CustomTextFormField(
+                              suffixIcon: IconsButton(
+                                size: 24,
+                                iconColor: Colors.grey,
+                                backgroundColor: Colors.transparent,
+                                icon: _obscureText2
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                onPressed: () {
+                                  setState(
+                                    () => _obscureText2 = !_obscureText2,
+                                  );
+                                },
+                              ),
+                              hintText: ' ',
+                              label: "Confirm Password",
+                              obscureText: _obscureText2,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _newPasswordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
                               },
+                              onSaved: (value) => newPassword = value,
                             ),
-                            hintText: ' ',
-                            label: "New Password",
-                            keyboardType: TextInputType.emailAddress,
-                            obscureText: _obscureText1,
-                            validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty ||
-                                  value.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          // Confirm password textfield
-                          CustomTextFormField(
-                            suffixIcon: IconsButton(
-                              size: 24,
-                              iconColor: Colors.grey,
-                              backgroundColor: Colors.transparent,
-                              icon: _obscureText2
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              onPressed: () {
-                                setState(() => _obscureText2 = !_obscureText2);
-                              },
-                            ),
-                            hintText: ' ',
-                            label: "Confirm Password",
-                            obscureText: _obscureText2,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _newPasswordController.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) => newPassword = value,
-                          ),
-                          const SizedBox(height: AppStyles.spacingL),
-                          // Reset Button
-                          CustomButton(
-                            text: 'Change Password',
-                            fullWidth: true,
-                            isLoading: is_loading,
-                            onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                _formKey.currentState!.save();
+                            const SizedBox(height: AppStyles.spacingL),
+                            // Reset Button
+                            CustomButton(
+                              text: 'Change Password',
+                              fullWidth: true,
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  _formKey.currentState!.save();
 
-                                await _handleChangePassword();
-                              } else {
-                                setState(() {
-                                  status = false;
-                                  message = "Please fill all fields correctly!";
-                                });
-                              }
-                            },
-                          ),
-                        ],
+                                  await _handleChangePassword();
+                                } else {
+                                  setState(() {
+                                    status = false;
+                                    message =
+                                        "Please fill all fields correctly!";
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppStyles.spacingS),
-                  // Display message
-                  if (message.isNotEmpty) ...[
-                    const SizedBox(height: AppStyles.spacingL),
-                    MessageDisplay(
-                      isSuccess: status,
-                      massegeBanner: status ? "L" : "Error",
-                      message: message,
-                      onDismiss: () => setState(() => message = ''),
-                    ),
+                    const SizedBox(height: AppStyles.spacingS),
+                    // Display message
+                    if (message.isNotEmpty) ...[
+                      const SizedBox(height: AppStyles.spacingL),
+                      MessageDisplay(
+                        isSuccess: status,
+                        massegeBanner: status ? "L" : "Error",
+                        message: message,
+                        onDismiss: () => setState(() => message = ''),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

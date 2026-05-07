@@ -11,8 +11,8 @@ import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
 
 class LecturePreviewScreen extends StatefulWidget {
   final bool isContent;
@@ -36,6 +36,47 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
     Navigator.pushNamed(context, AppRoutes.refinecontent);
   }
 
+  // void _handleApprove() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+  //   try {
+  //     final lectureState = context.read<LectureStateProvider>();
+  //     final appState = context.read<AppStateProvider>();
+
+  //     await LectureService.approve(lectureState.sessionId, appState);
+
+  //     if (!mounted) return;
+
+  //     // Resume polling — server will move to generating_content
+  //     Provider.of<ProcessingNotifier>(
+  //       context,
+  //       listen: false,
+  //     ).startForSession(lectureState.sessionId, appState);
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //     Navigator.pushNamed(
+  //       context,
+  //       AppRoutes.lectureprocessing,
+  //       arguments: {
+  //         'sessionId': lectureState.sessionId,
+  //         'lectureType': lectureState.lectureType,
+  //       },
+  //     );
+  //   } catch (e) {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //       CustomErrorHandler.show(
+  //         context,
+  //         message: 'Failed to approve lecture. Please try again.',
+  //         type: ErrorType.fail,
+  //       );
+  //     }
+  //   }
+  // }
   void _handleApprove() async {
     setState(() {
       _isLoading = true;
@@ -43,16 +84,17 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
     try {
       final lectureState = context.read<LectureStateProvider>();
       final appState = context.read<AppStateProvider>();
-
-      await LectureService.approve(lectureState.sessionId, appState);
-
+ 
+      await LectureService.approve(lectureState.ongoingSessionId!, appState);
+ 
+ 
       if (!mounted) return;
-
+ 
       // Resume polling — server will move to generating_content
       Provider.of<ProcessingNotifier>(
         context,
         listen: false,
-      ).startForSession(lectureState.sessionId, appState);
+      ).startForSession(lectureState.ongoingSessionId!, appState);
       setState(() {
         _isLoading = false;
       });
@@ -60,7 +102,7 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
         context,
         AppRoutes.lectureprocessing,
         arguments: {
-          'sessionId': lectureState.sessionId,
+          'sessionId': lectureState.ongoingSessionId!,
           'lectureType': lectureState.lectureType,
         },
       );
@@ -77,7 +119,6 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
       }
     }
   }
-
   void _handleavtartoptions() async {
     final appState = context.read<AppStateProvider>();
     appState.setLectureId(context.read<LectureStateProvider>().lectureId);
@@ -112,13 +153,13 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
           const SizedBox(height: AppStyles.spacingM),
           Text(
             'Failed to load content',
-            style: AppStyles.h3,
+            style: AppStyles.h3.copyWith(color: context.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppStyles.spacingS),
           Text(
             'Please check your connection and try again',
-            style: AppStyles.bodyMedium.copyWith(color: AppColors.gray),
+            style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -281,9 +322,9 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
                         text: 'Approve',
                         buttonType: ButtonType.primary,
                         onPressed: _handleApprove,
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.check,
-                          color: AppColors.white,
+                          color: Theme.of(context).cardColor,
                         ),
                       ),
                     ),
@@ -314,7 +355,7 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
                 else
                   SelectableText(
                     text,
-                    style: AppStyles.bodyMedium.copyWith(height: 1.5),
+                    style: AppStyles.bodyMedium.copyWith(height: 1.5,color: context.textPrimary),
                   ),
               ],
             ),

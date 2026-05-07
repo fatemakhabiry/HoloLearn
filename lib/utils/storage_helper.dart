@@ -289,4 +289,38 @@ static Future<void> clearLectureType(int lectureId) async {
   map.remove(lectureId.toString());
   await prefs.setString(_lectureTypeMapKey, json.encode(map));
 }
+// ========== Ongoing Session ID ==========
+  // Stored separately from the general session_id so that fetching a
+  // resource file from history never overwrites the live session.
+ 
+  static const String _ongoingSessionIdKey = 'ongoing_session_id';
+ 
+  static Future<void> saveOngoingSessionId(int sessionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_ongoingSessionIdKey, sessionId);
+  }
+ 
+  static Future<int?> getOngoingSessionId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_ongoingSessionIdKey);
+  }
+ 
+  static Future<void> clearOngoingSessionId() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_ongoingSessionIdKey);
+  }
+
+   // ========== Theme ==========
+ 
+  static const String _isDarkModeKey = 'is_dark_mode';
+ 
+  static Future<void> saveIsDarkMode(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isDarkModeKey, isDark);
+  }
+ 
+  static Future<bool> getIsDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isDarkModeKey) ?? false;
+  }
 }

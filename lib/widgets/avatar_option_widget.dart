@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/constants/app_themes.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_fonts.dart';
 import '../constants/app_styles.dart';
@@ -49,6 +50,7 @@ class RadioOptionsGroup extends StatelessWidget {
                 fontWeight: AppFonts.bold,
                 fontSize: AppFonts.fontSizeXS,
                 letterSpacing: 1.2,
+                color: context.textSecondary
               ),
             ),
           ),
@@ -59,7 +61,7 @@ class RadioOptionsGroup extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: AppStyles.spacingM),
               padding: const EdgeInsets.all(AppStyles.spacingM),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).cardColor,
                 border: Border.all(
                   color: selectedId == option.id
                       ? AppColors.primaryColor
@@ -106,6 +108,7 @@ class RadioOptionsGroup extends StatelessWidget {
                           option.title,
                           style: AppStyles.bodyMedium.copyWith(
                             fontWeight: AppFonts.semiBold,
+                            color: context.textPrimary
                           ),
                         ),
                         const SizedBox(height: AppStyles.spacingXS),

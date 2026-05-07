@@ -5,16 +5,16 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../services/avatar_service.dart';
 import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
 import '../../constants/constants.dart';
-import '../../services/avatar_service.dart';
 import '../../services/course_service.dart';
 import '../../services/lecture_service.dart';
-import '../../state/providers/app_state_provider.dart';
-import '../../state/providers/lecture_state_provider.dart';
-import '../../state/providers/resource_state_provider.dart';
+import '../../providers/app_state_provider.dart';
+import '../../providers/lecture_state_provider.dart';
+import '../../providers/resource_state_provider.dart';
 
 class CreateNewLectureScreen extends StatefulWidget {
   const CreateNewLectureScreen({super.key});
@@ -132,24 +132,6 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     return true;
   }
 
-  // ─── Flow handlers ────────────────────────────────────────────────────────
-
-  // Future<void> _handlePreparedFlow() async {
-  //     final appState = context.read<AppStateProvider>();
-  //   final lectureResponse = await LectureService.createLectureDraft(
-  //     appState: appState,
-  //     title: lectureTitle!,
-  //     courseCode: courseCode!,
-  //     filePath: _selectedFiles.first.path!,
-  //   );
-  //   appState.setLectureId(lectureResponse.lectureId);
-  //   await AvatarService.checkAvatarStatus(appState);
-  //   if (!mounted) return;
-  //   Navigator.pushNamed(
-  //     context,
-  //     appState.isFirstTimeLogin ? AppRoutes.createAvatar : AppRoutes.lectureSetup,
-  //   );
-  // }
   Future<void> _handlePreparedFlow() async {
     final appState = context.read<AppStateProvider>();
     final lectureState = context.read<LectureStateProvider>();
@@ -166,7 +148,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       appState,
       lectureResponse.lectureId,
     );
-    lectureState.setSessionId(sessionResponse.sessionId);
+    lectureState.startOngoingSession(sessionResponse.sessionId);
     lectureState.setLectureId(appState.lectureId);
     lectureState.setLectureType('prepared');
 
@@ -175,6 +157,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       lectureResponse.lectureId,
       sessionResponse.sessionId,
     );
+    await StorageHelper.saveOngoingSessionId(sessionResponse.sessionId);
     await StorageHelper.saveLectureType(lectureResponse.lectureId, 'prepared');
 
     if (!mounted) return;
@@ -182,7 +165,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       context,
       AppRoutes.lectureprocessing,
       arguments: {
-        'sessionId': sessionResponse.sessionId,
+        'sessionId': lectureState.ongoingSessionId,
         'lectureType': 'prepared',
       },
     );
@@ -196,13 +179,12 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     //       : AppRoutes.lectureSetup,
     // );
   }
-
+ 
   void _handleGeneratedFlow() {
     final resourceProvider = Provider.of<ResourceStateProvider>(
       context,
       listen: false,
     );
-    // final appState = Provider.of<AppStateProvider>(context, listen: false);
     final lectureState = Provider.of<LectureStateProvider>(
       context,
       listen: false,
@@ -239,6 +221,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
       Navigator.pushNamed(context, AppRoutes.insertQueries);
     } catch (e) {
       _showError(e.toString().replaceFirst("Exception: ", ""));
+      print(e);
     }
   }
 
@@ -283,50 +266,52 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const CustomAppBar(title: 'Create Lecture', showBackButton: true),
-      body:LoadingOverlay(
+      body: LoadingOverlay(
         isLoading: _isLoading,
-        child:  Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppStyles.spacingL),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInputTypeSelector(),
-                    const SizedBox(height: AppStyles.spacingL),
-                    _buildFileUpload(
-                      selectedInputType == 'generated' ? true : false,
-                    ),
-                    const SizedBox(height: AppStyles.spacingL),
-                    if (selectedInputType == 'generated') ...[
-                      _buildUrlSection(),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInputTypeSelector(),
                       const SizedBox(height: AppStyles.spacingL),
-                    ],
-                    _buildLectureDetails(),
-                    if (_showBanner) ...[
-                      const SizedBox(height: AppStyles.spacingL),
-                      MessageDisplay(
-                        isSuccess: _isSuccess,
-                        massegeBanner: _isSuccess
-                            ? 'Lecture Created Successfully'
-                            : 'Creation Failed',
-                        message: _bannerMessage,
-                        onDismiss: () => setState(() => _showBanner = false),
+                      _buildFileUpload(
+                        selectedInputType == 'generated' ? true : false,
                       ),
+                      const SizedBox(height: AppStyles.spacingL),
+                      if (selectedInputType == 'generated') ...[
+                        _buildUrlSection(),
+                        const SizedBox(height: AppStyles.spacingL),
+                      ],
+                      _buildLectureDetails(),
+                      if (_showBanner) ...[
+                        const SizedBox(height: AppStyles.spacingL),
+                        MessageDisplay(
+                          isSuccess: _isSuccess,
+                          massegeBanner: _isSuccess
+                              ? 'Lecture Created Successfully'
+                              : 'Creation Failed',
+                          message: _bannerMessage,
+                          onDismiss: () => setState(() => _showBanner = false),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),),
+      ),
     );
   }
 
@@ -421,6 +406,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
               fontWeight: AppFonts.bold,
               fontSize: AppFonts.fontSizeXS,
               letterSpacing: 1.2,
+              color: context.textPrimary
             ),
           ),
           const SizedBox(height: AppStyles.spacingM),
@@ -463,7 +449,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     return Container(
       padding: const EdgeInsets.all(AppStyles.spacingL),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppStyles.radiusXL),
         boxShadow: AppStyles.cardShadow,
       ),

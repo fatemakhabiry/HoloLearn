@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hololearn/services/storage_service.dart';
-import 'package:hololearn/utils/storage_helper.dart';
 import 'package:provider/provider.dart';
 
-import '../routes/app_routes.dart';
-import '../constants/constants.dart';
+ import '../constants/constants.dart';
 import '../models/lecture_models.dart';
 import '../state/processing_notifier.dart';
 
@@ -44,7 +41,7 @@ class ProcessingNotificationBar extends StatelessWidget {
             vertical: AppStyles.spacingS,
           ),
           decoration: BoxDecoration(
-            color: AppColors.lightBackground,
+            color: Theme.of(context).scaffoldBackgroundColor,
             border: Border.all(color: barColor),
             borderRadius: BorderRadius.circular(AppStyles.radiusM),
           ),
