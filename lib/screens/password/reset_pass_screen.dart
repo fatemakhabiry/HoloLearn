@@ -61,10 +61,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
       // 3️⃣ Navigate (no setState needed)
       if (mounted) {
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => ResetPassSuccessPage()),
-        // );
+        setState(() {
+          isloading = false;
+          message = '';
+        });
         Navigator.pushReplacementNamed(context, AppRoutes.resetPassSuccess);
       }
     } on ClientException {

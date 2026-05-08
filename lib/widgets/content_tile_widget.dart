@@ -53,7 +53,8 @@ class ContentTileWidget extends StatelessWidget {
                   children: [
                     Text(type.displayName,
                         style: AppStyles.bodyMedium
-                            .copyWith(fontWeight: AppFonts.semiBold)),
+                            .copyWith(fontWeight: AppFonts.semiBold,color: context.textPrimary)
+                            ),
                     const SizedBox(height: 2),
                     Text(
                       isCached ? 'Saved locally — tap to open' : 'Tap to download',

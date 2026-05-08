@@ -83,6 +83,7 @@ flutter:
     - images/vertical logo-02.png
 
 flutter_launcher_icons:
+
   android: true
   ios: true
   image_path: "images/icon/app_icon.png"  # path to your icon file

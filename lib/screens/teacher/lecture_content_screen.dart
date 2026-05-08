@@ -156,7 +156,7 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.lecture.lectureTitle, style: AppStyles.h2),
+                      Text(widget.lecture.lectureTitle, style: AppStyles.h2.copyWith(color: context.textPrimary)),
                       const SizedBox(height: AppStyles.spacingS),
                       Text(
                         '${widget.lecture.courseCode}  •  ${widget.lecture.formattedDate}',
@@ -180,6 +180,7 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
                     fontWeight: AppFonts.bold,
                     fontSize: AppFonts.fontSizeXS,
                     letterSpacing: 1.2,
+                    color: context.textPrimary
                   ),
                 ),
                 const SizedBox(height: AppStyles.spacingM),

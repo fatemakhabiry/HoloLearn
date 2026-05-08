@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/utils/storage_helper.dart';
 import 'package:provider/provider.dart';
 
 import '../../widgets/widgets.dart';
@@ -40,20 +41,20 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   //     listen: false,
   //   ).resumeIfNeeded(appState);
   // }
-    void _checkActiveSession() {
-    final appState = Provider.of<AppStateProvider>(context, listen: false);
-    final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
-    final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
- 
-    notifier.resumeIfNeeded(appState);
- 
-    // Sync ongoingSessionId from the notifier after resume so it is never null
-    // while a session is actively being polled (e.g. after app restart).
-    final activeSessionId = notifier.sessionId;
-    if (activeSessionId != 0 && !notifier.isTerminal) {
-      lectureState.startOngoingSession(activeSessionId);
+void _checkActiveSession() async {
+  final appState = Provider.of<AppStateProvider>(context, listen: false);
+  final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
+  final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+
+  notifier.resumeIfNeeded(appState);
+
+  if (!notifier.isTerminal) {
+    final activeSessionId = await StorageHelper.getOngoingSessionId(); // now returns int?
+    if (activeSessionId != null) {
+      lectureState.startOngoingSession(activeSessionId); // ✅ no cast needed
     }
   }
+}
 
   @override
   void didChangeDependencies() {
