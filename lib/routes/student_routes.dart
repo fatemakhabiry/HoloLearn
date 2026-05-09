@@ -9,7 +9,12 @@ class StudentRoutes {
         return MaterialPageRoute(
           builder: (_) => const StudentDashboardScreen(),
         );
+      case AppRoutes.studentQAScreen:
+        final args = settings.arguments as Map<String, dynamic>;
 
+        return MaterialPageRoute(
+          builder: (_) => StudentQAScreen(session: args["session"]),
+        );
       default:
         return null;
     }

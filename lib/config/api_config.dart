@@ -1,7 +1,7 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-  // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
+      // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
       'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
 
   // ===== Authentication Endpoints =====
@@ -38,13 +38,10 @@ class ApiConfig {
   static const String startPreparedEndpoint =
       '/session/start-prepared/{lecture_id}';
   //Generated lecture endpoints
-  static const String uploadGeneratedFileEndpoint ="/session/upload-resource";
-  static const String startGeneratedSessionEndpoint =
-       '/session/start';
-  static const String getSessionStatusEndpoint =
-      '/session/{session_id}/status';
-  static const String getSessionStreamEndpoint =
-      '/session/{session_id}/stream';
+  static const String uploadGeneratedFileEndpoint = "/session/upload-resource";
+  static const String startGeneratedSessionEndpoint = '/session/start';
+  static const String getSessionStatusEndpoint = '/session/{session_id}/status';
+  static const String getSessionStreamEndpoint = '/session/{session_id}/stream';
   static const String approveSessionEndpoint = '/session/{session_id}/approve';
   static const String rejectWithFeedbackSessionEndpoint =
       '/session/{session_id}/reject';
@@ -67,13 +64,29 @@ class ApiConfig {
       '/lecture/schedule/{schedule_id}/edit';
   static const String getLectureDetailsEndpoint =
       '/lecture/schedule/{schedule_id}/edit-details';
-static const String getFeedbackSuggestionsEndpoint =
+  static const String getFeedbackSuggestionsEndpoint =
       '/session/{session_id}/feedback-suggestions';
 
   // ===== Student Endpoints =====
   static const String courseListEndpoint = '/courses/';
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
 
+  // ===== Q&A Endpoints =====
+  /// POST /qa/{lecture_id}/ask
+  /// Body: multipart — text (String) OR voice_file (audio)
+  static const String qaAskEndpoint = '/qa/{lecture_id}/ask';
+
+  /// GET /qa/{lecture_id}/history?page=&page_size=
+  static const String qaHistoryEndpoint = '/qa/{lecture_id}/history';
+
+  /// GET /qa/{lecture_id}/status
+  static const String qaIndexStatusEndpoint = '/qa/{lecture_id}/status';
+
+  /// GET /qa/audio/{message_id}
+  static const String qaAudioEndpoint = '/qa/audio/{message_id}';
+
+  /// DELETE /qa/session/{session_id}
+  static const String qaClearSessionEndpoint = '/qa/session/{session_id}';
   // ===== Token Settings =====
   static const Duration tokenExpiry = Duration(minutes: 30);
 

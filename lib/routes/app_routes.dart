@@ -18,7 +18,8 @@ class AppRoutes {
   static const String lectureprocessing = '/lecture-progress';
   static const String lecturepreview = '/lecture-preview';
   static const String splash = '/splash';
-  static const String refinecontent = '/refine-content'; 
+  static const String refinecontent = '/refine-content';
   static const String lectureContent = '/lecture-content';
-
+  // ===== Student =====
+  static const String studentQAScreen = "/studentQAScreen";
 }

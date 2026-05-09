@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:hololearn/routes/app_routes.dart';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 
 import '../../widgets/widgets.dart';
 import '../../constants/constants.dart';
 import '../../models/schedule_models.dart';
 import '../../services/schedule_service.dart';
 import '../../providers/app_state_provider.dart';
-
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -75,7 +74,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     try {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
       // fetchedLectures = getDummySessions();
-    data = await ScheduleService.fetchStudentLectures(appState);
+      data = await ScheduleService.fetchStudentLectures(appState);
     } on ClientException {
       errorMessage = 'Cannot connect to server. Check internet or URL.';
     } on SocketException {
@@ -96,7 +95,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       }
       if (mounted) {
         setState(() {
-          fetchedLectures=data;
+          fetchedLectures = data;
           sortSessions();
           isLoading = false;
         });
@@ -109,7 +108,12 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   }
 
   void _handleEnterChat(int index) {
-    print('Enter Chat pressed on card index: $index');
+    // print('Enter Chat pressed on card index: $index');
+    Navigator.pushNamed(
+      context,
+      AppRoutes.studentQAScreen,
+      arguments: {"session": fetchedLectures[index]},
+    );
   }
 
   @override
