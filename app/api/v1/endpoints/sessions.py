@@ -1016,6 +1016,8 @@ from app.models.agent_session import AgentSession, AgentStatus
 from app.models.lecture_version import LectureVersion, VersionStatus
 from app.models.generated_content import GeneratedContent, ContentType
 from app.services.agent_client import start_agent, resume_agent, get_agent_state, extract_resource
+from app.tasks.session_tasks import sync_agent_state
+
 
 router = APIRouter()
 
@@ -1422,50 +1424,50 @@ async def _sync_state_to_db(
     db.commit()
 
 
-async def _background_sync_loop(
-    session_id: int,
-    thread_id:  str,
-    db_factory,
-) -> None:
-    """
-    Polls agent state every 60 seconds in the background.
-    Ensures DB is synced even if teacher never calls /status.
-    Stops when terminal state is reached.
-    """
-    terminal = {"done", "failed"}
+# async def _background_sync_loop(
+#     session_id: int,
+#     thread_id:  str,
+#     db_factory,
+# ) -> None:
+#     """
+#     Polls agent state every 60 seconds in the background.
+#     Ensures DB is synced even if teacher never calls /status.
+#     Stops when terminal state is reached.
+#     """
+#     terminal = {"done", "failed"}
 
-    while True:
-        await asyncio.sleep(60)
+#     while True:
+#         await asyncio.sleep(60)
 
-        try:
-            state = await get_agent_state(thread_id)
-            if not state:
-                continue
+#         try:
+#             state = await get_agent_state(thread_id)
+#             if not state:
+#                 continue
 
-            current_step = state.get("current_step")
+#             current_step = state.get("current_step")
 
-            with Session(db_factory) as db:
-                agent_session = db.exec(
-                    select(AgentSession).where(AgentSession.id == session_id)
-                ).first()
-                if not agent_session:
-                    print(f"[background_sync] session {session_id} not found — stopping")
-                    break
+#             with Session(db_factory) as db:
+#                 agent_session = db.exec(
+#                     select(AgentSession).where(AgentSession.id == session_id)
+#                 ).first()
+#                 if not agent_session:
+#                     print(f"[background_sync] session {session_id} not found — stopping")
+#                     break
 
-                lecture = db.get(Lecture, agent_session.lecture_id)
-                if not lecture:
-                    print(f"[background_sync] lecture not found — stopping")
-                    break
+#                 lecture = db.get(Lecture, agent_session.lecture_id)
+#                 if not lecture:
+#                     print(f"[background_sync] lecture not found — stopping")
+#                     break
 
-                await _sync_state_to_db(agent_session, lecture, state, db)
+#                 await _sync_state_to_db(agent_session, lecture, state, db)
 
-            if current_step in terminal:
-                print(f"[background_sync] session {session_id} → {current_step} — stopping")
-                break
+#             if current_step in terminal:
+#                 print(f"[background_sync] session {session_id} → {current_step} — stopping")
+#                 break
 
-        except Exception as e:
-            print(f"[background_sync] error for session {session_id}: {e}")
-            continue
+#         except Exception as e:
+#             print(f"[background_sync] error for session {session_id}: {e}")
+#             continue
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -1634,12 +1636,9 @@ async def start_generated_session(
     db.add(agent_session)
     db.commit()
 
-    asyncio.create_task(
-        _background_sync_loop(
-            session_id = agent_session.id,
-            thread_id  = thread_id,
-            db_factory = engine,
-        )
+    sync_agent_state.apply_async(
+        args=[agent_session.id, thread_id],
+        countdown=15,
     )
 
     return {
@@ -1723,12 +1722,9 @@ async def start_prepared_session(
 
     await start_agent(thread_id, initial_state)
 
-    asyncio.create_task(
-        _background_sync_loop(
-            session_id = agent_session.id,
-            thread_id  = thread_id,
-            db_factory = engine,
-        )
+    sync_agent_state.apply_async(
+        args=[agent_session.id, thread_id],
+        countdown=15,
     )
 
     return {
@@ -1803,10 +1799,14 @@ async def get_status(
 
     state = await get_agent_state(agent_session.thread_id)
 
-    if state:
+    # Do not let a live AI service state overwrite a manually set
+    # terminal status (failed/done) in the DB
+    db_is_terminal = agent_session.status in (AgentStatus.DONE, AgentStatus.FAILED)
+
+    if state and not db_is_terminal:
         await _sync_state_to_db(agent_session, lecture, state, db)
 
-    current_step = state.get("current_step") if state else agent_session.status.value
+    current_step = state.get("current_step") if state and not db_is_terminal else agent_session.status.value
 
     # ── Progress fields for the mobile progress screen ────────────
     progress = _STEP_PROGRESS.get(current_step, {
@@ -1836,15 +1836,15 @@ async def get_status(
         "description":      progress["description"],
 
         # ── Existing fields ────────────────────────────────────────
-        "approval_status": state.get("approval_status") if state else None,
-        "iteration":       state.get("iteration", 0)    if state else 0,
-        "max_iterations":  state.get("max_iterations", 3) if state else 3,
+        "approval_status": state.get("approval_status") if state and not db_is_terminal else None,
+        "iteration":       state.get("iteration", 0)    if state and not db_is_terminal else 0,
+        "max_iterations":  state.get("max_iterations", 3) if state and not db_is_terminal else 3,
         "lecture_version": {
             "version_number": latest_version.version_number,
             "pdf_path":       latest_version.pdf_path,
             "status":         latest_version.status,
         } if latest_version else None,
-        "error": state.get("error") if state else None,
+        "error": state.get("error") if state and not db_is_terminal else None,
     }
 
 
@@ -1860,19 +1860,41 @@ async def stream_status(
 
     async def event_generator():
         terminal = {"awaiting_approval", "done", "failed"}
+
+        # If DB is already terminal, send one event and close immediately
+        if agent_session.status in (AgentStatus.DONE, AgentStatus.FAILED):
+            payload = {
+                "current_step":    agent_session.status.value,
+                "approval_status": None,
+                "iteration":       0,
+                "lecture_paths":   None,
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
+            return
+
         while True:
             state = await get_agent_state(thread_id)
+
             if state:
-                await _sync_state_to_db(agent_session, lecture, state, db)
+                # Do not overwrite terminal DB status with stale AI state
+                db_is_terminal = agent_session.status in (AgentStatus.DONE, AgentStatus.FAILED)
+
+                if not db_is_terminal:
+                    await _sync_state_to_db(agent_session, lecture, state, db)
+
+                current_step = agent_session.status.value if db_is_terminal else state.get("current_step")
+
                 payload = {
-                    "current_step":    state.get("current_step"),
-                    "approval_status": state.get("approval_status"),
-                    "iteration":       state.get("iteration", 0),
-                    "lecture_paths":   state.get("lecture_paths"),
+                    "current_step":    current_step,
+                    "approval_status": state.get("approval_status") if not db_is_terminal else None,
+                    "iteration":       state.get("iteration", 0)    if not db_is_terminal else 0,
+                    "lecture_paths":   state.get("lecture_paths")   if not db_is_terminal else None,
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
-                if state.get("current_step") in terminal:
+
+                if current_step in terminal:
                     break
+
             await asyncio.sleep(1.5)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

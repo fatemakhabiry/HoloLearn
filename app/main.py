@@ -61,28 +61,15 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Runs on server startup (before) and shutdown (after the yield).
-    Use this for anything that must be ready before the first request.
-    """
     # ── Create required directories on startup ─────────────────────
-    # These must exist before any upload or generation job runs.
-    # parents=True  → creates intermediate dirs automatically
-    # exist_ok=True → no error if they already exist
-
     dirs_to_create = []
 
-    # Upload directories
     if settings.UPLOADS_DIR:
-        # Teacher assets: uploads/instructors/{teacher_id}/raw.jpg + voice_ref.wav
         dirs_to_create.append(Path(settings.UPLOADS_DIR) / "instructors")
     else:
-        # Fallback if UPLOADS_DIR not set in .env (local dev without pipeline)
         dirs_to_create.append(Path("uploads") / "instructors")
 
-    # Output directories
     if settings.OUTPUTS_DIR:
-        # Generated videos: outputs/jobs/{lecture_id}/avatar_NNN.mp4
         dirs_to_create.append(Path(settings.OUTPUTS_DIR) / "jobs")
     else:
         dirs_to_create.append(Path("outputs") / "jobs")
@@ -93,9 +80,44 @@ async def lifespan(app: FastAPI):
 
     logger.info("HoloLearn startup complete — all directories ready")
 
+    # ── Recover stuck sessions from before last restart ────────────
+    try:
+        from sqlmodel import Session, select
+        from app.core.database import engine
+        from app.models.agent_session import AgentSession, AgentStatus
+        from app.tasks.session_tasks import sync_agent_state
+
+        in_progress = {
+            AgentStatus.GENERATING_LECTURE,
+            AgentStatus.GENERATING_CONTENT,
+            AgentStatus.REGENERATING,
+        }
+
+        with Session(engine) as db:
+            stuck = db.exec(
+                select(AgentSession).where(
+                    AgentSession.status.in_(in_progress)
+                )
+            ).all()
+
+        for s in stuck:
+            logger.info(f"Recovering stuck session {s.id} (status={s.status})")
+            sync_agent_state.apply_async(
+                args=[s.id, s.thread_id],
+                countdown=5,
+            )
+
+        if stuck:
+            logger.info(f"Re-queued {len(stuck)} stuck session(s)")
+        else:
+            logger.info("No stuck sessions found")
+
+    except Exception as e:
+        logger.warning(f"Session recovery failed (non-fatal): {e}")
+
     yield  # ← server runs here, handling requests
 
-    # Anything after yield runs on shutdown (cleanup)
+    # ── Shutdown ───────────────────────────────────────────────────
     logger.info("HoloLearn shutting down")
 
 
