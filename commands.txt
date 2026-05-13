@@ -3,7 +3,10 @@ alembic revision --autogenerate -m "update schedule table "
 alembic upgrade head
 
 
-
-
-
 ngrok config add-authtoken 38R6kX5zmElRMWnSsVyTmDoAm0Y_7RPeqSPMTKRxTEYab3W1y
+
+python -m Lecture_Agent.run_server
+
+uvicorn app.main:app --reload
+
+celery -A app.celery_app worker --loglevel=info --pool=solo
