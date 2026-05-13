@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../constants/constants.dart';
 import '../../models/qa_models.dart';
@@ -87,7 +89,7 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
   Future<void> _loadData() async {
     setState(() {
       isLoading = true;
-      _isSending = false; // cancel any stale sending state
+      _isSending = false;
     });
     try {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
@@ -156,7 +158,6 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isSending) return;
 
-    // Add optimistic question bubble
     final optimisticQuestion = ChatMessage(
       text: text,
       sender: MessageSender.you,
@@ -178,14 +179,12 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
       );
       if (!mounted) return;
       setState(() {
-        // Optimistic question bubble stays — just append the answer
         _messages.add(ChatMessage.fromQAMessage(response.answer));
         _sessionId ??= response.answer.sessionId;
       });
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
-      // Remove optimistic bubble on failure
       setState(() => _messages.remove(optimisticQuestion));
       CustomErrorHandler.show(
         context,
@@ -228,7 +227,6 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
   }
 
   void _raiseHand() {
-    // TODO: call raise-hand API endpoint when available
     setState(() {
       if (_isInQueue) {
         _isInQueue = false;
@@ -321,14 +319,11 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
             ? _NotReadyState(label: _indexStatusLabel, onRetry: _loadData)
             : Column(
                 children: [
-                  // Teacher info strip
                   _TeacherStrip(session: widget.session),
 
-                  // Queue position banner
                   if (_isInQueue && _queuePosition != null)
                     _QueueBanner(position: _queuePosition!),
 
-                  // Messages list
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _loadData,
@@ -348,7 +343,6 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
                     ),
                   ),
 
-                  // Bottom actions
                   _BottomBar(
                     controller: _messageController,
                     isInQueue: _isInQueue,
@@ -807,7 +801,10 @@ class _BottomBar extends StatelessWidget {
                           horizontal: AppStyles.spacingM,
                           vertical: AppStyles.spacingS + 2,
                         ),
-                        suffixIcon: _MicButton(onVoiceSend: onVoiceSend),
+                        suffixIcon: _MicButton(
+                          onVoiceSend: onVoiceSend,
+                          disabled: isSending,
+                        ),
                       ),
                     ),
                   ),
@@ -825,28 +822,110 @@ class _BottomBar extends StatelessWidget {
 
 // ─── Mic Button ───────────────────────────────────────────────────────────────
 
-class _MicButton extends StatelessWidget {
+class _MicButton extends StatefulWidget {
   final Future<void> Function(File) onVoiceSend;
-  const _MicButton({required this.onVoiceSend});
+  final bool disabled;
+
+  const _MicButton({required this.onVoiceSend, this.disabled = false});
+
+  @override
+  State<_MicButton> createState() => _MicButtonState();
+}
+
+class _MicButtonState extends State<_MicButton> {
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+  String? _recordingPath;
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (widget.disabled) return;
+
+    if (_isRecording) {
+      await _stopAndSend();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    // Check / request microphone permission
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Microphone permission denied.',
+          type: ErrorType.fail,
+        );
+      }
+      return;
+    }
+
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/qa_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    await _recorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc, // produces .m4a / .aac — widely supported
+        bitRate: 128000,
+        sampleRate: 44100,
+      ),
+      path: path,
+    );
+
+    setState(() {
+      _isRecording = true;
+      _recordingPath = path;
+    });
+  }
+
+  Future<void> _stopAndSend() async {
+    final path = await _recorder.stop();
+    setState(() => _isRecording = false);
+
+    if (path == null || path.isEmpty) return;
+
+    final file = File(path);
+    if (!await file.exists()) return;
+
+    await widget.onVoiceSend(file);
+
+    // Clean up temp file after sending
+    try {
+      await file.delete();
+    } catch (_) {}
+    _recordingPath = null;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final color = widget.disabled
+        ? AppColors.gray
+        : (_isRecording ? AppColors.error : AppColors.primaryColor);
+
     return Padding(
       padding: const EdgeInsets.only(right: AppStyles.spacingXS),
       child: GestureDetector(
-        onTap: () {
-          // TODO: record with `record` package then call onVoiceSend(File(path))
-        },
+        onTap: _toggleRecording,
         child: Container(
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withOpacity(0.1),
+            color: _isRecording
+                ? AppColors.error.withOpacity(0.15)
+                : color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.mic_outlined,
-            color: AppColors.primaryColor,
+          child: Icon(
+            _isRecording ? Icons.stop_rounded : Icons.mic_outlined,
+            color: color,
             size: 20,
           ),
         ),

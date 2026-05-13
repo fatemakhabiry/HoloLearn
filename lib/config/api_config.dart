@@ -71,7 +71,7 @@ class ApiConfig {
   static const String courseListEndpoint = '/courses/';
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
 
-  // ===== Q&A Endpoints =====
+  // ===== Q&A Endpoints ========================================================
   /// POST /qa/{lecture_id}/ask
   /// Body: multipart — text (String) OR voice_file (audio)
   static const String qaAskEndpoint = '/qa/{lecture_id}/ask';

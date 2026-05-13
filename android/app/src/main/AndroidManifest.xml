@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Microphone permission for Q&A voice recording -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Needed by record package to write the audio file -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+        
     <application
         android:label="HoloLearn"
         android:name="${applicationName}"

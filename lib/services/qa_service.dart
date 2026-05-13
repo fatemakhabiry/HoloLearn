@@ -77,11 +77,13 @@ class QAService {
     }
 
     if (voiceFile != null) {
+      final extension = voiceFile.path.split('.').last.toLowerCase();
+      final mimeType = _audioMime(extension);
       request.files.add(
         await http.MultipartFile.fromPath(
           'voice_file',
           voiceFile.path,
-          // Let the server infer media type; common: audio/m4a, audio/wav
+          contentType: _mediaType(mimeType),
         ),
       );
     }
@@ -212,6 +214,32 @@ class QAService {
     } on TimeoutException {
       throw Exception('Audio download timed out.');
     }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  /// Maps a file extension to the correct audio MIME type.
+  static String _audioMime(String extension) {
+    switch (extension) {
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'wav':
+        return 'audio/wav';
+      case 'ogg':
+        return 'audio/ogg';
+      case 'm4a':
+        return 'audio/mp4';
+      case 'aac':
+        return 'audio/aac';
+      default:
+        return 'audio/mpeg';
+    }
+  }
+
+  /// Splits "audio/mpeg" into a [http.MediaType] for [http.MultipartFile].
+  static http.MediaType _mediaType(String mime) {
+    final parts = mime.split('/');
+    return http.MediaType(parts[0], parts.length > 1 ? parts[1] : '*');
   }
 
   // ─── 5. Clear Session ─────────────────────────────────────────────────────
