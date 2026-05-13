@@ -1,7 +1,11 @@
 from reportlab.lib.units import inch
 
 # OpenRouter model
-OPENROUTER_MODEL = "z-ai/glm-4.5-air:free"
+# OPENROUTER_MODEL = "arcee-ai/trinity-large-preview:free"
+# OPENROUTER_MODEL = "poolside/laguna-m.1:free"
+# OPENROUTER_MODEL = "openai/gpt-oss-120b:free"
+OPENROUTER_MODEL="llama-3.3-70b-versatile"
+
 
 # Slide page size: 16:9 widescreen (10 x 5.625 inches)
 
