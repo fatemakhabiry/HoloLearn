@@ -1,0 +1,180 @@
+--- Page 1 ---
+Systems and Internet Security
+Technologies
+تجميع وإعداد
+أحمد حسين
+Lecture 3
+1 October 2025
+
+--- Page 2 ---
+Lecture 3
+Cross-Site Scripting (XSS) Attacks
+
+--- Page 3 ---
+Reference:
+Chapter 6
+CROSS-SITE SCRIPTING
+
+--- Page 4 ---
+Why study XSS attacks?
+• XSS is one of the most common web app vulnerabilities.
+• Annually enlisted in OWASP’s top 10 vulnerabilities.
+• XSS is HackerOne’s most reported vulnerability.
+• In 2020, $4 million dollars have been paid out because of XSS
+attacks.
+
+--- Page 5 ---
+Why XSS is so prevalent?
+• Modern webpages utilize client-side code to produce interactive
+contents.
+• Client-side code makes webpages more responsive as well.
+• The popularity of Client-side code facilitates XSS attacks.
+
+--- Page 6 ---
+The nature of XSS attacks
+• Attackers are continuously looking for opportunities to execute
+their malicious scripts on victims' browsers.
+• Such script execution becomes easier when a web application
+fails to differentiate between user input and legitimate web page
+construction code.
+
+--- Page 7 ---
+How XSS attack works?
+First, an attacker injects a malicious code into a web page.
+Then, the malicious code will be executed once the victim opens
+the web page in a browser.
+
+--- Page 8 ---
+Risks of XSS attacks
+When a user browser executes a malicious script (for example,
+JavaScript, VBScript, Flash, or even HTML), this malicious script
+could do any of the following :
+• Redirect to a malicious site.
+• Leak personal data.
+• Steal session cookies then impersonate user online.
+• Manipulate web page components.
+• Access victim’s geolocation coordinates and webcam data.
+
+--- Page 9 ---
+Types of XSS
+• Reflected cross-site scripting
+• Most common type.
+• Malicious code is appended to the URL of a familiar webpage.
+• Once the victim loads the page in a web browser, the malicious code is
+executed.
+• Social engineering is employed to convince the victim to click the
+malicious link.
+• Persistent cross-site scripting
+• Also known as Stored XSS
+• Most severe attack (Why?)
+• An attacker injects a malicious code on a website.
+• This happens easily when users could post content on a website.
+• Commonly achieved by posting comments on online forums.
+• If user-generated content is not validated, other users visiting the website
+would be attacked.
+
+--- Page 10 ---
+Types of XSS (continued)
+• Blind XSS
+• A special case of stored XSS when its malicious script is executed by
+another part of the application or in another application.
+• Detecting Blind XSS is difficult. (not part of any server response)
+• Example:
+• An attacker could submit a message to the site’s support staff.
+• No validation takes place on users input.
+• The malicious code is executed later when an admin views that message.
+• DOM-Based XSS
+• Exploits client-side code that dynamically modifies page contents (in
+unsecure manner) based on user-supplied data. (e.g. jQuery)
+• User input remains in user’s browser (i.e. doesn’t travel to the server)
+• The application processes user input on the victim’s browser then returns
+it to the user.
+• Attackers use either URL parameters (?) or URL fragments (#).
+
+--- Page 11 ---
+Types of XSS (continued)
+• Self-XSS
+• The victim is tricked into typing a malicious payload and thus attacking
+himself.
+• Attackers use social engineering and shortened URLs.
+• Self-XSS is not accepted as a pure technical bug when reported to bug
+bounty programs.
+
+--- Page 12 ---
+Types of scripts
+• Inline scripts
+• Use of <script> </script> tag within HTML page.
+• Commonly used in XSS attacks.
+• External scripts
+• Use of the src attribute of the <script> tag.
+• For example, <script src=http://xxxxx/xss.js></script>
+
+--- Page 13 ---
+Examples of XSS attacks
+Note that victim’s cookie would be sent to the attackers
+server as part of the above request.
+Example 1:
+
+--- Page 14 ---
+Examples of XSS attacks (continued)
+Example 2:
+https://example.com/search?q=<script>alert(‘XSS’);</script>
+Once a victim is tricked into clicking on the above URL, the appended
+malicious code will be executed as part of the server’s response to his
+request.
+This is an example of Reflected XSS which is seen quite a lot when a
+website provides a search functionality.
+
+--- Page 15 ---
+Examples of XSS attacks (continued)
+Example 3:
+https://example.com?locale=<script>alert(‘XSS’);</script>
+Once a victim is tricked into clicking on the above URL, the appended
+malicious code will be executed as part of the client-side dynamic page
+rendering.
+This is an example of DOM-based XSS.
+
+--- Page 16 ---
+How to protect against XSS?
+• Disable HTML in user posts.
+• This is not always possible.
+• Enable markdown or WYSIWYG editors instead.
+• Robust input validation
+• Apply rules that prevent user from posting malicious code.
+• Any input that doesn’t meet the rule’s criteria, is rejected.
+• Sanitizing data
+• Filtering out any danger/malicious content from the data that enters or
+departs from a server.
+• Usually involves modification of special characters in the input that could
+facilitate malicious activity.
+• This filtration should be done before the data is displayed to other users.
+
+--- Page 17 ---
+How to protect against XSS? (continued)
+• Taking cookie security measures
+• Set the HttpOnly flag of the session cookie. This prevents JavaScript from
+reading the cookie.
+• Tie cookies to relevant IP addresses to prevent cookie-theft.
+• Web apps could even block JavaScript from gaining access to cookies.
+• Taking content security measures
+• Implement the Content-Security-Policy. (An HTTP response header)
+• This policy restricts how resources such as JavaScript, CSS, or images
+load on your web pages.
+• Restrict sources from which scripts could be executed by the browser.
+
+--- Page 18 ---
+How to protect against XSS? (continued)
+• Web Applications Firewall (WAF) rules configurations
+• Block suspicious requests to the server.
+• Implement contextual output escaping and encoding
+• Escaping prevents browsers from mistakenly treat user input as a code
+and executes it.
+• The solution adopted by modern JavaScript frameworks (e.g. React,
+Angular 2+ and Vue.js)
+• These modern JS frameworks automatically perform HTML escaping on
+behalf of the developer.
+• Client-side input validation
+• Used for DOM-based XSS prevention.
+
+--- Page 19 ---
+Questions?

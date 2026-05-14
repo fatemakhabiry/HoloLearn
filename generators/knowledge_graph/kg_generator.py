@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from dotenv import load_dotenv
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -12,15 +12,16 @@ from kg_prompts import SYSTEM_PROMPT, make_human_prompt
 from kg_render import render_html
 
 
+_DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GENERATE
 # ─────────────────────────────────────────────────────────────────────────────
-def generate(txt_path: str, course_code: str = "", output_path: str = "") -> str:
+def generate(txt_path: str, course_code: str = "", output_path: str = "", model: str = _DEFAULT_MODEL) -> str:
     load_dotenv()
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY_KG")
     if not api_key:
-        raise EnvironmentError("Set OPENROUTER_API_KEY in your .env")
+        raise EnvironmentError("Set GROQ_API_KEY_KG in your .env")
 
     raw = Path(txt_path).read_text(encoding="utf-8", errors="ignore").strip()
     if not raw:
@@ -48,12 +49,11 @@ def generate(txt_path: str, course_code: str = "", output_path: str = "") -> str
     chunks = splitter.split_text(text)
     print(f"[2/4] Split into {len(chunks)} chunk(s)")
 
-    llm = ChatOpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
-        model_name=MODEL,
+    llm = ChatGroq(
+        groq_api_key=api_key,
+        model_name=model,
         temperature=0.1,
-        max_tokens=16000,
+        max_tokens=8000,
     )
 
     fragments = []

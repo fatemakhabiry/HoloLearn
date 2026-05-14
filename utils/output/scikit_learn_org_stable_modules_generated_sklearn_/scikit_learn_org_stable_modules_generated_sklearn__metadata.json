@@ -1,0 +1,15 @@
+{
+  "resource_name": "scikit_learn_org_stable_modules_generated_sklearn_",
+  "resource_id": "scikit_learn_org_stable_modules_generated_sklearn_",
+  "url": "https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html",
+  "source_type": "url",
+  "upload_date": "2026-04-23T23:18:49.609947",
+  "extraction_timestamp": "2026-04-23T23:18:49.609947",
+  "processing_time_seconds": 0.87,
+  "status": "success",
+  "error_message": null,
+  "character_count": 15156,
+  "word_count": 2390,
+  "domain": "scikit-learn.org",
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\scikit_learn_org_stable_modules_generated_sklearn_\\scikit_learn_org_stable_modules_generated_sklearn__text.txt"
+}

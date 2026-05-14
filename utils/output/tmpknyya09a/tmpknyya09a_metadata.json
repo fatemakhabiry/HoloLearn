@@ -1,0 +1,16 @@
+{
+  "resource_name": "tmpknyya09a",
+  "resource_id": "tmpknyya09a",
+  "filename": "tmpknyya09a.pdf",
+  "source_type": "pdf",
+  "upload_date": "2026-04-13T22:36:04.194555",
+  "extraction_timestamp": "2026-04-13T22:36:04.194555",
+  "file_size_bytes": 807460,
+  "processing_time_seconds": 0.42,
+  "status": "success",
+  "error_message": null,
+  "page_count": 11,
+  "character_count": 2604,
+  "is_encrypted": false,
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\tmpknyya09a\\tmpknyya09a_text.txt"
+}

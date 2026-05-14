@@ -1,0 +1,16 @@
+{
+  "resource_name": "3950ff2341364aa98a02abcd9b123206",
+  "resource_id": "3950ff2341364aa98a02abcd9b123206",
+  "filename": "3950ff2341364aa98a02abcd9b123206.pdf",
+  "source_type": "pdf",
+  "upload_date": "2026-05-13T10:35:47.751074",
+  "extraction_timestamp": "2026-05-13T10:35:47.751074",
+  "file_size_bytes": 807460,
+  "processing_time_seconds": 0.54,
+  "status": "success",
+  "error_message": null,
+  "page_count": 11,
+  "character_count": 2604,
+  "is_encrypted": false,
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\3950ff2341364aa98a02abcd9b123206\\3950ff2341364aa98a02abcd9b123206_text.txt"
+}
