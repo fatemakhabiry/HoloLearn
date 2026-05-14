@@ -13,7 +13,7 @@ class OtpExpiredScreen extends StatelessWidget {
   final String bannerTitle = "Reset Link Expired";
   final String bannerMessage =
       "This password reset link has expired or is invalid. Reset links are valid for 10 minutes only.";
-  final String imagePath = 'images/time_expired_icon.png';
+  final String imagePath = 'assets/images/time_expired_icon.png';
   final Color imageBackgroundColor = const Color(0xFFFFCDD2);
   final String title = 'OTP Expired';
   final String description =

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 
-import '../../services/avatar_service.dart';
 import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';

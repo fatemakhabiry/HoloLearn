@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart' ;
 
 import '../routes/app_routes.dart';
@@ -20,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
         // Show splash for 2 seconds
-    Future.delayed(const Duration(seconds: 2), () async {
+    Future.delayed(const Duration(seconds: 3), () async {
       await _initializeApp(); // restore session state first
       _checkAutoLogin();      // then check login and navigate
     });
@@ -82,47 +83,19 @@ Future<void> _checkAutoLogin() async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo
-              Container(
-                width: 300,
-                height: 300,
-                child: Image(
-                image: AssetImage("images/vertical logo-02.png"),
-              )
+              Lottie.asset('assets/animation/Logo Animation.json'
               ),
-              const SizedBox(height: AppStyles.spacingS),
 
               // Tagline
               Text(
                 'AI-Powered Holographic learning',
-                style: AppStyles.h2.copyWith(color: AppColors.textLight),
+                style: AppStyles.h2.copyWith(color: AppColors.gray),
                 textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
 
-        // Bottom loading
-        Positioned(
-          bottom: 60,
-          left: 0,
-          right: 0,
-          child: Column(
-            children: [
-              const CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: AppStyles.spacingS),
-              Text(
-                'Loading...',
-                style: AppStyles.bodySmall.copyWith(
-                  color: AppColors.textLight,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     ),
   );

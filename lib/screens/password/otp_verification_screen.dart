@@ -33,7 +33,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
   final String bannerTitle = "Check Your Email";
   final String bannerMessage =
       "We've sent a Verification code to your email address.";
-  final String imagePath = 'images/email_sent_icon.png';
+  final String imagePath = 'assets/images/email_sent_icon.png';
   final Color imageBackgroundColor = Color(0xFFCDF1CD);
   final String title = 'Email Sent!';
   final String subtitle = "We've sent a reset link to:";

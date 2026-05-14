@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../constants/constants.dart';
 
+String animationPath="assets/animation/Logo Animation.json";
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
@@ -26,14 +28,13 @@ class LoadingOverlay extends StatelessWidget {
             child: AbsorbPointer(
               absorbing: true,
               child: Container(
-                color: barrierColor ?? AppColors.secondaryColor.withOpacity(0.45),
+                color:
+                    barrierColor ?? AppColors.secondaryColor.withOpacity(0.45),
               ),
             ),
           ),
           // Spinner card
-          const Center(
-            child: _SpinnerCard(),
-          ),
+          const Center(child: _SpinnerCard()),
         ],
       ],
     );
@@ -53,17 +54,20 @@ class _SpinnerCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(
-            color: AppColors.white,
-            strokeWidth: 5,
-            
+          Lottie.asset(
+            animationPath,
+            width: 200,
+            height: 200,
+            repeat: true,
           ),
+          // const CircularProgressIndicator(
+          //   color: AppColors.white,
+          //   strokeWidth: 5,
+          // ),
           const SizedBox(height: AppStyles.spacingM),
           Text(
             'Please wait…',
-            style: AppStyles.bodyLarge.copyWith(
-              color: AppColors.white,
-            ),
+            style: AppStyles.bodyLarge.copyWith(color: AppColors.white),
           ),
         ],
       ),
@@ -101,16 +105,20 @@ class LoadingOverlayHelper {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  color: AppColors.primaryColor,
-                  strokeWidth: 5,
+                Lottie.asset(
+                  animationPath,
+                  width: 200,
+                  height: 200,
+                  repeat: true,
                 ),
+                // const CircularProgressIndicator(
+                //   color: AppColors.primaryColor,
+                //   strokeWidth: 5,
+                // ),
                 const SizedBox(height: AppStyles.spacingM),
                 Text(
                   message ?? 'Please wait…',
-                  style: AppStyles.bodyLarge.copyWith(
-                    color: AppColors.white,
-                  ),
+                  style: AppStyles.bodyLarge.copyWith(color: AppColors.white),
                 ),
               ],
             ),

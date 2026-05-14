@@ -52,7 +52,7 @@ class _ResetPassSuccessPage extends State<ResetPassSuccessPage> {
                               radius: 60,
                               backgroundColor: Color(0xFFCDF1CD),
                               child: Image.asset(
-                                'images/check_icon.png',
+                                'assets/images/check_icon.png',
                                 width: 80,
                                 height: 80,
                               ),
