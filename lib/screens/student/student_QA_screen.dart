@@ -1,9 +1,10 @@
 import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../constants/constants.dart';
 import '../../models/qa_models.dart';
@@ -16,17 +17,23 @@ import '../../widgets/widgets.dart';
 
 enum MessageSender { you, hologramAvatar }
 
+enum MessageType { text, voice }
+
 class ChatMessage {
   final String text;
   final MessageSender sender;
   final DateTime timestamp;
   final int? messageId;
+  final MessageType type;
+  final String? voicePath;
 
   ChatMessage({
     required this.text,
     required this.sender,
     DateTime? timestamp,
     this.messageId,
+    this.type = MessageType.text,
+    this.voicePath,
   }) : timestamp = timestamp ?? DateTime.now();
 
   factory ChatMessage.fromQAMessage(QAMessage msg) {
@@ -37,6 +44,18 @@ class ChatMessage {
           : MessageSender.you,
       timestamp: msg.createdAt,
       messageId: msg.messageId,
+    );
+  }
+
+  factory ChatMessage.voice({
+    required MessageSender sender,
+    required String voicePath,
+  }) {
+    return ChatMessage(
+      text: '',
+      sender: sender,
+      type: MessageType.voice,
+      voicePath: voicePath,
     );
   }
 }
@@ -198,7 +217,18 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
 
   Future<void> _sendVoiceMessage(File audioFile) async {
     if (_isSending) return;
-    setState(() => _isSending = true);
+
+    // Show voice bubble optimistically so user sees it immediately
+    final optimisticMsg = ChatMessage.voice(
+      sender: MessageSender.you,
+      voicePath: audioFile.path,
+    );
+
+    setState(() {
+      _isSending = true;
+      _messages.add(optimisticMsg);
+    });
+    _scrollToBottom();
 
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     try {
@@ -209,13 +239,13 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _messages.add(ChatMessage.fromQAMessage(response.question));
         _messages.add(ChatMessage.fromQAMessage(response.answer));
         _sessionId ??= response.answer.sessionId;
       });
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
+      setState(() => _messages.remove(optimisticMsg));
       CustomErrorHandler.show(
         context,
         message: e.toString().replaceFirst('Exception: ', ''),
@@ -574,7 +604,7 @@ class _QueueBanner extends StatelessWidget {
   }
 }
 
-// ─── Message Bubble ───────────────────────────────────────────────────────────
+// ─── Message Bubble (router) ──────────────────────────────────────────────────
 
 class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -592,6 +622,7 @@ class _MessageBubble extends StatelessWidget {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
+          // Sender label
           Padding(
             padding: const EdgeInsets.only(
               bottom: AppStyles.spacingXS,
@@ -611,64 +642,260 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
+          // Bubble
           Row(
             mainAxisAlignment: isYou
                 ? MainAxisAlignment.end
                 : MainAxisAlignment.start,
             children: [
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppStyles.spacingM,
-                    vertical: AppStyles.spacingS + 2,
+                child: message.type == MessageType.voice
+                    ? _VoiceBubble(message: message, isYou: isYou)
+                    : _TextBubble(
+                        message: message,
+                        isYou: isYou,
+                        isDark: isDark,
+                      ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Text Bubble ──────────────────────────────────────────────────────────────
+
+class _TextBubble extends StatelessWidget {
+  final ChatMessage message;
+  final bool isYou;
+  final bool isDark;
+  const _TextBubble({
+    required this.message,
+    required this.isYou,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppStyles.spacingM,
+        vertical: AppStyles.spacingS + 2,
+      ),
+      decoration: isYou
+          ? BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryColor, AppColors.secondaryColor],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppStyles.radiusM),
+                topRight: Radius.circular(AppStyles.radiusM),
+                bottomLeft: Radius.circular(AppStyles.radiusM),
+                bottomRight: Radius.circular(4.0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              color: isDark ? AppColors.darkCard : AppColors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppStyles.radiusM),
+                topRight: Radius.circular(AppStyles.radiusM),
+                bottomRight: Radius.circular(AppStyles.radiusM),
+                bottomLeft: Radius.circular(4.0),
+              ),
+              boxShadow: AppStyles.cardShadow,
+            ),
+      child: Text(
+        message.text,
+        style: AppStyles.bodyMedium.copyWith(
+          color: isYou
+              ? AppColors.white
+              : (isDark ? AppColors.textLight : AppColors.textBlack),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Voice Bubble ─────────────────────────────────────────────────────────────
+
+class _VoiceBubble extends StatefulWidget {
+  final ChatMessage message;
+  final bool isYou;
+  const _VoiceBubble({required this.message, required this.isYou});
+
+  @override
+  State<_VoiceBubble> createState() => _VoiceBubbleState();
+}
+
+class _VoiceBubbleState extends State<_VoiceBubble> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _position = Duration.zero;
+  Duration _total = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() => _isPlaying = state == PlayerState.playing);
+    });
+    _player.onPositionChanged.listen((pos) {
+      if (!mounted) return;
+      setState(() => _position = pos);
+    });
+    _player.onDurationChanged.listen((dur) {
+      if (!mounted) return;
+      setState(() => _total = dur);
+    });
+    _player.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = false;
+        _position = Duration.zero;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    final path = widget.message.voicePath;
+    if (path == null) return;
+
+    if (_isPlaying) {
+      await _player.pause();
+    } else if (_position > Duration.zero) {
+      await _player.resume();
+    } else {
+      await _player.play(DeviceFileSource(path));
+    }
+  }
+
+  String _fmt(Duration d) {
+    final m = d.inMinutes.remainder(60).toString();
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isYou = widget.isYou;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isYou
+        ? AppColors.primaryColor
+        : (isDark ? AppColors.darkCard : AppColors.white);
+    final fgColor = isYou
+        ? AppColors.white
+        : (isDark ? AppColors.textLight : AppColors.textBlack);
+    final sliderActive = isYou ? AppColors.white : AppColors.primaryColor;
+    final sliderInactive = isYou
+        ? AppColors.white.withOpacity(0.35)
+        : AppColors.gray.withOpacity(0.3);
+
+    final progress = _total.inMilliseconds > 0
+        ? (_position.inMilliseconds / _total.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      width: 230,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(AppStyles.radiusM),
+          topRight: const Radius.circular(AppStyles.radiusM),
+          bottomLeft: Radius.circular(isYou ? AppStyles.radiusM : 4),
+          bottomRight: Radius.circular(isYou ? 4 : AppStyles.radiusM),
+        ),
+        boxShadow: isYou
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : AppStyles.cardShadow,
+      ),
+      child: Row(
+        children: [
+          // Play / Pause
+          GestureDetector(
+            onTap: _togglePlay,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: fgColor.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: fgColor,
+                size: 24,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Seek bar + timer
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 3,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: SliderComponentShape.noOverlay,
+                    activeTrackColor: sliderActive,
+                    inactiveTrackColor: sliderInactive,
+                    thumbColor: sliderActive,
                   ),
-                  decoration: isYou
-                      ? BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppColors.primaryColor,
-                              AppColors.secondaryColor,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(AppStyles.radiusM),
-                            topRight: Radius.circular(AppStyles.radiusM),
-                            bottomLeft: Radius.circular(AppStyles.radiusM),
-                            bottomRight: Radius.circular(4.0),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryColor.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        )
-                      : BoxDecoration(
-                          color: isDark ? AppColors.darkCard : AppColors.white,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(AppStyles.radiusM),
-                            topRight: Radius.circular(AppStyles.radiusM),
-                            bottomRight: Radius.circular(AppStyles.radiusM),
-                            bottomLeft: Radius.circular(4.0),
-                          ),
-                          boxShadow: AppStyles.cardShadow,
-                        ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: (val) async {
+                      final seek = Duration(
+                        milliseconds: (val * _total.inMilliseconds).toInt(),
+                      );
+                      await _player.seek(seek);
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
                   child: Text(
-                    message.text,
-                    style: AppStyles.bodyMedium.copyWith(
-                      color: isYou
-                          ? AppColors.white
-                          : (isDark
-                                ? AppColors.textLight
-                                : AppColors.textBlack),
+                    // Show position while playing, total when stopped
+                    _isPlaying || _position > Duration.zero
+                        ? _fmt(_position)
+                        : _fmt(_total),
+                    style: AppStyles.caption.copyWith(
+                      fontSize: 11,
+                      color: fgColor.withOpacity(0.75),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -835,7 +1062,6 @@ class _MicButton extends StatefulWidget {
 class _MicButtonState extends State<_MicButton> {
   final AudioRecorder _recorder = AudioRecorder();
   bool _isRecording = false;
-  String? _recordingPath;
 
   @override
   void dispose() {
@@ -845,7 +1071,6 @@ class _MicButtonState extends State<_MicButton> {
 
   Future<void> _toggleRecording() async {
     if (widget.disabled) return;
-
     if (_isRecording) {
       await _stopAndSend();
     } else {
@@ -854,7 +1079,6 @@ class _MicButtonState extends State<_MicButton> {
   }
 
   Future<void> _startRecording() async {
-    // Check / request microphone permission
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
@@ -873,35 +1097,25 @@ class _MicButtonState extends State<_MicButton> {
 
     await _recorder.start(
       const RecordConfig(
-        encoder: AudioEncoder.aacLc, // produces .m4a / .aac — widely supported
+        encoder: AudioEncoder.aacLc,
         bitRate: 128000,
         sampleRate: 44100,
       ),
       path: path,
     );
 
-    setState(() {
-      _isRecording = true;
-      _recordingPath = path;
-    });
+    if (mounted) setState(() => _isRecording = true);
   }
 
   Future<void> _stopAndSend() async {
     final path = await _recorder.stop();
-    setState(() => _isRecording = false);
+    if (mounted) setState(() => _isRecording = false);
 
     if (path == null || path.isEmpty) return;
-
     final file = File(path);
     if (!await file.exists()) return;
 
     await widget.onVoiceSend(file);
-
-    // Clean up temp file after sending
-    try {
-      await file.delete();
-    } catch (_) {}
-    _recordingPath = null;
   }
 
   @override
@@ -914,13 +1128,12 @@ class _MicButtonState extends State<_MicButton> {
       padding: const EdgeInsets.only(right: AppStyles.spacingXS),
       child: GestureDetector(
         onTap: _toggleRecording,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: _isRecording
-                ? AppColors.error.withOpacity(0.15)
-                : color.withOpacity(0.1),
+            color: color.withOpacity(0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(
