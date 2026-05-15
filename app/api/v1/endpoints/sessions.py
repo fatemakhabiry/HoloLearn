@@ -1692,7 +1692,7 @@ async def start_prepared_session(
     db.add(agent_session)
     db.commit()
     db.refresh(agent_session)
-
+    
     output_dir    = str(Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id))
     initial_state = {
         "meta": {
@@ -1927,7 +1927,32 @@ async def approve_lecture(
     agent_session.updated_at = datetime.utcnow()
     db.add(agent_session)
     db.commit()
+    # ── Trigger RAG indexing ───────────────────────────────────────
+    # txt_path is ready after approval — index it now so students
+    # can ask questions as soon as content generation completes
+    # ── Debug ──────────────────────────────────────────────────
+    print(f"[Approve] version={version}")
+    print(f"[Approve] txt_path={version.txt_path if version else 'NO VERSION'}")
+    if version and version.txt_path and Path(version.txt_path).exists():
+        try:
+            from arq import create_pool
+            from arq.connections import RedisSettings
 
+            redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+            await redis.enqueue_job(
+                "run_rag_ingest",
+                lecture_id = lecture.lecture_id,
+                file_path  = version.txt_path,
+            )
+            await redis.close()
+        except Exception as e:
+            # Non-fatal — don't block approval if RAG trigger fails
+            import logging
+            logging.getLogger(__name__).warning(
+                f"[Approve] RAG ingest trigger failed for lecture "
+                f"{lecture.lecture_id}: {e}"
+            )
+    # ─────────────────────────────────────────────────────────────
     await resume_agent(agent_session.thread_id, status="approved")
 
     if (

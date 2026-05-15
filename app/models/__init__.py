@@ -7,4 +7,6 @@ from app.models.agent_session import AgentSession
 from app.models.lecture_version import LectureVersion
 from app.models.generated_content import GeneratedContent
 from app.models.user import User, OTPVerification
-
+from app.models.lecture_index import LectureIndex    # ← ADD
+from app.models.qa_session import QASession          # ← ADD
+from app.models.qa_message import QAMessage          # ← ADD

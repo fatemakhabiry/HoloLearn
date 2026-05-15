@@ -3,6 +3,7 @@ from arq.connections import RedisSettings
 
 from app.core.config import settings
 from app.workers.generation_worker import run_generation
+from app.workers.rag_ingest_worker import run_rag_ingest      # ← ADD
 
 
 class WorkerSettings:
@@ -19,4 +20,5 @@ class WorkerSettings:
     max_jobs = settings.MAX_GENERATION_WORKERS  # MUST be 1
 
     # Functions this worker knows how to run
-    functions = [run_generation]
+    functions = [run_generation,run_rag_ingest,]    
+    

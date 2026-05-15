@@ -73,6 +73,15 @@ class Settings(BaseSettings):
     GROQ_API_KEY_VIDEO: Optional[str] = None
     GROQ_API_KEY_AUDIO: Optional[str] = None
 
+    # RAG Service
+    RAG_SERVICE_URL     : str           = "http://127.0.0.1:8002"
+    RAG_TIMEOUT_INGEST  : int           = 600   # 10 min — ingest is slow
+    RAG_TIMEOUT_QUERY   : int           = 60    # 1 min — query is fast
+
+    # Storage
+    VOICE_UPLOADS_DIR   : Optional[str] = None
+    TTS_AUDIO_DIR       : Optional[str] = None
+
     # ── Pipeline Paths ─────────────────────────────────────────────
     # Absolute paths on the machine running the pipeline (Windows)
     # Optional so the app starts even without pipeline configured

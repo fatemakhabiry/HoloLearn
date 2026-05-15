@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from app.models.agent_session import AgentSession        # ← ADD
     from app.models.lecture_version import LectureVersion    # ← ADD
     from app.models.generated_content import GeneratedContent # ← ADD
+    from app.models.lecture_index import LectureIndex  # ← ADD
+    from app.models.qa_session import QASession        # ← ADD
 
 class LectureType(str, Enum):
     PREPARED = "prepared"  # Teacher uploaded ready lecture
@@ -30,7 +32,8 @@ class LectureBase(SQLModel):
     lecture_type: LectureType = Field(default=LectureType.PREPARED)
     status: LectureStatus = Field(default=LectureStatus.DRAFT)
     final_content: Optional[str] = None  # URL to final lecture (Drive link)
-
+    is_indexed: bool = Field(default=False)
+    local_file_path: Optional[str] = Field(default=None)  # path to file on disk
 
 class Lecture(LectureBase, table=True):
     """Database model"""
@@ -39,6 +42,7 @@ class Lecture(LectureBase, table=True):
     lecture_id: Optional[int] = Field(default=None, primary_key=True)
     teacher_id: int = Field(foreign_key="teachers.user_id")
     course_code: str = Field(foreign_key="courses.course_code", max_length=50)
+    
     
     # Relationships
     teacher: Optional["Teacher"] = Relationship(back_populates="lectures")
@@ -49,7 +53,8 @@ class Lecture(LectureBase, table=True):
     versions:          List["LectureVersion"]         = Relationship(back_populates="lecture")
     generated_content: List["GeneratedContent"]       = Relationship(back_populates="lecture")
     pipeline: Optional["LecturePipeline"] = Relationship(back_populates="lecture")  # ← ADD
-
+    lecture_index : Optional["LectureIndex"] = Relationship(back_populates="lecture")
+    qa_sessions   : List["QASession"]        = Relationship(back_populates="lecture")
 class LectureCreate(SQLModel):
     """For creating a new lecture"""
     title: str

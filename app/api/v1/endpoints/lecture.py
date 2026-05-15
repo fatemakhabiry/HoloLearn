@@ -107,7 +107,21 @@ async def create_lecture_draft(
         session.add(lecture)
         session.commit()
         session.refresh(lecture)
-        
+        # ── Save permanent copy for RAG (triggered at publish time) ───
+        permanent_dir  = Path(settings.UPLOADS_DIR) / "lectures" / str(lecture.lecture_id)
+        permanent_dir.mkdir(parents=True, exist_ok=True)
+        permanent_path = permanent_dir / f"lecture{file_ext}"
+
+        with open(temp_path, "rb") as src, open(permanent_path, "wb") as dst:
+            dst.write(src.read())
+
+        # Store permanent path on lecture for later use
+        lecture.local_file_path = str(permanent_path.resolve())
+        session.add(lecture)
+        session.commit()
+        session.refresh(lecture)
+        # ─────────────────────────────────────────────────────────────
+
         return lecture
         
     except Exception as e:
@@ -194,7 +208,29 @@ async def confirm_and_publish_lecture(
     session.commit()
     session.refresh(lecture)
     session.refresh(schedule)
-    
+    # ── Trigger RAG indexing ───────────────────────────────────────
+    # Only for prepared lectures — generated lectures trigger from
+    # generation_worker.py after agent completes
+    if lecture.lecture_type == LectureType.PREPARED:
+        if lecture.local_file_path and Path(lecture.local_file_path).exists():
+            from arq import create_pool
+            from arq.connections import RedisSettings
+
+            redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+            await redis.enqueue_job(
+                "run_rag_ingest",
+                lecture_id = lecture.lecture_id,
+                file_path  = lecture.local_file_path,
+            )
+            await redis.close()
+        else:
+            # Log warning — file missing but don't block publish
+            import logging
+            logging.getLogger(__name__).warning(
+                f"[RAG] Prepared lecture {lecture.lecture_id} published "
+                f"but local_file_path missing or not on disk — skipping RAG ingest"
+            )
+    # ─────────────────────────────────────────────────────────────
     return ConfirmPublishResponse(
         message="Lecture published and scheduled successfully",
         lecture_id=lecture.lecture_id,
