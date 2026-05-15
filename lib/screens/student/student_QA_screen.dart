@@ -728,7 +728,6 @@ class _TextBubble extends StatelessWidget {
 }
 
 // ─── Voice Bubble ─────────────────────────────────────────────────────────────
-// ─── Voice Bubble ─────────────────────────────────────────────────────────────
 
 class _VoiceBubble extends StatefulWidget {
   final ChatMessage message;
@@ -757,6 +756,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     final path = widget.message.voicePath;
     if (path == null) return;
     try {
+      await _player.setLoopMode(LoopMode.off); // ← disable looping
       final duration = await _player.setFilePath(path);
       if (!mounted) return;
       setState(() {
@@ -802,6 +802,9 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       if (_isPlaying) {
         await _player.pause();
       } else {
+        if (_player.processingState == ProcessingState.completed) {
+          await _player.seek(Duration.zero);
+        }
         await _player.play();
       }
     } catch (e) {
