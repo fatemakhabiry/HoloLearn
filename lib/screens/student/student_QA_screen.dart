@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -728,6 +728,7 @@ class _TextBubble extends StatelessWidget {
 }
 
 // ─── Voice Bubble ─────────────────────────────────────────────────────────────
+// ─── Voice Bubble ─────────────────────────────────────────────────────────────
 
 class _VoiceBubble extends StatefulWidget {
   final ChatMessage message;
@@ -739,32 +740,53 @@ class _VoiceBubble extends StatefulWidget {
 }
 
 class _VoiceBubbleState extends State<_VoiceBubble> {
-  final AudioPlayer _player = AudioPlayer();
+  late final AudioPlayer _player;
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _total = Duration.zero;
+  bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    _player.onPlayerStateChanged.listen((state) {
+    _player = AudioPlayer();
+    _initPlayer();
+  }
+
+  Future<void> _initPlayer() async {
+    final path = widget.message.voicePath;
+    if (path == null) return;
+    try {
+      final duration = await _player.setFilePath(path);
       if (!mounted) return;
-      setState(() => _isPlaying = state == PlayerState.playing);
+      setState(() {
+        _total = duration ?? Duration.zero;
+        _loaded = true;
+      });
+    } catch (e) {
+      debugPrint('just_audio setFilePath error: $e');
+      return;
+    }
+
+    _player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      final playing =
+          state.playing && state.processingState != ProcessingState.completed;
+      setState(() => _isPlaying = playing);
+      if (state.processingState == ProcessingState.completed) {
+        _player.seek(Duration.zero);
+        if (mounted) setState(() => _position = Duration.zero);
+      }
     });
-    _player.onPositionChanged.listen((pos) {
+
+    _player.positionStream.listen((pos) {
       if (!mounted) return;
       setState(() => _position = pos);
     });
-    _player.onDurationChanged.listen((dur) {
-      if (!mounted) return;
+
+    _player.durationStream.listen((dur) {
+      if (!mounted || dur == null) return;
       setState(() => _total = dur);
-    });
-    _player.onPlayerComplete.listen((_) {
-      if (!mounted) return;
-      setState(() {
-        _isPlaying = false;
-        _position = Duration.zero;
-      });
     });
   }
 
@@ -775,15 +797,15 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   }
 
   Future<void> _togglePlay() async {
-    final path = widget.message.voicePath;
-    if (path == null) return;
-
-    if (_isPlaying) {
-      await _player.pause();
-    } else if (_position > Duration.zero) {
-      await _player.resume();
-    } else {
-      await _player.play(DeviceFileSource(path));
+    if (!_loaded) return;
+    try {
+      if (_isPlaying) {
+        await _player.pause();
+      } else {
+        await _player.play();
+      }
+    } catch (e) {
+      debugPrint('just_audio play error: $e');
     }
   }
 
@@ -836,7 +858,6 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       ),
       child: Row(
         children: [
-          // Play / Pause
           GestureDetector(
             onTap: _togglePlay,
             child: Container(
@@ -854,7 +875,6 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
             ),
           ),
           const SizedBox(width: 8),
-          // Seek bar + timer
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -873,18 +893,21 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
                   ),
                   child: Slider(
                     value: progress,
-                    onChanged: (val) async {
-                      final seek = Duration(
-                        milliseconds: (val * _total.inMilliseconds).toInt(),
-                      );
-                      await _player.seek(seek);
-                    },
+                    onChanged: _loaded
+                        ? (val) async {
+                            await _player.seek(
+                              Duration(
+                                milliseconds: (val * _total.inMilliseconds)
+                                    .toInt(),
+                              ),
+                            );
+                          }
+                        : null,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
-                    // Show position while playing, total when stopped
                     _isPlaying || _position > Duration.zero
                         ? _fmt(_position)
                         : _fmt(_total),
@@ -1091,13 +1114,13 @@ class _MicButtonState extends State<_MicButton> {
       return;
     }
 
-    final dir = await getTemporaryDirectory();
+    final dir = await getApplicationDocumentsDirectory();
     final path =
-        '${dir.path}/qa_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        '${dir.path}/qa_voice_${DateTime.now().millisecondsSinceEpoch}.wav';
 
     await _recorder.start(
       const RecordConfig(
-        encoder: AudioEncoder.aacLc,
+        encoder: AudioEncoder.wav,
         bitRate: 128000,
         sampleRate: 44100,
       ),
