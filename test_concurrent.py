@@ -8,9 +8,9 @@ NUM_TEACHERS = 3  # how many concurrent teachers to simulate
 # Put real JWT tokens for different teacher accounts here
 # Get them by logging in via /auth/login for each teacher
 TEACHER_TOKENS = [
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJFTG9tZGFAZ21haWwuY29tIiwiZXhwIjoxNzc4Njg1MjQwfQ.jqvilNSYMi_5uYR6TswhE4BQFFOMeEDNumzlafQZW-U",  # teacher 1 token
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZWFjaGVyMkBob2xvbGVhcm4uY29tIiwiZXhwIjoxNzc4Njg1Mjg3fQ.bthRt4FJnzvWNrnvPqEIT1_KZyJA3jD3DzlPvrvg370",  # teacher 2 token
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXRlbWFraGFiaXJ5ODhAZ21haWwuY29tIiwiZXhwIjoxNzc4Njg1MzQyfQ.k4JxqJ7KGaMjTp2NUKtDi2exRpdTYyZeDxObczhGlEQ",  # teacher 3 token
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJFTG9tZGFAZ21haWwuY29tIiwiZXhwIjoxNzc4ODgyMjUwfQ.FhmAevv_qC5nwL8jieEk5ABt8Kx-7Etj9V5Q3HLT-os",  # teacher 1 token
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZWFjaGVyMkBob2xvbGVhcm4uY29tIiwiZXhwIjoxNzc4ODgyMzA1fQ.pTVvaMeyRv9scSAiWL2RyH6l3evDj50yoCA2_2rZ_v0",  # teacher 2 token
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYXRlbWFraGFiaXJ5ODhAZ21haWwuY29tIiwiZXhwIjoxNzc4ODgyMzYxfQ.Us7hc3Qgk7p3HvUhoMub_zRyH8DZ1rjQZst3RJOgqOo",  # teacher 3 token
 ]
 
 # A real uploaded resource file_path for each teacher

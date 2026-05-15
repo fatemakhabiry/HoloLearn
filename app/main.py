@@ -82,10 +82,12 @@ async def lifespan(app: FastAPI):
 
     # ── Recover stuck sessions from before last restart ────────────
     try:
+        from datetime import timedelta
+        from arq import create_pool
+        from arq.connections import RedisSettings as ArqRedisSettings
         from sqlmodel import Session, select
         from app.core.database import engine
         from app.models.agent_session import AgentSession, AgentStatus
-        from app.tasks.session_tasks import sync_agent_state
 
         in_progress = {
             AgentStatus.GENERATING_LECTURE,
@@ -100,14 +102,19 @@ async def lifespan(app: FastAPI):
                 )
             ).all()
 
-        for s in stuck:
-            logger.info(f"Recovering stuck session {s.id} (status={s.status})")
-            sync_agent_state.apply_async(
-                args=[s.id, s.thread_id],
-                countdown=5,
-            )
-
         if stuck:
+            arq_pool = await create_pool(
+                ArqRedisSettings.from_dsn(settings.REDIS_URL)
+            )
+            for s in stuck:
+                logger.info(f"Recovering stuck session {s.id} (status={s.status})")
+                await arq_pool.enqueue_job(
+                    "sync_agent_state",
+                    s.id,
+                    s.thread_id,
+                    _defer_by=timedelta(seconds=5),
+                )
+            await arq_pool.close()
             logger.info(f"Re-queued {len(stuck)} stuck session(s)")
         else:
             logger.info("No stuck sessions found")

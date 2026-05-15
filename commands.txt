@@ -10,3 +10,4 @@ python -m Lecture_Agent.run_server
 uvicorn app.main:app --reload
 
 celery -A app.celery_app worker --loglevel=info --pool=solo
+ea84606aaf35

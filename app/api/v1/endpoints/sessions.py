@@ -994,7 +994,7 @@ import uuid
 import asyncio
 import json
 import os
-from datetime import datetime
+from datetime import datetime , timedelta
 from pathlib import Path
 from typing import Optional
 import re
@@ -1016,8 +1016,8 @@ from app.models.agent_session import AgentSession, AgentStatus
 from app.models.lecture_version import LectureVersion, VersionStatus
 from app.models.generated_content import GeneratedContent, ContentType
 from app.services.agent_client import start_agent, resume_agent, get_agent_state, extract_resource
-from app.tasks.session_tasks import sync_agent_state
-
+from arq import create_pool
+from arq.connections import RedisSettings as ArqRedisSettings
 
 router = APIRouter()
 
@@ -1636,10 +1636,14 @@ async def start_generated_session(
     db.add(agent_session)
     db.commit()
 
-    sync_agent_state.apply_async(
-        args=[agent_session.id, thread_id],
-        countdown=15,
+    arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
+    await arq_pool.enqueue_job(
+        "sync_agent_state",
+        agent_session.id,
+        thread_id,
+        _defer_by=timedelta(seconds=15),
     )
+    await arq_pool.close()
 
     return {
         "session_id": agent_session.id,
@@ -1692,7 +1696,7 @@ async def start_prepared_session(
     db.add(agent_session)
     db.commit()
     db.refresh(agent_session)
-    
+
     output_dir    = str(Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id))
     initial_state = {
         "meta": {
@@ -1722,10 +1726,14 @@ async def start_prepared_session(
 
     await start_agent(thread_id, initial_state)
 
-    sync_agent_state.apply_async(
-        args=[agent_session.id, thread_id],
-        countdown=15,
+    arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
+    await arq_pool.enqueue_job(
+        "sync_agent_state",
+        agent_session.id,
+        thread_id,
+        _defer_by=timedelta(seconds=15),
     )
+    await arq_pool.close()
 
     return {
         "session_id": agent_session.id,
@@ -1733,6 +1741,7 @@ async def start_prepared_session(
         "thread_id":  thread_id,
         "status":     "started",
     }
+
 
 
 # ── Progress metadata map ──────────────────────────────────────────────────────
@@ -1927,32 +1936,26 @@ async def approve_lecture(
     agent_session.updated_at = datetime.utcnow()
     db.add(agent_session)
     db.commit()
-    # ── Trigger RAG indexing ───────────────────────────────────────
-    # txt_path is ready after approval — index it now so students
-    # can ask questions as soon as content generation completes
-    # ── Debug ──────────────────────────────────────────────────
+
     print(f"[Approve] version={version}")
     print(f"[Approve] txt_path={version.txt_path if version else 'NO VERSION'}")
+
     if version and version.txt_path and Path(version.txt_path).exists():
         try:
-            from arq import create_pool
-            from arq.connections import RedisSettings
-
-            redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
-            await redis.enqueue_job(
+            arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
+            await arq_pool.enqueue_job(
                 "run_rag_ingest",
-                lecture_id = lecture.lecture_id,
-                file_path  = version.txt_path,
+                lecture_id=lecture.lecture_id,
+                file_path=version.txt_path,
             )
-            await redis.close()
+            await arq_pool.close()
         except Exception as e:
-            # Non-fatal — don't block approval if RAG trigger fails
             import logging
             logging.getLogger(__name__).warning(
                 f"[Approve] RAG ingest trigger failed for lecture "
                 f"{lecture.lecture_id}: {e}"
             )
-    # ─────────────────────────────────────────────────────────────
+
     await resume_agent(agent_session.thread_id, status="approved")
 
     if (
