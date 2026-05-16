@@ -744,6 +744,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   Duration _position = Duration.zero;
   Duration _total = Duration.zero;
   bool _loaded = false;
+  bool _completed = false; // track completion separately
 
   @override
   void initState() {
@@ -756,7 +757,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     final path = widget.message.voicePath;
     if (path == null) return;
     try {
-      await _player.setLoopMode(LoopMode.off); // ← disable looping
+      await _player.setLoopMode(LoopMode.off);
       final duration = await _player.setFilePath(path);
       if (!mounted) return;
       setState(() {
@@ -770,18 +771,25 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
 
     _player.playerStateStream.listen((state) {
       if (!mounted) return;
-      final playing =
-          state.playing && state.processingState != ProcessingState.completed;
-      setState(() => _isPlaying = playing);
       if (state.processingState == ProcessingState.completed) {
-        _player.seek(Duration.zero);
-        if (mounted) setState(() => _position = Duration.zero);
+        // Mark as completed and update UI — do NOT seek here
+        setState(() {
+          _isPlaying = false;
+          _completed = true;
+          _position = Duration.zero;
+        });
+      } else {
+        setState(() {
+          _isPlaying = state.playing;
+          _completed = false;
+        });
       }
     });
 
     _player.positionStream.listen((pos) {
       if (!mounted) return;
-      setState(() => _position = pos);
+      // Don't update position display when completed (it would show end time)
+      if (!_completed) setState(() => _position = pos);
     });
 
     _player.durationStream.listen((dur) {
@@ -802,8 +810,10 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       if (_isPlaying) {
         await _player.pause();
       } else {
-        if (_player.processingState == ProcessingState.completed) {
+        // Always seek to start if completed before replaying
+        if (_completed || _player.processingState == ProcessingState.completed) {
           await _player.seek(Duration.zero);
+          setState(() => _completed = false);
         }
         await _player.play();
       }
