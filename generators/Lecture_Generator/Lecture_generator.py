@@ -6,8 +6,49 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import OpenAI
 
 from Config import OPENROUTER_MODEL
+from Helpers import normalize_equations
 from Parsers import parse_lecture_response
 from PDF_builder import SlideBuilder
+
+
+def _normalize_lecture_equations(lecture_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Walk every text-bearing field of *lecture_data* and run
+    :func:`~Helpers.normalize_equations` on each one.
+
+    This ensures that bare LaTeX commands and Unicode math characters
+    produced by the LLM are wrapped in proper dollar-sign delimiters
+    **before** ``SlideBuilder.text_to_flowables`` inspects them, so
+    matplotlib receives well-formed LaTeX for every equation.
+
+    The dict is mutated in-place **and** returned so the call can be
+    chained directly with ``parse_lecture_response``.
+    """
+    # Plain-string fields
+    for field in ('introduction', 'mathematical_derivations', 'summary'):
+        if lecture_data.get(field):
+            lecture_data[field] = normalize_equations(lecture_data[field])
+
+    # Main content sections
+    for section in lecture_data.get('main_sections', []):
+        if section.get('content'):
+            section['content'] = normalize_equations(section['content'])
+
+    # Real-world examples (body text + bullet items)
+    for example in lecture_data.get('real_world_examples', []):
+        if example.get('body'):
+            example['body'] = normalize_equations(example['body'])
+        example['bullets'] = [
+            normalize_equations(b) for b in example.get('bullets', [])
+        ]
+
+    # Misconceptions
+    lecture_data['misconceptions'] = [
+        normalize_equations(m) for m in lecture_data.get('misconceptions', [])
+    ]
+
+    return lecture_data
+
 
 
 # OpenRouter client
@@ -83,20 +124,20 @@ class LectureGenerator:
     # LLM call
 
     def _call_llm(self, prompt: str) -> str:
-        return _call_openrouter_sync(
-            prompt=prompt,
-            api_key=self.api_key,
-            model=self.model_name,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-        )
-        # return _call_groq_sync(
+        # return _call_openrouter_sync(
         #     prompt=prompt,
         #     api_key=self.api_key,
         #     model=self.model_name,
         #     max_tokens=self.max_tokens,
         #     temperature=self.temperature,
         # )
+        return _call_groq_sync(
+            prompt=prompt,
+            api_key=self.api_key,
+            model=self.model_name,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+        )
 
     # Content extraction
     
@@ -325,7 +366,7 @@ DO NOT use markdown bold (**text**), italic (*text*), or heading (###) syntax an
 DO NOT include REAL_WORLD_APPLICATIONS section."""
 
         result = self._call_llm(lecture_prompt)
-        return parse_lecture_response(result)
+        return _normalize_lecture_equations(parse_lecture_response(result))
 
     # PDF output (delegates to SlideBuilder)
     

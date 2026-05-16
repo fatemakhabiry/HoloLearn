@@ -1,0 +1,16 @@
+{
+  "resource_name": "tmpt4_39lg7",
+  "resource_id": "tmpt4_39lg7",
+  "filename": "tmpt4_39lg7.pdf",
+  "source_type": "pdf",
+  "upload_date": "2026-04-16T00:08:50.781102",
+  "extraction_timestamp": "2026-04-16T00:08:50.781102",
+  "file_size_bytes": 950378,
+  "processing_time_seconds": 0.87,
+  "status": "success",
+  "error_message": null,
+  "page_count": 19,
+  "character_count": 6286,
+  "is_encrypted": false,
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\tmpt4_39lg7\\tmpt4_39lg7_text.txt"
+}

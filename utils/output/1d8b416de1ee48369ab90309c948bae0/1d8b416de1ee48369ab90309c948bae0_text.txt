@@ -1,0 +1,265 @@
+--- Page 1 ---
+K-MEANS CLUSTERING
+
+--- Page 2 ---
+Clustering
+– Unsupervised learning
+– Requires data, but no labels
+– Detect patterns e.g. in
+• Group emails or search results
+• Customer shopping patterns
+• Regions of images
+– Useful when don’t now
+what you’re looking for
+• Basic idea: group together similar instances
+Example: 2D point patterns
+
+--- Page 3 ---
+Clustering
+– Clustering
+results
+are
+crucially
+dependent
+on
+the measure of similarity
+(or
+distance)
+between
+“points” to be clustered.
+– One
+option:
+small
+Euclidean
+distance
+(squared)
+
+--- Page 4 ---
+How the K-Mean Clustering algorithm works?
+
+--- Page 7 ---
+K-‐means clustering: Example
+
+--- Page 8 ---
+A Simple Example k-means (using K=2)
+
+--- Page 9 ---
+1
+0
+2
+3
+4
+5
+6
+0
+1
+2
+3
+4
+Variable 2
+5
+6
+7
+8
+Variable 1
+2
+3
+4
+5
+6
+7
+1
+2
+A Simple Example k-means (using K=2)
+
+--- Page 10 ---
+Step 1:
+Initialization: Randomly we choose following two centroids (k=2) for two clusters.
+In this case the 2 centroid are: m1=(1.0,1.0) and m2=(5.0,7.0).
+A Simple Example k-means (using K=2)
+
+--- Page 11 ---
+Centroid 1
+Centroid 2
+1
+√( 1 – 1
+)²
++ ( 1 – 1
+)² = 0
+√( 5 – 1
+)² + ( 7 – 1
+)² = 7.21
+2
+√( 1 – 1.5 )²
++ ( 1 – 2
+)² = 1.12
+√( 5 – 1.5 )² + ( 7 – 2
+)² = 6.10
+3
+√( 1 – 3
+)²
++ ( 1 – 4
+)² = 3.61
+√( 5 – 3
+)² + ( 7 – 4
+)² = 3.61
+4
+√( 1 – 5
+)²
++ ( 1 – 7
+)² = 7.21
+√( 5 – 5
+)² + ( 7 – 7
+)² = 0
+5
+√( 1 – 3.5 )²
++ ( 1 – 5
+)² = 4.72
+√( 5 – 3.5 )² + ( 7 – 5
+)² = 2.5
+6
+√( 1 – 4.5 )²
++ ( 1 – 5
+)² = 5.31
+√( 5 – 4.5 )² + ( 7 – 5
+)² = 2.06
+7
+√( 1 – 3.5 )²
++ ( 1 – 4.5 )² = 4.30
+√( 5 – 3.5 )² + ( 7 – 4.5 )² = 2.92
+Step 2:
+A Simple Example k-means (using K=2)
+
+--- Page 12 ---
+Step 2:
+A Simple Example k-means (using K=2)
+
+--- Page 13 ---
+Step 3:
+Centroid 1
+Centroid 2
+1
+√( 1.83 – 1
+)²
++ ( 2.33 – 1
+)² = 1.57
+√( 4.12 – 1
+)² + ( 5.38 – 1
+)² = 5.38
+2
+√(1.83 – 1.5 )²
++ (2.33 – 2
+)² = 0.47
+√( 4.12 – 1.5 )² + ( 5.38 – 2
+)² = 4.29
+3
+√(1.83 – 3
+)²
++ (2.33 – 4
+)² = 2.04
+√( 4.12 – 3
+)² + ( 5.38 – 4
+)² = 1.78
+4
+√(1.83 – 5
+)²
++ (2.33 – 7
+)² = 5.64
+√( 4.12 – 5
+)² + ( 5.38 – 7
+)² = 1.84
+5
+√(1.83 – 3.5 )²
++ (2.33 – 5
+)² = 3.15
+√( 4.12 – 3.5 )² + ( 5.38 – 5
+)² = 0.73
+6
+√(1.83 – 4.5 )²
++ (2.33 – 5
+)² = 3.78
+√( 4.12 – 4.5 )² + ( 5.38 – 5
+)² = 0.54
+7
+√(1.83 – 3.5 )²
++ (2.33 – 4.5 )² = 2.74
+√( 4.12 – 3.5 )² + ( 5.38 – 4.5 )² = 1.08
+A Simple Example k-means (using K=2)
+
+--- Page 14 ---
+Therefore, the new clusters are:
+{1,2} and {3,4,5,6,7}
+A Simple Example k-means (using K=2)
+Step 3:
+=(1.25 , 1.5)
+=(3.9 , 5.1)
+
+--- Page 15 ---
+Step 4:
+Centroid 1
+Centroid 2
+1
+√( 1.25 – 1
+)²
++ ( 1.5 – 1
+)² = 0.58
+√( 3.9 – 1
+)² + ( 5.1 – 1
+)² = 5.02
+2
+√(1.25 – 1.5 )²
++ (1.5 – 2
+)² = 0.56
+√( 3.9 – 1.5 )² + ( 5.1 – 2
+)² = 3.92
+3
+√(1.25 – 3
+)²
++ (1.5 – 4
+)² = 3.05
+√( 3.9 – 3
+)² + ( 5.1 – 4
+)² = 1.42
+4
+√(1.25 – 5
+)²
++ (1.5 – 7
+)² = 6.66
+√( 3.9 – 5
+)² + ( 5.1 – 7
+)² = 2.20
+5
+√(1.25 – 3.5 )²
++ (1.5 – 5
+)² = 4.16
+√( 3.9 – 3.5 )² + ( 5.1 – 5
+)² = 0.41
+6
+√(1.25 – 4.5 )²
++ (1.5 – 5
+)² = 4.78
+√( 3.9 – 4.5 )² + ( 5.1 – 5
+)² = 0.61
+7
+√(1.25 – 3.5 )²
++ (1.5 – 4.5 )² = 3.75
+√( 3.9 – 3.5 )² + ( 5.1 – 4.5 )² = 0.72
+A Simple Example k-means (using K=2)
+
+--- Page 16 ---
+Therefore, there is no change in the cluster.
+Thus, the algorithm comes to a halt here.
+The final result consist of 2 clusters {1,2} and {3,4,5,6,7}.
+A Simple Example k-means (using K=2)
+
+--- Page 17 ---
+Advantages of k-means
+1. Relatively simple to implement.
+2. Scales to large data sets.
+3. Guarantees convergence.
+4. Easily adapts to new examples.
+Disadvantages of k-means
+1. Choosing \(k\) manually.
+2. Being dependent on initial values.
+3. Scaling with number of dimensions.
+k-means

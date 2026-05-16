@@ -1,0 +1,108 @@
+--- Page 1 ---
+Support Vector Machines
+
+--- Page 2 ---
+Classification
+
+--- Page 3 ---
+Separation
+
+--- Page 4 ---
+Separation
+
+--- Page 5 ---
+Separation
+
+--- Page 6 ---
+A “Good” Separator
+between two classes
+
+--- Page 7 ---
+margin
+Maximizing the Margin
+
+--- Page 8 ---
+Why Maximize Margin
+Increasing margin reduces capacity
+• i.e., fewer possible models
+Lesson from Learning Theory:
+• If the following holds:
+– H is sufficiently constrained in size
+– and/or the size of the training data set n is large,
+then low training error is likely to be evidence of low
+generalization error
+
+--- Page 9 ---
+Support Vector Machines (SVM)
+
+--- Page 10 ---
+Support Vector Machines (SVM)
+
+--- Page 11 ---
+Support Vector Machines (SVM)
+
+--- Page 12 ---
+We wish to find the w and b which minimizes, and the α which maximizes LP(whilst
+keeping αi
+≥0 ∀i).
+We can do this by differentiating LP with respect to w and b and setting
+the derivatives to zero:
+SVM as a minimization problem
+•αi is the Lagrange
+multiplier associated
+with the ith training
+sample.
+
+--- Page 13 ---
+Example on SVM
+
+--- Page 14 ---
+Example on SVM
+
+--- Page 15 ---
+Example on SVM
+
+--- Page 16 ---
+Example on SVM
+
+--- Page 17 ---
+Example on SVM
+
+--- Page 18 ---
+Example on SVM
+
+--- Page 19 ---
+Example on SVM
+From equation (y=WX + b)
+X1W1 + X2W2 +b =0
+W1= 1, W0 =0, b = -3
+So
+X1=3
+So line will be at X1=3
+
+--- Page 20 ---
+To deal with Nonlinear problem
+In practice, SVM algorithm is implemented using a kernel.
+It uses a technique called the kernel trick. In simple words, a
+kernel is just a function that maps the data to a higher dimension
+where data is separable.
+A kernel transforms a low-dimensional input data space into a
+higher dimensional space. So, it converts non-linear separable
+problems
+to
+linear
+separable
+problems
+by
+adding
+more
+dimensions to it.
+Thus, the kernel trick helps us to build a more accurate
+classifier. Hence, it is useful in non-linear separation problems.
+
+--- Page 21 ---
+To deal with Nonlinear problem
+(Kernal function)
+
+--- Page 22 ---
+To deal with Nonlinear problem

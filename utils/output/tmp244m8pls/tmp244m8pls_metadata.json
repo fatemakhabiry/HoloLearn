@@ -1,0 +1,16 @@
+{
+  "resource_name": "tmp244m8pls",
+  "resource_id": "tmp244m8pls",
+  "filename": "tmp244m8pls.pdf",
+  "source_type": "pdf",
+  "upload_date": "2026-04-23T23:29:42.293551",
+  "extraction_timestamp": "2026-04-23T23:29:42.293551",
+  "file_size_bytes": 1170785,
+  "processing_time_seconds": 0.34,
+  "status": "success",
+  "error_message": null,
+  "page_count": 22,
+  "character_count": 2051,
+  "is_encrypted": false,
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\tmp244m8pls\\tmp244m8pls_text.txt"
+}

@@ -327,7 +327,7 @@ class SimpleGeneratorWrapper:
         print("\nGenerating worksheet...")
         
         try:       
-            api_key=os.getenv("OPENROUTER_API_KEY_WORKSHEET")     
+            api_key=os.getenv("GROQ_API_KEY_WORKSHEET")     
             output_dir.mkdir(exist_ok=True, parents=True)
             questions_path = output_dir / f"{course_code}_worksheet.pdf"
             answers_path = output_dir / f"{course_code}_worksheet_answers.pdf"
@@ -385,7 +385,7 @@ class SimpleGeneratorWrapper:
         print("\n📝 Generating quiz...")
         
         try:   
-            api_key=os.getenv("OPENROUTER_API_KEY_QUIZ")         
+            api_key=os.getenv("GROQ_API_KEY_QUIZ")         
             output_dir.mkdir(exist_ok=True, parents=True)
             quiz_path = output_dir / f"{course_code}_quiz.pdf"
             answers_path = output_dir / f"{course_code}_quiz_answers.pdf"
@@ -433,7 +433,7 @@ class SimpleGeneratorWrapper:
         print("\n📚 Generating summary...")
         
         try:  
-            api_key=os.getenv("OPENROUTER_API_KEY_SUMMARY")          
+            api_key=os.getenv("GROQ_API_KEY_SUMMARY")          
             output_dir.mkdir(exist_ok=True, parents=True)
             summary_path = output_dir / f"{course_code}_summary.pdf"
             

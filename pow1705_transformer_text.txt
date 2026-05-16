@@ -1,0 +1,1645 @@
+--- Page 1 ---
+Transformer
+
+--- Page 2 ---
+2
+Why do we need transformers?
+• Increase voltage of generator’s output
+– Transmit high power at low current
+– Reduce cost of transmission system
+• Adjust voltage to a usable level
+• Create electrical isolation
+• Match load impedance
+• Filters
+
+--- Page 3 ---
+3
+220kV‐750kV
+15 kV‐ 25kV
+208V‐ 416V
+Transmission
+Transformer
+Distribution
+Transformer
+Service
+Transformer
+
+--- Page 4 ---
+4
+Basic Components
+Iron Core
+Insulated Copper Wire
+
+--- Page 5 ---
+5
+Basic Components
+Laminated
+iron core
+Insulated
+copper wire
+
+--- Page 6 ---
+6
+
+--- Page 7 ---
+7
+
+--- Page 8 ---
+8
+
+--- Page 9 ---
+9
+Transmission Transformer
+
+--- Page 10 ---
+10
+Distribution Transformer
+
+--- Page 11 ---
+11
+Distribution Transformer
+
+--- Page 12 ---
+12
+Service Transformer
+
+--- Page 13 ---
+13
+Service Transformer bank
+
+--- Page 14 ---
+14
+Service Transformer bank
+
+--- Page 15 ---
+15
+Service Transformer
+
+--- Page 16 ---
+16
+Service Transformer
+
+--- Page 17 ---
+17
+Service Transformer
+
+--- Page 18 ---
+18
+Service Transformer
+
+--- Page 19 ---
+19
+Service Transformer
+
+--- Page 20 ---
+20
+Low power Transformer
+
+--- Page 21 ---
+IDEAL TRANSFORMER
+21
+
+--- Page 22 ---
+22
+i1
+i2
+N1
+e1
+N2
+e2
+
+
+dt
+e
+N
+1
+dt
+d
+N
+e
+1
+
+dt
+d
+N
+e
+
+2
+2 
+Primary
+Secondary
+
+--- Page 23 ---
+23
+
+2
+1
+2
+1
+2
+1
+N
+dt
+d
+N
+dt
+d
+N
+t
+e
+t
+e
+
+
+2
+1
+2
+1
+N
+E
+E 
+2
+1
+N
+E
+N
+E 
+Basic Analysis: Voltage
+i1
+i2
+N1
+e1
++
+_
+N2
+e2
++
+_
+• Volts/turn is constant
+• Voltages are in phase (no phase shift)
+• Voltage magnitudes vary with turns ratio.
+
+--- Page 24 ---
+24
+Basic Analysis: Power and current
+2
+1
+S
+S 
+2
+1
+I
+E
+I
+E
+
+1
+2
+1
+2
+1
+N
+E
+I
+
+1
+2
+1
+N
+I
+I 
+2
+1
+I
+N
+I
+N
+
+i1
+i2
+N1
+e1
++
+_
+N2
+e2
++
+_
+• Ampere turn is constant
+• Currents are in phase.
+• Current ratio is opposite to the voltage ratio
+
+--- Page 25 ---
+25
+Basic Analysis: Reflected impedance
+I1
+I2
+N1
+E1
+N2
+E2
+Primary
+Secondary
+Source
+Load
+Flux
+Zload
+2
+I
+E
+Zload 
+1
+I
+E
+Z'
+load 
+
+--- Page 26 ---
+26
+Basic Analysis: Reflected impedance
+'
+load
+Z
+I1
+E1
+Primary
+Source
+1
+I
+E
+Z'
+load 
+2
+1
+'
+2
+1
+2
+1
+'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+N
+Z
+N
+I
+E
+Z
+load
+2
+1
+'
+N
+Z
+N
+Z
+load
+load 
+I1
+I2
+N1
+E1
++
+_
+N2
+E2
++
+_
+
+--- Page 27 ---
+Key relationships
+27
+2
+1
+'
+N
+Z
+N
+Z
+load
+load 
+2
+1
+I
+N
+I
+N
+
+2
+1
+N
+E
+N
+E 
+I1
+I2
+N1
+E1
++
+_
+N2
+E2
++
+_
+Constant voltage per turn
+Constant Ampere turn
+Reflected impedance
+
+--- Page 28 ---
+28
+Single‐Phase, Ideal Transformer Ratings
+2 KVA, 120/240 V
+Apparent Power (S)
+Primary Voltage (V1)
+Secondary Voltage (V2)
+N2
+N1
++
+‐
+V1
+I1
+I2
++
+‐
+V2
+
+--- Page 29 ---
+29
+Rated Values
+• Rated voltage: The device can continuously operate at the
+rated voltage without being damaged due to insulation
+failure
+• Rated current: The device can continuously operate at the
+rated current without being damaged due to thermal
+destruction
+
+--- Page 30 ---
+30
+Example
+Transformer rating:
+2 KVA, 240/120 V
+Compute the currents
+KVA
+I
+V
+I
+V
+S
+2
+
+2
+1
+
+A
+
+33
+.8
+V
+240
+KVA
+2
+1
+
+V
+S
+I
+A
+
+67
+.
+16
+V
+
+120
+KVA
+2
+
+V
+S
+I
+N2
+N1
++
+‐
+V1
+I1
+I2
++
+‐
+V2
+
+--- Page 31 ---
+ACTUAL TRANSFORMER
+31
+
+--- Page 32 ---
+32
+Actual Transformer
+• Windings:
+– Resistance
+– Inductance
+• Core:
+– Eddy Current
+– Hysteresis
+I1
+I2
+N1
+E1
++
+_
+N2
+E2
++
+_
+
+--- Page 33 ---
+33
+R1
+X1
+N1
+N2
+R2
+X2
+Ideal Transformer
+Windings Impedance
+
+--- Page 34 ---
+34
+Core Hysteresis
+B
+H
+i
+N
+e
++
+_
+
+
+dt
+e
+f
+B
+
+
+i
+f
+H 
+
+--- Page 35 ---
+35
+i
+e
+
+--- Page 36 ---
+36
+Core Model
+e
+i
+R
+Let
+t
+E
+e
+
+sin
+max
+
+t
+E
+dt
+e
+
+cos
+max
+
+
+
+t
+R
+E
+R
+e
+i
+
+sin
+max
+
+i
+e
+
+--- Page 37 ---
+37
+Core Model
+Let
+t
+E
+e
+
+sin
+max
+
+t
+E
+dt
+e
+
+cos
+max
+
+
+
+t
+L
+E
+dt
+e
+L
+i
+dt
+di
+L
+e
+
+cos
+1
+max
+
+
+
+i
+e
+i
+e
+Xl
+
+--- Page 38 ---
+38
+e
+i
+R
+Xl
+i
+e
+i
+e
+
+--- Page 39 ---
+39
+Ro
+Xo
+R1
+X1
+R2
+X2
+V1
+I1
+Io
+'
+2I
+I2
+V2
+E1
+E2
+N1 N2
+Equivalent Circuit
+load
+
+--- Page 40 ---
+40
+Key Relations
+2
+1
+2
+1
+N
+V
+or
+N
+V
+N
+E
+N
+E
+
+
+1
+'
+2
+N
+I
+N
+I
+N
+I
+
+
+Ro
+Xo
+R1
+X1
+R2
+X2
+V1
+I1
+Io
+'
+2I
+I2
+V2
+E1
+E2
+N1 N2
+load
+Voltage per turn
+Ampere turn
+
+--- Page 41 ---
+41
+Referred (reflected) impedance
+Ro
+Xo
+R1
+X1
+R2
+X2
+V1
+I1
+Io
+'
+2I
+I2
+E1
+E2
+N1 N2
+V2
+
+
+
+
+2
+1
+2
+1
+V
+jX
+R
+I
+N
+E
+N
+E
+
+
+
+--- Page 42 ---
+42
+Ro
+Xo
+R1
+X1
+R2
+X2
+V1
+I1
+Io
+'
+2I
+I2
+E1
+E2
+N1 N2
+V2
+
+
+
+
+
+
+
+
+2
+1
+'
+2
+1
+2
+1
+V
+jX
+R
+N
+I
+N
+E
+N
+E
+Referred (reflected) impedance
+
+--- Page 43 ---
+43
+
+
+
+
+
+
+
+
+2
+1
+'
+2
+1
+2
+1
+V
+jX
+R
+N
+I
+N
+E
+N
+E
+2
+1
+'
+2
+1
+'
+2
+1
+'
+2
+V
+N
+V
+X
+N
+X
+R
+N
+R
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Define:
+
+
+'
+2
+'
+2
+'
+2
+'
+2
+1
+V
+jX
+R
+I
+E
+
+
+Then:
+
+
+2
+1
+2
+1
+'
+2
+1
+V
+N
+jX
+R
+N
+I
+E
+
+
+
+
+
+
+
+
+
+--- Page 44 ---
+44
+
+
+'
+2
+'
+2
+'
+2
+'
+2
+1
+V
+jX
+R
+I
+E
+
+
+Ro
+Xo
+R1
+X1
+R2
+X2
+V1
+I1
+Io
+'
+2I
+I2
+E1
+E2
+N1 N2
+V2
+Ro
+Xo
+R1
+X1
+V1
+I1
+Io
+'
+2I
+E1
+'
+2
+R
+'
+2
+X
+'
+2
+V
+Equivalent Circuit Referred to
+Source Side
+
+--- Page 45 ---
+45
+o
+'
+2
+1
+I
+
+
+1
+o
+'
+2
+I
+
+
+Ro
+Xo
+V1
+I1
+Io
+'
+2I
+E1
+'
+2
+V
+R1
+X1
+'
+2
+R
+'
+2
+X
+'
+2
+o
+1
+R
+
+
+'
+2
+o
+1
+X
+
+
+Practical Considerations
+
+--- Page 46 ---
+46
+V1
+I1
+Ro
+Xo
+Io
+'
+2I
+'
+2
+V
+R1
+X1
+'
+2
+R
+'
+2
+X
+V1
+I1
+Ro
+Xo
+Io
+'
+2I
+'
+2
+V
+R1
+X1
+'
+2
+R
+'
+2
+X
+
+--- Page 47 ---
+47
+V1
+'
+2
+1
+I
+I 
+'
+2
+V
+R1
+X1
+'
+2
+R
+'
+2
+X
+Define:
+'
+2
+1
+eq
+'
+2
+1
+eq
+X
+R
+
+
+
+
+
+--- Page 48 ---
+48
+Analysis of Transformer
+'
+2
+1
+I
+I 
+V1
+'
+2
+V
+eq
+R
+eq
+X
+
+
+eq
+'
+2
+'
+2
+1
+jX
+R
+I
+V
+
+
+Z’
+
+--- Page 49 ---
+49
+2
+1
+'
+2
+V
+N
+V 
+Terminologies
+2
+1
+'
+2
+1
+'
+2
+X
+N
+X
+R
+N
+R
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2I
+2
+1
+2
+'
+2
+I
+N
+I 
+2
+V
+Load Voltage
+Load Voltage referred to Source side
+Impedance referred to Source side
+Load Current
+Load current referred to Source side
+
+--- Page 50 ---
+50
+eq
+X
+'
+2
+1
+I
+I 
+V1
+'
+2
+V
+eq
+R
+Z’
+'
+2
+I
+eq
+'
+2 R
+I
+eq
+'
+2 X
+I
+
+--- Page 51 ---
+51
+'
+2
+1
+I
+I 
+V1
+'
+2
+V
+eq
+R
+eq
+X
+Z
+eq
+'
+2
+eq
+'
+2
+'
+2
+1
+X
+I
+j
+R
+I
+V
+
+
+eq
+'
+2 R
+I
+eq
+'
+2 X
+I
+'
+2
+I
+
+eq
+'
+2 Z
+I
+'
+2
+V
+1
+V
+
+
+--- Page 52 ---
+52
+Example
+10
+2
+1 
+N
+
+
+
+
+
+
+
+
+
+
+
+
+5000
+;
+1000
+;
+10
+;
+1
+0
+'
+2
+1
+'
+2
+1
+X
+R
+X
+R
+o
+eq
+
+
+
+o
+lZ
+30
+50
+A transformer has the following parameters:
+The rated voltage of the primary winding (V1) is 1000V.
+Compute the load voltage.
+
+--- Page 53 ---
+53
+Solution
+
+50
+2
+1
+
+
+
+
+
+
+
+
+N
+Z
+L
+'
+L
+
+
+
+
+A
+.
+j
+Z
+X
+j
+R
+V
+I
+o
+'
+L
+eq
+'
+31
+38
+7
+17
+30
+50
+10
+1
+0
+1000
+0
+1
+2
+
+
+
+
+
+
+
+
+
+'
+2
+1
+I
+I 
+V1
+'
+2
+V
+eq
+R
+eq
+X
+Z’
+
+
+
+V
+.
+Z
+I
+V
+o
+'
+L
+'
+0
+2
+31
+8
+885
+30
+50
+31
+38
+7
+17
+
+
+
+
+
+
+
+V
+.
+N
+V
+'
+5
+88
+10
+1
+885
+1
+2
+
+
+--- Page 54 ---
+54
+Voltage Regulation VR
+load
+full
+load
+full
+load
+no
+V
+VR
+
+
+'
+2
+'
+2
+1
+V
+VR
+
+
+Measured at the load side
+'
+2
+1
+I
+I 
+'
+2
+V
+eq
+R
+eq
+X
+V1
+Load
+
+--- Page 55 ---
+55
+Example
+Calculate the voltage regulation of the transformer in the
+previous problem.
+Solution:
+%
+14
+.0
+100
+7200
+5.
+7209
+VR
+V
+VR
+'
+2
+'
+2
+1
+
+
+
+
+
+
+
+--- Page 56 ---
+56
+Efficiency 
+V1
+I1
+Ro
+Xo
+Io
+'
+2I
+'
+2
+V
+Req
+Xeq
+in
+out
+P
+Power
+Input
+Power
+Output
+
+
+Losses
+P
+out
+in
+
+
+iron
+cu
+losses
+P
+
+
+
+eq
+2
+'
+2
+cu
+R
+I
+P
+
+o
+2
+1
+iron
+R
+V
+P
+
+
+cos
+I
+V
+P
+'
+2
+'
+2
+out 
+
+--- Page 57 ---
+57
+Example
+A 10 kVA, 2300/230 V, single phase distribution transformer
+has the following parameters:
+
+k
+4.
+69
+X
+;
+k
+6.
+75
+R
+05
+.6
+R
+;
+12
+X
+;
+8.5
+R
+o
+'
+2
+'
+2
+1
+
+At full load and 0.8 power factor lagging, compute the efficiency
+of the transformer.
+
+--- Page 58 ---
+58
+Solution
+
+
+
+W
+23
+.
+224
+05
+.6
+8.5
+)
+35
+.4
+(
+R
+I
+P
+2
+eq
+2
+'
+2
+cu
+
+
+
+
+
+
+
+W
+R
+V
+R
+V
+P
+o
+iron
+70
+600
+,
+75
+2300
+2
+'
+2
+1
+
+
+
+kW
+8
+8.0
+10
+cos
+S
+cos
+I
+V
+P
+'
+2
+'
+2
+out
+
+
+
+
+A
+35
+.4
+2300
+000
+,
+10
+V
+S
+I
+'
+2
+'
+2
+
+%
+45
+.
+96
+100
+70
+23
+.
+224
+8000
+P
+in
+out
+
+
+
+
+

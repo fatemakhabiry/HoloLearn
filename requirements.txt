@@ -69,4 +69,7 @@ pix2tex[mfr]>=0.1.2              # LaTeX OCR, handles math equations
  fastapi
  uvicorn
  psycopg[binary]
+ tiktoken
+ matplotlib
+ openai
 

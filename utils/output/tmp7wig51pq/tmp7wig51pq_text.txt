@@ -1,0 +1,259 @@
+--- Page 1 ---
+حسني أحمد /د
+Feb 10, 2025
+Modeling and Simulation
+Lecture 1
+Introduction to Modeling and Simulation Concepts
+
+--- Page 2 ---
+Course Objectives
+• Develop your ability to model and analyze real systems.
+• Formulating a suitable simulation model.
+• Implement the model as a computer program.
+• Run discrete event simulations.
+• Evaluate the output of the model.
+
+--- Page 3 ---
+CSE 4720 Modeling and Simulation
+Topics to be covered
+• Introduction to modeling and
+simulation concepts.
+• System analysis and classification.
+• Abstract and simulation models.
+• Continuous, discrete, and combined
+models.
+• Heterogeneous models.
+• Using Petri nets and finite automata in
+simulation.
+• Pseudorandom number generation
+and testing.
+• Queuing systems.
+• Monte Carlo method.
+• Continuous simulation, numerical
+methods.
+• Simulation experiment control.
+• Visualization and analysis of simulation
+results.
+
+--- Page 4 ---
+• Year Work (20)
+• Practical/Oral (20)
+• Final Exam (60)
+Grading Scheme
+
+--- Page 5 ---
+Simulation with Arena, 6/e by
+W. David Kelton, University of Cincinnati
+Randall P. Sadowski
+Nancy B. Zupick, Rockwell Automation
+Textbook
+
+--- Page 6 ---
+Introduction to Simulation
+• The purpose of this section is to answer the following questions:
+• What is simulation?
+• What needs lead us to use it?
+• What are the advantages and disadvantages of the methodology?
+• Also, introduce the concept of system and its standard (model)
+• Present a brief overview – history – of the simulation
+
+--- Page 7 ---
+What is Simulation?
+• Simulation is the imitation of the operation of a real process or system as a
+function of time. Whether done manually or by computer, simulation involves
+creating an artificial history of a system and observing that past to conclude
+the characteristics of the functions of the real system.
+• Simulation methods are used to imitate or mimic real systems, usually via
+computer.
+
+--- Page 8 ---
+What needs lead us to use it?
+• Complexity: many real systems are too complex that their respective models
+are virtually impossible to solve mathematically.
+• Experimenting with this kind in a real situation is not only costly and time-
+consuming but can often prove disastrous. Therefore, every time we must
+study problematic situations that we cannot express with mathematical
+models that can be solved, we create an experimental model of the real
+situation and test it.
+
+--- Page 9 ---
+Where is simulation used?
+• The applications of simulation are numerous. They can be classified into enterprises,
+industrial systems, public organizations and others
+• Manufacturing facility
+• Bank operation
+• Airport operations (passengers, security, planes, crews, baggage)
+• Transportation/logistics/distribution operation
+• Hospital facilities (emergency room, operating room, admissions)
+• Freeway system
+• Business process (insurance office)
+• Chemical plant
+• Fast-food restaurant
+• Supermarket
+• Shipping ports, berths
+• Military combat, logistics
+
+--- Page 10 ---
+Advantages
+•
+New political procedures, operating rules, rules of action, organizational
+rules, etc. They can be investigated without interrupting the performed
+functions of the actual system.
+•
+The simulation can help to understand how the system works as opposed
+to the perception of individual individuals.
+•
+Questions of the "what if" style can be answered. This feature is especially
+useful when designing new systems.
+•
+But often impossible with actual system
+•
+System doesn’t exist
+•
+Would be disruptive, expensive, dangerous
+
+--- Page 11 ---
+Advantages of Simulation
+• Flexibility to model things as they are (even if messy and complicated)
+• Allows uncertainty, no stationarity in modeling
+• Advances in computing/cost ratios
+• Advances in simulation software
+
+--- Page 12 ---
+Disadvantages
+• The construction of systems requires training. It is a skill acquired with time
+and experience.
+• The results of the simulation may be difficult to interpret. Because simulation
+output is basically random variables (usually based on input data that is also
+basically random variables), it is often difficult to determine whether an
+observation is the result of some relationship of system elements or a result of
+randomness.
+• Building the simulation model and analyzing the results takes time and
+money.
+
+--- Page 13 ---
+The Bad news
+• Don’t get exact answers, only approximations, estimates
+• Also true of many other modern methods
+• Can bound errors by machine round off
+• Get random output (RIRO) from stochastic simulations
+• Statistical design, analysis of simulation experiments
+• Exploit: noise control, replicability, sequential sampling, variance-reduction
+techniques
+• Catch: “standard” statistical methods seldom work
+
+--- Page 14 ---
+System Definition
+• A system is defined as a group-set of objects (elements) that are related to
+each other by some constant interaction or interdependence (relationships) to
+achieve some goal (goal).
+• The basic characteristics of the system as they result from the previous
+definition are its elements, the relationships between them and its purpose.
+• As an example of a system can be considered an industrial car production
+system. Machines, assembly pieces and workers work together along an
+assembly line to produce high-quality cars
+
+--- Page 15 ---
+The components of a system
+To understand and analyze a system it is necessary to determine the meaning of
+a series of terms.
+• An entity is an object of system interest.
+• An attribute is a property of an entity.
+• An activity represents an interval of time with a defined duration.
+• The state of a system is defined as the group of variables necessary to
+describe the system at any time in relation to the objects of study.
+
+--- Page 16 ---
+• If a bank is to be studied customers are likely to be one of the entities, the
+fluctuation of their transaction volume may be a characteristic and the deposit
+may be considered an activity.
+• An event is defined as an instantaneous action that can change the state of
+the system.
+The components of a system
+
+--- Page 17 ---
+The components of a system
+• The term endogenous is used to describe activities and events that take place
+within the system while the term exogenous is used to describe activities and
+events that take place in the context of the system and that affect the system.
+• In the bank study, the arrival of a customer is an exogenous event, and the
+completion of a customer's service is an intrinsic event, they change the
+state/number of customers in the bank.
+
+--- Page 18 ---
+Model definition of a system
+• Sometimes it is interesting to study a system to understand the relationships
+between its elements or to predict how the system will work under new policy.
+Studying the system implies that we are likely to experiment with it. But this is
+not always possible. A new system may not yet exist. It can be hypothetical
+or in the design stage. Even if the system exists, it can be impossible to
+experiment with it.
+
+--- Page 19 ---
+Model definition of a system
+• Consequently, systems studies are often performed through a system model.
+• A model is defined as a representation of a system for the purpose of studying
+the system. For most studies, it is necessary to consider those aspects/
+characteristics of the systems that affect the system under study. These
+features are represented in a system model, and the model is a simplification
+of the system.
+• Model – set of assumptions/approximations about how system works
+
+--- Page 20 ---
+Types of models
+• Physical (iconic) models
+• Tabletop material-handling models
+• Mock-ups of fast-food restaurants
+• Flight simulators
+• Logical (mathematical) models
+• Approximations, assumptions about system’s operation
+• Often represented via computer program in appropriate software
+• Exercise program to try things, get results, learn about model behavior
+
+--- Page 21 ---
+Simulation by Hand: The Buffon Needle Problem
+• Estimate π (George Louis Leclerc, c. 1733)
+• Toss needle of length l onto table with stripes d (>l) apart
+• P (needle crosses a line) =
+• Repeat; tally = proportion of times a line is crossed
+• Estimate π by
+
+--- Page 22 ---
+History of simulation
+• Early years (1950s – 1960s)
+• Very expensive, specialized tool
+• Required big computers, special training
+• Mostly in FORTRAN (or even Assembler)
+• Formative years (1970s – early 1980s)
+• Computers got faster, cheaper
+• Value of simulation more widely recognized
+• Simulation software improved, but still languages to be learned, typed,
+batch processed
+
+--- Page 23 ---
+History of simulation
+• Recent past (late 1980s – mid 2000s)
+• Microcomputer power
+• Software expanded into GUIs, animation
+• Wider acceptance across more areas
+• Traditional manufacturing applications
+• Services
+• Health care
+• “Business processes”
+• Still mostly in large firms
+• Simulation is often part of “specs”
+
+--- Page 24 ---
+History of simulation
+• Present
+• Proliferating into smaller firms
+• Becoming a standard tool
+• Being used earlier in design phase
+• Real-time control
+• Future
+• Integration with other applications for visualization, analysis
+• Networked sharing of data in real time
+• Internet-enabled distributed model building, execution
+• Specialized vertical “templates” for specific industries, firms
+• Better model re-usability, operational decision making
+• Automated statistical design, analysis

@@ -1,0 +1,17 @@
+{
+  "resource_name": "cv_lec023_image_processing_fundamentals_1",
+  "resource_id": "cv_lec023_image_processing_fundamentals_1",
+  "filename": "CV---Lec02.3---Image-Processing---Fundamentals (1).pptx",
+  "source_type": "pptx",
+  "upload_date": "2026-04-11T20:20:20.645514",
+  "extraction_timestamp": "2026-04-11T20:20:20.645514",
+  "file_size_bytes": 5398117,
+  "processing_time_seconds": 0.51,
+  "status": "success",
+  "error_message": null,
+  "slide_count": 44,
+  "slides_with_notes": 0,
+  "character_count": 19005,
+  "included_notes": true,
+  "extracted_text_path": "C:\\Users\\Fatma PC\\HoloLearn-AI\\utils\\output\\cv_lec023_image_processing_fundamentals_1\\text.txt"
+}
