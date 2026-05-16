@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/constants.dart';
 import '../../models/qa_models.dart';
@@ -146,11 +147,32 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
         lectureId: _lectureId,
       );
       if (!mounted) return;
+
+      // Restore saved voice paths from local storage
+      final prefs = await SharedPreferences.getInstance();
+      final messages = history.messages.map((msg) {
+        final base = ChatMessage.fromQAMessage(msg);
+        if (msg.messageId != null) {
+          final savedPath = prefs.getString('voice_path_${msg.messageId}');
+          if (savedPath != null && File(savedPath).existsSync()) {
+            return ChatMessage(
+              text: base.text,
+              sender: base.sender,
+              timestamp: base.timestamp,
+              messageId: base.messageId,
+              type: MessageType.voice,
+              voicePath: savedPath,
+            );
+          }
+        }
+        return base;
+      }).toList();
+
       setState(() {
         _sessionId = history.sessionId;
         _messages
           ..clear()
-          ..addAll(history.messages.map(ChatMessage.fromQAMessage));
+          ..addAll(messages);
       });
       _scrollToBottom();
     } catch (_) {
@@ -238,7 +260,23 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
         voiceFile: audioFile,
       );
       if (!mounted) return;
+      // Save the voice path keyed by question messageId for persistence
+      final questionId = response.answer.messageId;
+      if (questionId != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('voice_path_$questionId', audioFile.path);
+      }
       setState(() {
+        _messages.remove(optimisticMsg);
+        _messages.add(
+          ChatMessage(
+            text: '',
+            sender: MessageSender.you,
+            type: MessageType.voice,
+            voicePath: audioFile.path,
+            messageId: questionId,
+          ),
+        );
         _messages.add(ChatMessage.fromQAMessage(response.answer));
         _sessionId ??= response.answer.sessionId;
       });
@@ -287,6 +325,13 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
             sessionId: _sessionId!,
           );
           if (!mounted) return;
+          // Remove all saved voice paths for this session
+          final prefs = await SharedPreferences.getInstance();
+          for (final msg in _messages) {
+            if (msg.messageId != null) {
+              await prefs.remove('voice_path_${msg.messageId}');
+            }
+          }
           setState(() {
             _messages.clear();
             _sessionId = null;
@@ -744,7 +789,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   Duration _position = Duration.zero;
   Duration _total = Duration.zero;
   bool _loaded = false;
-  bool _completed = false; // track completion separately
+  bool _completed = false; // prevents infinite seek loop on completion
 
   @override
   void initState() {
@@ -772,7 +817,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     _player.playerStateStream.listen((state) {
       if (!mounted) return;
       if (state.processingState == ProcessingState.completed) {
-        // Mark as completed and update UI — do NOT seek here
+        // Do NOT seek here — seeking inside the listener causes infinite loop
         setState(() {
           _isPlaying = false;
           _completed = true;
@@ -788,7 +833,6 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
 
     _player.positionStream.listen((pos) {
       if (!mounted) return;
-      // Don't update position display when completed (it would show end time)
       if (!_completed) setState(() => _position = pos);
     });
 
@@ -810,8 +854,9 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       if (_isPlaying) {
         await _player.pause();
       } else {
-        // Always seek to start if completed before replaying
-        if (_completed || _player.processingState == ProcessingState.completed) {
+        // Seek to start on replay — safe here because it is user-triggered
+        if (_completed ||
+            _player.processingState == ProcessingState.completed) {
           await _player.seek(Duration.zero);
           setState(() => _completed = false);
         }
@@ -1127,7 +1172,15 @@ class _MicButtonState extends State<_MicButton> {
       return;
     }
 
-    final dir = await getApplicationDocumentsDirectory();
+    // Save to external Downloads so the file persists and is user-accessible
+    Directory? dir;
+    if (Platform.isAndroid) {
+      dir = Directory('/storage/emulated/0/Download/QAVoiceMessages');
+    } else {
+      dir = await getApplicationDocumentsDirectory();
+    }
+    if (!await dir.exists()) await dir.create(recursive: true);
+
     final path =
         '${dir.path}/qa_voice_${DateTime.now().millisecondsSinceEpoch}.wav';
 
