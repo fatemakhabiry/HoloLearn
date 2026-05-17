@@ -34,7 +34,10 @@ class LectureRoutes {
         return MaterialPageRoute(
           builder: (_) => LectureContentScreen(lecture: lecture),
         );
-
+      case AppRoutes.researchAgent:
+        return MaterialPageRoute(
+          builder: (_) => const ResearchAgentScreen(),
+        );
       default:
         return null;
     }

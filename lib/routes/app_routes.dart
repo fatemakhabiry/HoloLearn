@@ -20,6 +20,7 @@ class AppRoutes {
   static const String splash = '/splash';
   static const String refinecontent = '/refine-content';
   static const String lectureContent = '/lecture-content';
+  static const String researchAgent = '/research-agent';
   // ===== Student =====
   static const String studentQAScreen = "/studentQAScreen";
   static const String studentlectureContent="/student-lecture-content";

@@ -32,7 +32,7 @@ class ApiConfig {
       '/schedules/my-scheduled-lectures';
   static const String availabilitySlotsEndpoint = '/schedules/available-slots';
 
-  // Lecture endpoints
+  //===== Lecture endpoints =====
   static const String lecturesEndpoint = '/lecture/';
   //prepared lecture endpoints
   static const String createLectureDraftEndpoint = '/lecture/create-draft';
@@ -57,8 +57,6 @@ class ApiConfig {
       '/lecture/{lecture_id}/confirm-and-publish';
   static const String lectureHistoryendpoint = '/lecture/all-my-lectures';
 
-  // Delete and update endpoints with placeholders
-  // Note: {schedule_id} will be replaced with actual ID in the service
   static const String cancleLectureEndpoint = '/schedules/{schedule_id}/cancel';
   static const String deleteLectureEndpoint = '/lecture/{lecture_id}';
   static const String updateLectureEndpoint =
@@ -71,10 +69,9 @@ class ApiConfig {
   // ===== Student Endpoints =====
   static const String courseListEndpoint = '/courses/';
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
-  // Student endpoint — uses lecture_id instead of session_id
   static const String getStudentLectureContentEndpoint =
       "/session/lecture/{lecture_id}/content/{content_type}/download";
-  // ===== Q&A Endpoints ========================================================
+  // ===== Q&A Endpoints =======
   /// POST /qa/{lecture_id}/ask
   /// Body: multipart — text (String) OR voice_file (audio)
   static const String qaAskEndpoint = '/qa/{lecture_id}/ask';
@@ -90,6 +87,8 @@ class ApiConfig {
 
   /// DELETE /qa/session/{session_id}
   static const String qaClearSessionEndpoint = '/qa/session/{session_id}';
+  // ===== Research Agent Endpoints =======
+  static const String researchAgentEndpoint = '/research';
   // ===== Token Settings =====
   static const Duration tokenExpiry = Duration(minutes: 30);
 

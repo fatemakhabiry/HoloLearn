@@ -108,34 +108,76 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               child: fetchedLectures.isEmpty
                   ? SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height - 200,
-                        child: Center(
-                          child: Text(
-                            'No scheduled lectures',
-                            textAlign: TextAlign.center,
-                            style: AppStyles.h2.copyWith(
-                              color: AppColors.textLight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppStyles.spacingL),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CustomButton(
+                              text: 'Research Agent',
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.researchAgent,
+                                );
+                              },
+                              buttonType: ButtonType.secondary,
+                              fullWidth: true,
                             ),
-                          ),
+                            const SizedBox(height: AppStyles.spacingL),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height - 200,
+                              child: Center(
+                                child: Text(
+                                  'No scheduled lectures',
+                                  textAlign: TextAlign.center,
+                                  style: AppStyles.h2.copyWith(
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
                   : ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(AppStyles.spacingL),
-                      itemCount: fetchedLectures.length,
-                      itemBuilder: (context, index) => Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppStyles.spacingM,
-                        ),
-                        child: SessionCard(
-                          session: fetchedLectures[index],
-                          onOpenTranscript: () => _handleOpenTranscript(index),
-                          onEnterChat: () => _handleEnterChat(index),
-                          onLectureContent :() => _handleLectureContent(index),
-                        ),
-                      ),
+                      itemCount: fetchedLectures.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return Column(
+                            children: [
+                              CustomButton(
+                                text: 'Research Agent',
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.researchAgent,
+                                  );
+                                },
+                                buttonType: ButtonType.secondary,
+                                fullWidth: true,
+                              ),
+                              const SizedBox(height: AppStyles.spacingL),
+                            ],
+                          );
+                        }
+
+                        final lectureIndex = index - 1;
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: AppStyles.spacingM,
+                          ),
+                          child: SessionCard(
+                            session: fetchedLectures[lectureIndex],
+                            onOpenTranscript: () => _handleOpenTranscript(lectureIndex),
+                            onEnterChat: () => _handleEnterChat(lectureIndex),
+                            onLectureContent: () => _handleLectureContent(lectureIndex),
+                          ),
+                        );
+                      },
                     ),
             ),
     ));

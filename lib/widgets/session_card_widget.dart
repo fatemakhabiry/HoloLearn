@@ -132,7 +132,7 @@ class _SessionCardState extends State<SessionCard> {
           CustomButton(
             onPressed: widget.onLectureContent!,
             text: 'Lecture Content',
-            buttonType: ButtonType.outlined,
+            buttonType: ButtonType.secondary,
             fullWidth: true,
           )
         ],

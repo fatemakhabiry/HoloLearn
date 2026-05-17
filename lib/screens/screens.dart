@@ -23,6 +23,7 @@ export 'teacher/refine_content_screen.dart';
 export 'teacher/teacher_dashboard_screen.dart';
 export 'teacher/insert_queries_screen.dart';
 export 'teacher/lecture_content_screen.dart';
+export 'research_agent_screen.dart';
 
 //student
 export 'student/student_dashboard_screen.dart';

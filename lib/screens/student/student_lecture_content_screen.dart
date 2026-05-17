@@ -31,7 +31,6 @@ class _StudentLectureContentScreenState
   // Students only see content — not the raw generated lecture PDF
   // (that is teacher-only). Exclude GenContentType.lecture for students.
   static const List<GenContentType> _studentTypes = [
-    GenContentType.script,
     GenContentType.worksheet,
     GenContentType.quiz,
     GenContentType.knowledgeGraph,

@@ -41,20 +41,22 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   //     listen: false,
   //   ).resumeIfNeeded(appState);
   // }
-void _checkActiveSession() async {
-  final appState = Provider.of<AppStateProvider>(context, listen: false);
-  final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
-  final lectureState = Provider.of<LectureStateProvider>(context, listen: false);
+  void _checkActiveSession() async {
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
+    final lectureState =
+        Provider.of<LectureStateProvider>(context, listen: false);
 
-  notifier.resumeIfNeeded(appState);
+    notifier.resumeIfNeeded(appState);
 
-  if (!notifier.isTerminal) {
-    final activeSessionId = await StorageHelper.getOngoingSessionId(); // now returns int?
-    if (activeSessionId != null) {
-      lectureState.startOngoingSession(activeSessionId); // ✅ no cast needed
+    if (!notifier.isTerminal) {
+      final activeSessionId =
+          await StorageHelper.getOngoingSessionId(); // now returns int?
+      if (activeSessionId != null) {
+        lectureState.startOngoingSession(activeSessionId); // ✅ no cast needed
+      }
     }
   }
-}
 
   @override
   void didChangeDependencies() {
@@ -175,29 +177,36 @@ void _checkActiveSession() async {
   }
 
   void onDone() {
-  //is content=true review script
+    //is content=true review script
     Navigator.pushNamed(
-          context,
-          AppRoutes.lecturepreview,
-          arguments:true ,
-        );
+      context,
+      AppRoutes.lecturepreview,
+      arguments: true,
+    );
   }
+
   void onAwait() {
     //is content=false review lecture
     Navigator.pushNamed(
-          context,
-          AppRoutes.lecturepreview,
-          arguments:false ,
-        );
+      context,
+      AppRoutes.lecturepreview,
+      arguments: false,
+    );
   }
-  void onTap(){
-      final lecturestate=Provider.of<LectureStateProvider>(context,listen: false);
-      Navigator.pushNamed(
-            context,
-            AppRoutes.lectureprocessing,
-            arguments: {"sessionId": lecturestate.ongoingSessionId, "lectureType": lecturestate.lectureType} ,
-          );
+
+  void onTap() {
+    final lecturestate =
+        Provider.of<LectureStateProvider>(context, listen: false);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.lectureprocessing,
+      arguments: {
+        "sessionId": lecturestate.ongoingSessionId,
+        "lectureType": lecturestate.lectureType
+      },
+    );
   }
+
   void _handleCancel(ScheduleSlot lecture) {
     CustomConfirmationDialog.show(
       context,
@@ -291,9 +300,9 @@ void _checkActiveSession() async {
         showBackButton: false,
         showProfile: true,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+      body:LoadingOverlay(
+        isLoading: isLoading,
+        child: RefreshIndicator(
               onRefresh: fetchScheduleData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -316,7 +325,8 @@ void _checkActiveSession() async {
                             children: [
                               Text(
                                 'MY SCHEDULED LECTURES',
-                                style: AppStyles.h3.copyWith(color:context.textPrimary),
+                                style: AppStyles.h3
+                                    .copyWith(color: context.textPrimary),
                               ),
                               // Add Button
                               Container(
@@ -338,7 +348,7 @@ void _checkActiveSession() async {
                                     }
                                   },
                                   icon: Icons.add,
-                                  iconColor:Theme.of(context).cardColor,
+                                  iconColor: Theme.of(context).cardColor,
                                   backgroundColor: AppColors.primaryColor,
                                   size: 40,
                                 ),
@@ -346,8 +356,20 @@ void _checkActiveSession() async {
                             ],
                           ),
                           const SizedBox(height: AppStyles.spacingM),
-
+                          CustomButton(
+                            text: 'Research Agent',
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.researchAgent,
+                              );
+                            },
+                            buttonType: ButtonType.secondary,
+                            fullWidth: true,
+                          ),
                           // Display My Lectures from API
+                          const SizedBox(height: AppStyles.spacingL),
+
                           if (myLectures.isEmpty)
                             Text(
                               'No scheduled lectures',
@@ -361,7 +383,7 @@ void _checkActiveSession() async {
                                 padding: const EdgeInsets.only(
                                   bottom: AppStyles.spacingM,
                                 ),
-                                child:  LectureScheduleCard(
+                                child: LectureScheduleCard(
                                   lectureTitle: lecture.lectureTitle,
                                   date: lecture.formattedDate,
                                   timeRange: lecture.timeRange,
@@ -380,6 +402,6 @@ void _checkActiveSession() async {
                 ),
               ),
             ),
-    );
+    ));
   }
 }
