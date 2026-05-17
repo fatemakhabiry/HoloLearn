@@ -46,15 +46,22 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // NEW: Load saved email from storage
+  // Load saved email (and password if rememberMe) from storage
   Future<void> _loadSavedEmail() async {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     await appState.init(); // Load from storage
 
     if (appState.email.isNotEmpty && mounted) {
+      final savedPassword = appState.rememberMe
+          ? await StorageHelper.getPassword()
+          : null;
+
       setState(() {
         _emailController.text = appState.email;
-        _rememberMe = appState.rememberMe; // Load remember me state
+        _rememberMe = appState.rememberMe;
+        if (savedPassword != null && savedPassword.isNotEmpty) {
+          _passwordController.text = savedPassword;
+        }
       });
     }
   }

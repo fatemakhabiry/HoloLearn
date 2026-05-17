@@ -35,17 +35,19 @@ class AppStateProvider extends ChangeNotifier {
     _rememberMe = await StorageHelper.getRememberMe(); // NEW
     notifyListeners();
   }
-    Future<bool> tryAutoLogin() async {
+
+  Future<bool> tryAutoLogin() async {
     final shouldAutoLogin = await StorageHelper.shouldAutoLogin();
     if (!shouldAutoLogin) return false;
 
     final savedEmail = await StorageHelper.getEmail();
     final savedPassword = await StorageHelper.getPassword();
 
-    if (savedEmail == null || savedPassword == null) return false;
+    if (savedEmail == null || savedEmail.isEmpty) return false;
+    if (savedPassword == null || savedPassword.isEmpty) return false;
 
     try {
-      final data= await AuthService.login(
+      final data = await AuthService.login(
         email: savedEmail,
         password: savedPassword,
       );
