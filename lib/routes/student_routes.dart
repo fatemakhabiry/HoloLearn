@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/schedule_models.dart';
 import 'app_routes.dart';
 import '../screens/screens.dart';
 
@@ -14,6 +15,12 @@ class StudentRoutes {
 
         return MaterialPageRoute(
           builder: (_) => StudentQAScreen(session: args["session"]),
+        );
+              case AppRoutes.studentlectureContent:
+        final args = settings.arguments as Map<String, dynamic>;
+        final session = args['session'] as ScheduleSlot;
+        return MaterialPageRoute(
+          builder: (_) => StudentLectureContentScreen(session: session),
         );
       default:
         return null;

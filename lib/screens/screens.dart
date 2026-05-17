@@ -27,3 +27,4 @@ export 'teacher/lecture_content_screen.dart';
 //student
 export 'student/student_dashboard_screen.dart';
 export 'student/student_QA_screen.dart';
+export 'student/student_lecture_content_screen.dart';

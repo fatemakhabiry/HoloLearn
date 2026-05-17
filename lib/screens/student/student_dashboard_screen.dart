@@ -36,38 +36,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     });
   }
 
-  List<ScheduleSlot> getDummySessions() {
-    final now = DateTime.now();
-
-    return [
-      ScheduleSlot(
-        teacherName: 'Dr. Smith',
-        courseCode: 'CS101',
-        lectureTitle: 'Intro to Computing',
-        startTime: now.add(const Duration(minutes: 30)).toIso8601String(),
-        endTime: now
-            .add(const Duration(hours: 1, minutes: 30))
-            .toIso8601String(),
-        scheduleId: 1,
-      ),
-      ScheduleSlot(
-        teacherName: 'Dr. Ahmed',
-        courseCode: 'CS202',
-        lectureTitle: 'Data Structures',
-        startTime: now.subtract(const Duration(minutes: 15)).toIso8601String(),
-        endTime: now.add(const Duration(minutes: 45)).toIso8601String(),
-        scheduleId: 2,
-      ),
-      ScheduleSlot(
-        teacherName: 'Dr. Mona',
-        courseCode: 'CS303',
-        lectureTitle: 'Operating Systems',
-        startTime: now.subtract(const Duration(hours: 2)).toIso8601String(),
-        endTime: now.subtract(const Duration(hours: 1)).toIso8601String(),
-        scheduleId: 3,
-      ),
-    ];
-  }
 
   Future<void> fetchScheduleData() async {
     List<ScheduleSlot> data = [];
@@ -115,7 +83,15 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       arguments: {"session": fetchedLectures[index]},
     );
   }
-
+ void _handleLectureContent(int index) {
+    // print('Enter Chat pressed on card index: $index');
+    Navigator.pushNamed(
+      context,
+      AppRoutes.studentlectureContent,
+      arguments: {"session": fetchedLectures[index]},
+      
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,9 +100,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         showBackButton: false,
         showProfile: true,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: LoadingOverlay(
+        isLoading: isLoading,
+          child: RefreshIndicator(
               onRefresh: fetchScheduleData,
               child: fetchedLectures.isEmpty
                   ? SingleChildScrollView(
@@ -156,10 +133,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                           session: fetchedLectures[index],
                           onOpenTranscript: () => _handleOpenTranscript(index),
                           onEnterChat: () => _handleEnterChat(index),
+                          onLectureContent :() => _handleLectureContent(index),
                         ),
                       ),
                     ),
             ),
-    );
+    ));
   }
 }

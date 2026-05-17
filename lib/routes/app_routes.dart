@@ -22,4 +22,5 @@ class AppRoutes {
   static const String lectureContent = '/lecture-content';
   // ===== Student =====
   static const String studentQAScreen = "/studentQAScreen";
+  static const String studentlectureContent="/student-lecture-content";
 }

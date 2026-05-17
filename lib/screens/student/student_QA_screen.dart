@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:just_audio/just_audio.dart';
@@ -110,6 +111,7 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
     setState(() {
       isLoading = true;
       _isSending = false;
+      _isIndexed = false;
     });
     try {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
@@ -148,31 +150,97 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
       );
       if (!mounted) return;
 
-      // Restore saved voice paths from local storage
+      // Build a map of answerId → filePath from all saved local voice keys.
+      // Storage format: key = "voice_path_local_<hash>", value = "<answerId>|<filePath>"
       final prefs = await SharedPreferences.getInstance();
+      final allKeys = prefs.getKeys();
+      final Map<int, String> answerIdToVoicePath = {};
+      for (final key in allKeys) {
+        if (!key.startsWith('voice_path_local_')) continue;
+        final raw = prefs.getString(key);
+        if (raw == null) continue;
+        final parts = raw.split('|');
+        if (parts.length < 2) continue;
+        final answerId = int.tryParse(parts[0]);
+        final filePath = parts.sublist(1).join('|'); // rejoin in case path has |
+        if (answerId != null && File(filePath).existsSync()) {
+          answerIdToVoicePath[answerId] = filePath;
+        }
+      }
+
       final messages = history.messages.map((msg) {
-        final base = ChatMessage.fromQAMessage(msg);
-        if (msg.messageId != null) {
-          final savedPath = prefs.getString('voice_path_${msg.messageId}');
-          if (savedPath != null && File(savedPath).existsSync()) {
-            return ChatMessage(
-              text: base.text,
-              sender: base.sender,
-              timestamp: base.timestamp,
-              messageId: base.messageId,
+        // If this is a user message whose FOLLOWING assistant message has a
+        // saved voice path, show it as a voice bubble.
+        // We match by checking if the answer message (next in list) has a
+        // stored voice path. Since history is ordered user→assistant pairs,
+        // we can check by answerId stored alongside the path.
+        //
+        // Simpler approach: if the answer message id is in our map, the
+        // PRECEDING user message was a voice message. But we only have the
+        // current msg here, so instead we check: is THIS msg's id in the map
+        // as an answerId? If yes → it's the answer to a voice question.
+        // The user voice bubble was the message just before it.
+        // We handle this by building the list in two passes.
+        return ChatMessage.fromQAMessage(msg);
+      }).toList();
+
+      // Second pass: for each assistant message whose id is in answerIdToVoicePath,
+      // find the preceding user message and upgrade it to a voice bubble.
+      final resolved = <ChatMessage>[];
+      for (int i = 0; i < messages.length; i++) {
+        final msg = messages[i];
+        if (msg.sender == MessageSender.hologramAvatar &&
+            msg.messageId != null &&
+            answerIdToVoicePath.containsKey(msg.messageId)) {
+          // The message before this is the user voice question — upgrade it
+          if (resolved.isNotEmpty &&
+              resolved.last.sender == MessageSender.you &&
+              resolved.last.type == MessageType.text &&
+              resolved.last.text.isEmpty) {
+            // Already a placeholder — replace
+            resolved[resolved.length - 1] = ChatMessage(
+              text: '',
+              sender: MessageSender.you,
+              timestamp: resolved.last.timestamp,
+              messageId: resolved.last.messageId,
               type: MessageType.voice,
-              voicePath: savedPath,
+              voicePath: answerIdToVoicePath[msg.messageId],
+            );
+          } else if (resolved.isNotEmpty &&
+              resolved.last.sender == MessageSender.you) {
+            // Regular text user message before — upgrade to voice
+            final prev = resolved.last;
+            resolved[resolved.length - 1] = ChatMessage(
+              text: '',
+              sender: MessageSender.you,
+              timestamp: prev.timestamp,
+              messageId: prev.messageId,
+              type: MessageType.voice,
+              voicePath: answerIdToVoicePath[msg.messageId],
             );
           }
         }
-        return base;
-      }).toList();
+        resolved.add(msg);
+      }
+
+      // Remove orphaned user messages: any user message that has no following
+      // assistant reply means the RAG response was never saved — drop it.
+      final clean = <ChatMessage>[];
+      for (int i = 0; i < resolved.length; i++) {
+        final msg = resolved[i];
+        if (msg.sender == MessageSender.you) {
+          final hasReply = i + 1 < resolved.length &&
+              resolved[i + 1].sender == MessageSender.hologramAvatar;
+          if (!hasReply) continue; // skip orphan
+        }
+        clean.add(msg);
+      }
 
       setState(() {
         _sessionId = history.sessionId;
         _messages
           ..clear()
-          ..addAll(messages);
+          ..addAll(clean);
       });
       _scrollToBottom();
     } catch (_) {
@@ -220,6 +288,18 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
       );
       if (!mounted) return;
       setState(() {
+        // Replace the optimistic bubble with the real one (carries messageId)
+        _messages.remove(optimisticQuestion);
+        _messages.add(
+          ChatMessage(
+            text: optimisticQuestion.text,
+            sender: MessageSender.you,
+            timestamp: optimisticQuestion.timestamp,
+            messageId: response.question.messageId != 0
+                ? response.question.messageId
+                : null,
+          ),
+        );
         _messages.add(ChatMessage.fromQAMessage(response.answer));
         _sessionId ??= response.answer.sessionId;
       });
@@ -239,6 +319,12 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
 
   Future<void> _sendVoiceMessage(File audioFile) async {
     if (_isSending) return;
+
+    // Generate a stable local key from the file path so we can restore
+    // this voice bubble after the app restarts. We cannot rely on the
+    // backend question messageId because QAAskResponse.question.messageId
+    // is always 0 (placeholder — the backend only returns the answer id).
+    final localKey = 'voice_path_local_${audioFile.path.hashCode}';
 
     // Show voice bubble optimistically so user sees it immediately
     final optimisticMsg = ChatMessage.voice(
@@ -260,12 +346,12 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
         voiceFile: audioFile,
       );
       if (!mounted) return;
-      // Save the voice path keyed by question messageId for persistence
-      final questionId = response.answer.messageId;
-      if (questionId != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('voice_path_$questionId', audioFile.path);
-      }
+
+      // Persist: value = "answerId|filePath" so _loadHistory can match the pair.
+      final answerId = response.answer.messageId;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(localKey, '$answerId|${audioFile.path}');
+
       setState(() {
         _messages.remove(optimisticMsg);
         _messages.add(
@@ -274,7 +360,7 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
             sender: MessageSender.you,
             type: MessageType.voice,
             voicePath: audioFile.path,
-            messageId: questionId,
+            messageId: answerId, // use answerId so _clearSession can clean up
           ),
         );
         _messages.add(ChatMessage.fromQAMessage(response.answer));
@@ -327,9 +413,25 @@ class _StudentQAScreenState extends State<StudentQAScreen> {
           if (!mounted) return;
           // Remove all saved voice paths for this session
           final prefs = await SharedPreferences.getInstance();
+          final allKeys = prefs.getKeys().toList();
           for (final msg in _messages) {
             if (msg.messageId != null) {
+              // Clean old-style keys (legacy)
               await prefs.remove('voice_path_${msg.messageId}');
+            }
+          }
+          // Clean new-style local keys whose stored answerId matches a msg in this session
+          final sessionAnswerIds = _messages
+              .where((m) => m.messageId != null)
+              .map((m) => m.messageId!)
+              .toSet();
+          for (final key in allKeys) {
+            if (!key.startsWith('voice_path_local_')) continue;
+            final raw = prefs.getString(key);
+            if (raw == null) continue;
+            final answerId = int.tryParse(raw.split('|').first);
+            if (answerId != null && sessionAnswerIds.contains(answerId)) {
+              await prefs.remove(key);
             }
           }
           setState(() {
@@ -791,6 +893,11 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   bool _loaded = false;
   bool _completed = false; // prevents infinite seek loop on completion
 
+  // Keep subscription references so we can cancel them on dispose
+  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _posSub;
+  StreamSubscription<Duration?>? _durSub;
+
   @override
   void initState() {
     super.initState();
@@ -801,6 +908,11 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   Future<void> _initPlayer() async {
     final path = widget.message.voicePath;
     if (path == null) return;
+    // Guard: file must exist on disk before handing to just_audio
+    if (!File(path).existsSync()) {
+      debugPrint('Voice file not found on disk: $path');
+      return;
+    }
     try {
       await _player.setLoopMode(LoopMode.off);
       final duration = await _player.setFilePath(path);
@@ -814,7 +926,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       return;
     }
 
-    _player.playerStateStream.listen((state) {
+    _stateSub = _player.playerStateStream.listen((state) {
       if (!mounted) return;
       if (state.processingState == ProcessingState.completed) {
         // Do NOT seek here — seeking inside the listener causes infinite loop
@@ -831,12 +943,12 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       }
     });
 
-    _player.positionStream.listen((pos) {
+    _posSub = _player.positionStream.listen((pos) {
       if (!mounted) return;
       if (!_completed) setState(() => _position = pos);
     });
 
-    _player.durationStream.listen((dur) {
+    _durSub = _player.durationStream.listen((dur) {
       if (!mounted || dur == null) return;
       setState(() => _total = dur);
     });
@@ -844,6 +956,9 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
 
   @override
   void dispose() {
+    _stateSub?.cancel();
+    _posSub?.cancel();
+    _durSub?.cancel();
     _player.dispose();
     super.dispose();
   }
@@ -966,9 +1081,11 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
-                    _isPlaying || _position > Duration.zero
-                        ? _fmt(_position)
-                        : _fmt(_total),
+                    !_loaded
+                        ? '...'
+                        : (_isPlaying || _position > Duration.zero
+                            ? _fmt(_position)
+                            : _fmt(_total)),
                     style: AppStyles.caption.copyWith(
                       fontSize: 11,
                       color: fgColor.withOpacity(0.75),

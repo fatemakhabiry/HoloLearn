@@ -1,9 +1,9 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-      // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
+      "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
       // 'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
-      'http://10.0.2.2:8000/api/v1';
+      // 'http://10.0.2.2:8000/api/v1';
 
   // ===== Authentication Endpoints =====
   static const String loginEndpoint = '/auth/login';
@@ -71,7 +71,9 @@ class ApiConfig {
   // ===== Student Endpoints =====
   static const String courseListEndpoint = '/courses/';
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
-
+  // Student endpoint — uses lecture_id instead of session_id
+  static const String getStudentLectureContentEndpoint =
+      "/session/lecture/{lecture_id}/content/{content_type}/download";
   // ===== Q&A Endpoints ========================================================
   /// POST /qa/{lecture_id}/ask
   /// Body: multipart — text (String) OR voice_file (audio)
