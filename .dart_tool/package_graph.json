@@ -853,6 +853,40 @@
       ]
     },
     {
+      "name": "rxdart",
+      "version": "0.28.0",
+      "dependencies": []
+    },
+    {
+      "name": "audio_session",
+      "version": "0.1.25",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "rxdart"
+      ]
+    },
+    {
+      "name": "just_audio_web",
+      "version": "0.4.16",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "just_audio_platform_interface",
+        "synchronized",
+        "web"
+      ]
+    },
+    {
+      "name": "just_audio_platform_interface",
+      "version": "4.6.0",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "permission_handler_platform_interface",
       "version": "4.3.0",
       "dependencies": [
@@ -1282,6 +1316,11 @@
       ]
     },
     {
+      "name": "synchronized",
+      "version": "3.4.0",
+      "dependencies": []
+    },
+    {
       "name": "file_selector_windows",
       "version": "0.9.3+5",
       "dependencies": [
@@ -1329,45 +1368,6 @@
       "dependencies": [
         "path"
       ]
-    },
-    {
-      "name": "audio_session",
-      "version": "0.1.25",
-      "dependencies": [
-        "flutter",
-        "flutter_web_plugins",
-        "meta",
-        "rxdart"
-      ]
-    },
-    {
-      "name": "just_audio_web",
-      "version": "0.4.16",
-      "dependencies": [
-        "flutter",
-        "flutter_web_plugins",
-        "just_audio_platform_interface",
-        "synchronized",
-        "web"
-      ]
-    },
-    {
-      "name": "synchronized",
-      "version": "3.4.0",
-      "dependencies": []
-    },
-    {
-      "name": "just_audio_platform_interface",
-      "version": "4.6.0",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "rxdart",
-      "version": "0.28.0",
-      "dependencies": []
     }
   ],
   "configVersion": 1

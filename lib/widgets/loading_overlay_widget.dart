@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import '../constants/constants.dart';
 
-String animationPath="assets/animation/Logo Animation.json";
+String animationPath="assets/animation/Loading animation.json";
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;

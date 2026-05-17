@@ -42,7 +42,6 @@ dependencies:
   permission_handler: ^12.0.1
   just_audio: ^0.9.46
   record: ^6.1.2
-  shared_preferences: ^2.2.2
   http_parser: ^4.0.2
   dio: ^5.9.0
   provider: ^6.1.2
@@ -85,6 +84,7 @@ flutter:
     - assets/images/time_expired_icon.png
     - assets/images/vertical logo-02.png
     - assets/animation/Logo Animation.json
+    - assets/animation/Loading animation.json
 
 # flutter_launcher_icons:
 
