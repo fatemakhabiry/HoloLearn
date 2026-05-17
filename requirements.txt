@@ -37,3 +37,10 @@ pywin32
 fastapi
 uvicorn[standard]
 python-multipart
+
+#BM25 RETRIEVE
+rank-bm25
+
+#NEO4J GRAPH
+
+Neo4j
