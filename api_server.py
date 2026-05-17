@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
         key_whisper  = os.getenv("GROQ_API_KEY_WHISPER",  ""),
         key_query    = os.getenv("GROQ_API_KEY_QUERY",    ""),
         key_grader   = os.getenv("GROQ_API_KEY_GRADER",   ""),
+        key_LLM= os.getenv("GROQ_API_KEY",""),
     )
     print("[api_server] ✅ RAG service ready on port 8002")
     yield

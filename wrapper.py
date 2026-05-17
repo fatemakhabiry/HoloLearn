@@ -40,6 +40,7 @@ class GraphRAGWrapper:
         key_whisper : str,
         key_query   : str,
         key_grader  : str,
+        key_LLM     : str,
     ):
         self.work_dir    = Path(work_dir).resolve()
         self.answers_dir = Path(answers_dir).resolve()
@@ -56,6 +57,7 @@ class GraphRAGWrapper:
         self._key_whisper  = key_whisper
         self._key_query    = key_query
         self._key_grader   = key_grader
+        self._key_LLM = key_LLM
 
         # ── Embed model (loaded once, never reset) ────────────────────────────
         self._embed_model      = None
@@ -114,7 +116,7 @@ class GraphRAGWrapper:
             embed_model = embed_model,
             chunks      = chunks,
             graph_store = graph_store,
-            api_key     = self._key_query or self._key_grader,
+            api_key     = self._key_LLM,
         )
 
         # AnswerGenerator
