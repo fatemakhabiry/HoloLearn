@@ -9,6 +9,7 @@ import '../routes/app_routes.dart';
 import '../constants/constants.dart';
 import '../services/auth_service.dart';
 import '../providers/app_state_provider.dart';
+import '../utils/storage_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,9 +72,15 @@ class _LoginPageState extends State<LoginPage> {
       await appState.setUserName(data!['user']['full_name']);
       await appState.setUserRole(data!['user']['role']);
       await appState.setAccessToken(data!['access_token']);
-      await appState.setRememberMe(
-        _rememberMe,
-      ); // NEW: Save Remember Me preference
+      await appState.setRememberMe(_rememberMe);
+
+      // Save password securely so auto-login works on next app launch
+      if (_rememberMe) {
+        await StorageHelper.savePassword(password!);
+      } else {
+        // If user unchecked Remember Me, clear any previously saved password
+        await StorageHelper.savePassword('');
+      }
 
       // print('🔑 Access Token: ${appState.accessToken}');
       // print('✅ Remember Me: $_rememberMe'); // NEW: Debug log
@@ -122,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: LoadingOverlay(
         isLoading: is_loading,
         child: Center(
@@ -149,7 +156,9 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'HOLOGRAPHIC LEARNING',
                         style: AppStyles.caption.copyWith(
-                          color: context.isDark?AppColors.darkBackground:AppColors.white,
+                          color: context.isDark
+                              ? AppColors.darkBackground
+                              : AppColors.white,
                           fontWeight: AppFonts.semiBold,
                           letterSpacing: 1.2,
                         ),
@@ -157,14 +166,19 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: AppStyles.spacingM),
                     // HoloLearn Title
-                    Text('HoloLearn', style: AppStyles.logo.copyWith(color: context.textPrimary)),
+                    Text(
+                      'HoloLearn',
+                      style: AppStyles.logo.copyWith(
+                        color: context.textPrimary,
+                      ),
+                    ),
 
                     const SizedBox(height: AppStyles.spacingXS),
                     // Subtitle
                     Text(
                       'Next-generation virtual education',
                       style: AppStyles.bodyMedium.copyWith(
-                        color:  context.textSecondary,
+                        color: context.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppStyles.spacingXL),

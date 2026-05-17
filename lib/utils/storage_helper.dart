@@ -124,26 +124,28 @@ class StorageHelper {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
-static const String _processingStateKey = 'processing_state';
 
-static Future<void> saveProcessingState(Map<String, dynamic> data) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(_processingStateKey, json.encode(data));
-}
+  static const String _processingStateKey = 'processing_state';
 
-static Future<Map<String, dynamic>?> getProcessingState() async {
-  final prefs = await SharedPreferences.getInstance();
-  final jsonString = prefs.getString(_processingStateKey);
-  if (jsonString != null) {
-    return json.decode(jsonString) as Map<String, dynamic>;
+  static Future<void> saveProcessingState(Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_processingStateKey, json.encode(data));
   }
-  return null;
-}
 
-static Future<void> clearProcessingState() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove(_processingStateKey);
-}
+  static Future<Map<String, dynamic>?> getProcessingState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_processingStateKey);
+    if (jsonString != null) {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<void> clearProcessingState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_processingStateKey);
+  }
+
   /// Clear only auth data (with option to keep email)
   // static Future<void> clearAuth({bool keepEmail = true}) async {
   //   // Clear secure storage (token)
@@ -168,28 +170,29 @@ static Future<void> clearProcessingState() async {
   //   }
   // }
   static Future<void> clearAuth({bool keepEmail = true}) async {
-  await _secureStorage.delete(key: _accessTokenKey);
+    await _secureStorage.delete(key: _accessTokenKey);
 
-  // Only clear password if not remembering
-  final prefs = await SharedPreferences.getInstance();
-  final rememberMe = prefs.getBool(_keyRememberMe) ?? false;
-  if (!rememberMe) {
-    await _secureStorage.delete(key: _passwordKey);
+    // Only clear password if not remembering
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool(_keyRememberMe) ?? false;
+    if (!rememberMe) {
+      await _secureStorage.delete(key: _passwordKey);
+    }
+
+    final lastEmail = keepEmail ? prefs.getString(_emailKey) : null;
+
+    await prefs.remove(_userNameKey);
+    await prefs.remove(_userRoleKey);
+    await prefs.remove(_isFirstTimeLoginKey);
+    // Do NOT remove _keyRememberMe here — it must survive logout so the
+    // checkbox is pre-filled and auto-login works on the next app launch.
+
+    if (!keepEmail) {
+      await prefs.remove(_emailKey);
+    } else if (lastEmail != null) {
+      await prefs.setString(_emailKey, lastEmail);
+    }
   }
-
-  final lastEmail = keepEmail ? prefs.getString(_emailKey) : null;
-
-  await prefs.remove(_userNameKey);
-  await prefs.remove(_userRoleKey);
-  await prefs.remove(_isFirstTimeLoginKey);
-  await prefs.remove(_keyRememberMe);
-
-  if (!keepEmail) {
-    await prefs.remove(_emailKey);
-  } else if (lastEmail != null) {
-    await prefs.setString(_emailKey, lastEmail);
-  }
-}
 
   /// Clear only lecture state
   static Future<void> clearLectureState() async {
@@ -206,119 +209,122 @@ static Future<void> clearProcessingState() async {
 
   static const String _sessionIdKey = 'session_id';
 
-static Future<void> saveSessionId(int sessionId) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setInt(_sessionIdKey, sessionId);
-}
+  static Future<void> saveSessionId(int sessionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_sessionIdKey, sessionId);
+  }
 
-static Future<int?> getSessionId() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getInt(_sessionIdKey);
-}
+  static Future<int?> getSessionId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_sessionIdKey);
+  }
 
   static Future<void> clearSessionId() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove(_sessionIdKey);
-}static const String _lectureSessionMapKey = 'lecture_session_map';
-
-/// Save a lectureId → sessionId mapping
-static Future<void> saveLectureSessionId(int lectureId, int sessionId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureSessionMapKey);
-  
-  Map<String, dynamic> map = {};
-  if (existing != null) {
-    map = json.decode(existing) as Map<String, dynamic>;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionIdKey);
   }
-  
-  map[lectureId.toString()] = sessionId;
-  await prefs.setString(_lectureSessionMapKey, json.encode(map));
-}
 
-/// Get sessionId for a given lectureId
-static Future<int?> getSessionIdForLecture(int lectureId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureSessionMapKey);
-  if (existing == null) return null;
-  
-  final map = json.decode(existing) as Map<String, dynamic>;
-  final value = map[lectureId.toString()];
-  return value as int?;
-}
+  static const String _lectureSessionMapKey = 'lecture_session_map';
 
-/// Clear a single lecture-session mapping after deletion
-static Future<void> clearLectureSessionId(int lectureId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureSessionMapKey);
-  if (existing == null) return;
-  
-  final map = json.decode(existing) as Map<String, dynamic>;
-  map.remove(lectureId.toString());
-  await prefs.setString(_lectureSessionMapKey, json.encode(map));
-}
-static const String _lectureTypeMapKey = 'lecture_type_map';
+  /// Save a lectureId → sessionId mapping
+  static Future<void> saveLectureSessionId(int lectureId, int sessionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureSessionMapKey);
 
-static Future<void> saveLectureType(int lectureId, String type) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureTypeMapKey);
-  
-  Map<String, dynamic> map = {};
-  if (existing != null) {
-    map = json.decode(existing) as Map<String, dynamic>;
+    Map<String, dynamic> map = {};
+    if (existing != null) {
+      map = json.decode(existing) as Map<String, dynamic>;
+    }
+
+    map[lectureId.toString()] = sessionId;
+    await prefs.setString(_lectureSessionMapKey, json.encode(map));
   }
-  
-  map[lectureId.toString()] = type;
-  await prefs.setString(_lectureTypeMapKey, json.encode(map));
-}
 
-static Future<String?> getLectureType(int lectureId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureTypeMapKey);
-  if (existing == null) return null;
-  
-  final map = json.decode(existing) as Map<String, dynamic>;
-  return map[lectureId.toString()] as String?;
-}
+  /// Get sessionId for a given lectureId
+  static Future<int?> getSessionIdForLecture(int lectureId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureSessionMapKey);
+    if (existing == null) return null;
 
-static Future<void> clearLectureType(int lectureId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final existing = prefs.getString(_lectureTypeMapKey);
-  if (existing == null) return;
-  
-  final map = json.decode(existing) as Map<String, dynamic>;
-  map.remove(lectureId.toString());
-  await prefs.setString(_lectureTypeMapKey, json.encode(map));
-}
-// ========== Ongoing Session ID ==========
+    final map = json.decode(existing) as Map<String, dynamic>;
+    final value = map[lectureId.toString()];
+    return value as int?;
+  }
+
+  /// Clear a single lecture-session mapping after deletion
+  static Future<void> clearLectureSessionId(int lectureId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureSessionMapKey);
+    if (existing == null) return;
+
+    final map = json.decode(existing) as Map<String, dynamic>;
+    map.remove(lectureId.toString());
+    await prefs.setString(_lectureSessionMapKey, json.encode(map));
+  }
+
+  static const String _lectureTypeMapKey = 'lecture_type_map';
+
+  static Future<void> saveLectureType(int lectureId, String type) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureTypeMapKey);
+
+    Map<String, dynamic> map = {};
+    if (existing != null) {
+      map = json.decode(existing) as Map<String, dynamic>;
+    }
+
+    map[lectureId.toString()] = type;
+    await prefs.setString(_lectureTypeMapKey, json.encode(map));
+  }
+
+  static Future<String?> getLectureType(int lectureId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureTypeMapKey);
+    if (existing == null) return null;
+
+    final map = json.decode(existing) as Map<String, dynamic>;
+    return map[lectureId.toString()] as String?;
+  }
+
+  static Future<void> clearLectureType(int lectureId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_lectureTypeMapKey);
+    if (existing == null) return;
+
+    final map = json.decode(existing) as Map<String, dynamic>;
+    map.remove(lectureId.toString());
+    await prefs.setString(_lectureTypeMapKey, json.encode(map));
+  }
+  // ========== Ongoing Session ID ==========
   // Stored separately from the general session_id so that fetching a
   // resource file from history never overwrites the live session.
- 
+
   static const String _ongoingSessionIdKey = 'ongoing_session_id';
- 
+
   static Future<void> saveOngoingSessionId(int sessionId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_ongoingSessionIdKey, sessionId);
   }
- 
+
   static Future<int?> getOngoingSessionId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_ongoingSessionIdKey);
   }
- 
+
   static Future<void> clearOngoingSessionId() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_ongoingSessionIdKey);
   }
 
-   // ========== Theme ==========
- 
+  // ========== Theme ==========
+
   static const String _isDarkModeKey = 'is_dark_mode';
- 
+
   static Future<void> saveIsDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_isDarkModeKey, isDark);
   }
- 
+
   static Future<bool> getIsDarkMode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_isDarkModeKey) ?? false;
