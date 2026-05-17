@@ -516,7 +516,9 @@ def _get_or_create_student_pipeline(student_session_id: str):
 def _wipe_neo4j(graph_store) -> None:
     """Delete ALL nodes and relationships from Neo4j (full database wipe)."""
     with graph_store._driver.session() as session:
-        session.run("MATCH (n) DETACH DELETE n")
+        # session.run("MATCH (n) DETACH DELETE n")
+        session.run("MATCH ()-[r]->() DELETE r")
+        session.run("MATCH (n) DETACH DELETE n")  # ensure completion before proceeding
 
 
 _embed_model_cache      = None          # loaded once, never reset between lectures
