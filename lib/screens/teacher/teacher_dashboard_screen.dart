@@ -44,8 +44,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   void _checkActiveSession() async {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     final notifier = Provider.of<ProcessingNotifier>(context, listen: false);
-    final lectureState =
-        Provider.of<LectureStateProvider>(context, listen: false);
+    final lectureState = Provider.of<LectureStateProvider>(
+      context,
+      listen: false,
+    );
 
     notifier.resumeIfNeeded(appState);
 
@@ -178,31 +180,25 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
   void onDone() {
     //is content=true review script
-    Navigator.pushNamed(
-      context,
-      AppRoutes.lecturepreview,
-      arguments: true,
-    );
+    Navigator.pushNamed(context, AppRoutes.lecturepreview, arguments: true);
   }
 
   void onAwait() {
     //is content=false review lecture
-    Navigator.pushNamed(
-      context,
-      AppRoutes.lecturepreview,
-      arguments: false,
-    );
+    Navigator.pushNamed(context, AppRoutes.lecturepreview, arguments: false);
   }
 
   void onTap() {
-    final lecturestate =
-        Provider.of<LectureStateProvider>(context, listen: false);
+    final lecturestate = Provider.of<LectureStateProvider>(
+      context,
+      listen: false,
+    );
     Navigator.pushNamed(
       context,
       AppRoutes.lectureprocessing,
       arguments: {
         "sessionId": lecturestate.ongoingSessionId,
-        "lectureType": lecturestate.lectureType
+        "lectureType": lecturestate.lectureType,
       },
     );
   }
@@ -300,108 +296,102 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
         showBackButton: false,
         showProfile: true,
       ),
-      body:LoadingOverlay(
+      body: LoadingOverlay(
         isLoading: isLoading,
         child: RefreshIndicator(
-              onRefresh: fetchScheduleData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppStyles.spacingL),
-                  child: Column(
+          onRefresh: fetchScheduleData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(AppStyles.spacingL),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ProcessingNotificationBar(
+                    onAwait: onAwait,
+                    onDone: onDone,
+                    ontap: onTap,
+                  ),
+                  const SizedBox(height: AppStyles.spacingS),
+                  ResearchAgentButton(
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.researchAgent),
+                  ),
+                  const SizedBox(height: AppStyles.spacingM),
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ProcessingNotificationBar(
-                        onAwait: onAwait,
-                        onDone: onDone,
-                        ontap: onTap,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Section Header with Add Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Section Header with Add Button
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'MY SCHEDULED LECTURES',
-                                style: AppStyles.h3
-                                    .copyWith(color: context.textPrimary),
-                              ),
-                              // Add Button
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconsButton(
-                                  onPressed: () async {
-                                    final result = await Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.createNewLecture,
-                                    );
-                                    // Refresh data if a lecture was created
-                                    if (result == true) {
-                                      fetchScheduleData();
-                                    }
-                                  },
-                                  icon: Icons.add,
-                                  iconColor: Theme.of(context).cardColor,
-                                  backgroundColor: AppColors.primaryColor,
-                                  size: 40,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            'MY SCHEDULED LECTURES',
+                            style: AppStyles.h3.copyWith(
+                              color: context.textPrimary,
+                            ),
                           ),
-                          const SizedBox(height: AppStyles.spacingM),
-                          CustomButton(
-                            text: 'Research Agent',
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.researchAgent,
-                              );
-                            },
-                            buttonType: ButtonType.secondary,
-                            fullWidth: true,
+                          // Add Button
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconsButton(
+                              onPressed: () async {
+                                final result = await Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.createNewLecture,
+                                );
+                                // Refresh data if a lecture was created
+                                if (result == true) {
+                                  fetchScheduleData();
+                                }
+                              },
+                              icon: Icons.add,
+                              iconColor: Theme.of(context).cardColor,
+                              backgroundColor: AppColors.primaryColor,
+                              size: 40,
+                            ),
                           ),
-                          // Display My Lectures from API
-                          const SizedBox(height: AppStyles.spacingL),
-
-                          if (myLectures.isEmpty)
-                            Text(
-                              'No scheduled lectures',
-                              style: AppStyles.bodyMedium.copyWith(
-                                color: AppColors.textLight,
-                              ),
-                            )
-                          else
-                            ...myLectures.map((lecture) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppStyles.spacingM,
-                                ),
-                                child: LectureScheduleCard(
-                                  lectureTitle: lecture.lectureTitle,
-                                  date: lecture.formattedDate,
-                                  timeRange: lecture.timeRange,
-                                  status: lecture.status,
-                                  editButtonText: "EDIT",
-                                  cancelButtonText: "CANCLE ",
-                                  onEdit: () => _handleEdit(lecture),
-                                  onCancel: () => _handleCancel(lecture),
-                                ),
-                              );
-                            }).toList(),
                         ],
                       ),
+                      const SizedBox(height: AppStyles.spacingM),
+                      if (myLectures.isEmpty)
+                        Text(
+                          'No scheduled lectures',
+                          style: AppStyles.bodyMedium.copyWith(
+                            color: AppColors.textLight,
+                          ),
+                        )
+                      else
+                        ...myLectures.map((lecture) {
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppStyles.spacingM,
+                            ),
+                            child: LectureScheduleCard(
+                              lectureTitle: lecture.lectureTitle,
+                              date: lecture.formattedDate,
+                              timeRange: lecture.timeRange,
+                              status: lecture.status,
+                              editButtonText: "EDIT",
+                              cancelButtonText: "CANCLE ",
+                              onEdit: () => _handleEdit(lecture),
+                              onCancel: () => _handleCancel(lecture),
+                            ),
+                          );
+                        }).toList(),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
-    ));
+          ),
+        ),
+      ),
+    );
   }
 }

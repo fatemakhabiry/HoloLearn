@@ -36,7 +36,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     });
   }
 
-
   Future<void> fetchScheduleData() async {
     List<ScheduleSlot> data = [];
     try {
@@ -83,15 +82,16 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       arguments: {"session": fetchedLectures[index]},
     );
   }
- void _handleLectureContent(int index) {
+
+  void _handleLectureContent(int index) {
     // print('Enter Chat pressed on card index: $index');
     Navigator.pushNamed(
       context,
       AppRoutes.studentlectureContent,
       arguments: {"session": fetchedLectures[index]},
-      
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,83 +103,81 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: LoadingOverlay(
         isLoading: isLoading,
-          child: RefreshIndicator(
-              onRefresh: fetchScheduleData,
-              child: fetchedLectures.isEmpty
-                  ? SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppStyles.spacingL),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CustomButton(
-                              text: 'Research Agent',
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.researchAgent,
-                                );
-                              },
-                              buttonType: ButtonType.secondary,
-                              fullWidth: true,
-                            ),
-                            const SizedBox(height: AppStyles.spacingL),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height - 200,
-                              child: Center(
-                                child: Text(
-                                  'No scheduled lectures',
-                                  textAlign: TextAlign.center,
-                                  style: AppStyles.h2.copyWith(
-                                    color: AppColors.textLight,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+        child: RefreshIndicator(
+          onRefresh: fetchScheduleData,
+          child: fetchedLectures.isEmpty
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppStyles.spacingL),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ResearchAgentButton(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.researchAgent,
+                          ),
                         ),
-                      ),
-                    )
-                  : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(AppStyles.spacingL),
-                      itemCount: fetchedLectures.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Column(
-                            children: [
-                              CustomButton(
-                                text: 'Research Agent',
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.researchAgent,
-                                  );
-                                },
-                                buttonType: ButtonType.secondary,
-                                fullWidth: true,
+                        const SizedBox(height: AppStyles.spacingL),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height - 200,
+                          child: Center(
+                            child: Text(
+                              'No scheduled lectures',
+                              textAlign: TextAlign.center,
+                              style: AppStyles.h2.copyWith(
+                                color: AppColors.textLight,
                               ),
-                              const SizedBox(height: AppStyles.spacingL),
-                            ],
-                          );
-                        }
-
-                        final lectureIndex = index - 1;
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppStyles.spacingM,
+                            ),
                           ),
-                          child: SessionCard(
-                            session: fetchedLectures[lectureIndex],
-                            onOpenTranscript: () => _handleOpenTranscript(lectureIndex),
-                            onEnterChat: () => _handleEnterChat(lectureIndex),
-                            onLectureContent: () => _handleLectureContent(lectureIndex),
-                          ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
-            ),
-    ));
+                  ),
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(AppStyles.spacingL),
+                  itemCount: fetchedLectures.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return Column(
+                        children: [
+                          CustomButton(
+                            text: 'Research Agent',
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.researchAgent,
+                              );
+                            },
+                            buttonType: ButtonType.secondary,
+                            fullWidth: true,
+                          ),
+                          const SizedBox(height: AppStyles.spacingL),
+                        ],
+                      );
+                    }
+
+                    final lectureIndex = index - 1;
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: AppStyles.spacingM,
+                      ),
+                      child: SessionCard(
+                        session: fetchedLectures[lectureIndex],
+                        onOpenTranscript: () =>
+                            _handleOpenTranscript(lectureIndex),
+                        onEnterChat: () => _handleEnterChat(lectureIndex),
+                        onLectureContent: () =>
+                            _handleLectureContent(lectureIndex),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
   }
 }
