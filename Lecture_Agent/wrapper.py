@@ -192,7 +192,7 @@ class SimpleGeneratorWrapper:
         print(f"\nGenerating lecture (Lecture API): {lecture_topic}")
  
         try:
-            api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY_LECTURE")
+            api_key = openrouter_api_key or os.getenv("GROQ_API_KEY_LECTURE")
             if not api_key:
                 raise EnvironmentError(
                     "No OpenRouter API key provided. Pass openrouter_api_key= or "
