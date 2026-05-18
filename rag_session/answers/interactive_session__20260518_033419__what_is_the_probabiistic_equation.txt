@@ -1,0 +1,13 @@
+SESSION   : interactive_session
+TIMESTAMP : 2026-05-18T03:34:19
+QUERY     : what is the probabiistic equation
+VERDICT   : PASS
+SOURCES   : Naive Bayes Classifier Slides groq llama final b2znallah.txt
+------------------------------------------------------------------------
+The probabilistic equation used in Naive Bayes classification is based on Bayes' theorem, which describes the probability of an event occurring given that another event has occurred. This theorem is mathematically represented as the posterior probability of Y given X, which can be written as: P(Y|X) = (P(X|Y)P(Y)/P(X)). 
+
+In the context of Naive Bayes, the likelihood P(X|Y) is factorized into the product of the individual probabilities of each predictor variable X_i given the target variable Y, assuming independence among these predictor variables. This factorization is expressed as: P(X|Y) = P(X_1, X_2, ..., X_n|Y) = prod_i=1^n P(X_i|Y). 
+
+The use of Bayes' theorem and the factorization of the likelihood enable the Naive Bayes algorithm to predict the probability of the target variable based on the predictor variables. This is a fundamental aspect of how Naive Bayes classification operates, allowing it to be applied in various fields such as text classification and medical diagnosis.
+
+The key takeaway is that the probabilistic equation in Naive Bayes classification is P(Y|X) = (P(X|Y)P(Y)/P(X)), which is derived from Bayes' theorem and is central to the algorithm's functionality.
