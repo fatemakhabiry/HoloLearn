@@ -137,100 +137,164 @@ def _rows_for_image(rows: list, source_image: str) -> list:
 #         "figures":      figures,
 #     }
 
-def _build_document(source_image: str, rows: list) -> dict:
-    """
-    Assemble one document dict from the rows belonging to source_image.
+# def _build_document(source_image: str, rows: list) -> dict:
+#     """
+#     Assemble one document dict from the rows belonging to source_image.
 
-    Equations and code are inserted INLINE into the text.
-    Only figures/tables/diagrams are extracted into separate lists.
+#     Equations and code are inserted INLINE into the text.
+#     Only figures/tables/diagrams are extracted into separate lists.
+#     """
+#     text_parts = []
+#     figures    = []
+
+#     fig_n = 0
+
+#     for row in rows:
+#         label         = (row.get("label") or row.get("cca_region_type") or "text").strip().lower()
+#         transcription = (row.get("transcription") or "").strip()
+#         crop_path     = row.get("crop_path", "")
+#         crop_filename = os.path.basename(crop_path)
+
+#         # skip invalid rows
+#         if not transcription or transcription.startswith("ERROR"):
+#             continue
+
+#         # ─────────────────────────────────────────────
+#         # INLINE CONTENT
+#         # ─────────────────────────────────────────────
+#         if label == "text":
+#             text_parts.append(transcription)
+
+#         elif label == "equation":
+#             # equations inserted directly inline
+#             text_parts.append(transcription)
+
+#         elif label == "code":
+#             # code inserted directly inline
+#             lang, content = _parse_code_block(transcription)
+
+#             # preserve markdown fencing
+#             inline_code = f"```{lang}\n{content}\n```"
+#             text_parts.append(inline_code)
+
+#         # ─────────────────────────────────────────────
+#         # EXTERNAL FIGURES
+#         # ─────────────────────────────────────────────
+#         elif label in ("diagram", "figure", "table"):
+#             fig_n += 1
+#             fig_id = f"FIG_{fig_n}"
+
+#             figures.append({
+#                 "id":       fig_id,
+#                 "filename": crop_filename,
+#                 "caption":  transcription,
+#             })
+
+#             # placeholder remains in text
+#             text_parts.append(f"[{fig_id}]")
+
+#         else:
+#             # unknown labels treated as text
+#             text_parts.append(transcription)
+
+#     return {
+#         "source_image": source_image,
+#         "text": "\n\n".join(text_parts),
+#         "figures": figures,
+#     }
+# # ─────────────────────────────────────────────────────────────────────────────
+# # Public entry point
+# # ─────────────────────────────────────────────────────────────────────────────
+
+# def build_json(
+#     csv_path: str,
+#     out_path: str = None,
+#     indent:   int = 2,
+# ) -> list:
+#     """
+#     Read a completed CSV and return a list of document dicts,
+#     one per unique source_image.
+
+#     Parameters
+#     ----------
+#     csv_path : path to the CSV (all columns filled including transcription)
+#     out_path : if given, write the JSON array to this file
+#     indent   : JSON indentation (default 2)
+
+#     Returns
+#     -------
+#     list[dict]  one dict per source image
+#     """
+#     with open(csv_path, newline="", encoding="utf-8") as f:
+#         rows = list(csv.DictReader(f))
+
+#     # preserve original page order
+#     seen   = []
+#     images = []
+#     for r in rows:
+#         si = r.get("source_image", "")
+#         if si and si not in seen:
+#             seen.append(si)
+#             images.append(si)
+
+#     documents = []
+#     for source_image in images:
+#         image_rows = _rows_for_image(rows, source_image)
+#         doc        = _build_document(source_image, image_rows)
+#         documents.append(doc)
+#         # print(f"  built doc: {source_image}  "
+#         #     #   f"eq={len(doc['equations'])}  "
+#         #       f"code={len(doc['code'])}  "
+#         #       f"fig={len(doc['figures'])}  "
+#         #       f"text_len={len(doc['text'])}")
+
+#     if out_path:
+#         os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+#         with open(out_path, "w", encoding="utf-8") as f:
+#             json.dump(documents, f, indent=indent, ensure_ascii=False)
+#         print(f"  JSON saved → {out_path}")
+
+#     return documents
+def _build_document(source_image: str, rows: list) -> str:
+    """
+    Assemble one document as plain text with everything inline.
+    Diagrams appear as [Figure: caption] inline.
     """
     text_parts = []
-    figures    = []
-
     fig_n = 0
 
     for row in rows:
         label         = (row.get("label") or row.get("cca_region_type") or "text").strip().lower()
         transcription = (row.get("transcription") or "").strip()
-        crop_path     = row.get("crop_path", "")
-        crop_filename = os.path.basename(crop_path)
 
-        # skip invalid rows
         if not transcription or transcription.startswith("ERROR"):
             continue
 
-        # ─────────────────────────────────────────────
-        # INLINE CONTENT
-        # ─────────────────────────────────────────────
         if label == "text":
             text_parts.append(transcription)
 
         elif label == "equation":
-            # equations inserted directly inline
             text_parts.append(transcription)
 
         elif label == "code":
-            # code inserted directly inline
             lang, content = _parse_code_block(transcription)
+            text_parts.append(f"```{lang}\n{content}\n```")
 
-            # preserve markdown fencing
-            inline_code = f"```{lang}\n{content}\n```"
-            text_parts.append(inline_code)
-
-        # ─────────────────────────────────────────────
-        # EXTERNAL FIGURES
-        # ─────────────────────────────────────────────
         elif label in ("diagram", "figure", "table"):
             fig_n += 1
-            fig_id = f"FIG_{fig_n}"
-
-            figures.append({
-                "id":       fig_id,
-                "filename": crop_filename,
-                "caption":  transcription,
-            })
-
-            # placeholder remains in text
-            text_parts.append(f"[{fig_id}]")
+            text_parts.append(f"[{transcription}]")
 
         else:
-            # unknown labels treated as text
             text_parts.append(transcription)
 
-    return {
-        "source_image": source_image,
-        "text": "\n\n".join(text_parts),
-        "figures": figures,
-    }
-# ─────────────────────────────────────────────────────────────────────────────
-# Public entry point
-# ─────────────────────────────────────────────────────────────────────────────
+    return "\n\n".join(text_parts)
 
-def build_json(
-    csv_path: str,
-    out_path: str = None,
-    indent:   int = 2,
-) -> list:
-    """
-    Read a completed CSV and return a list of document dicts,
-    one per unique source_image.
 
-    Parameters
-    ----------
-    csv_path : path to the CSV (all columns filled including transcription)
-    out_path : if given, write the JSON array to this file
-    indent   : JSON indentation (default 2)
-
-    Returns
-    -------
-    list[dict]  one dict per source image
-    """
+def build_txt(csv_path: str, out_path: str = None) -> list:
     with open(csv_path, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
 
-    # preserve original page order
-    seen   = []
-    images = []
+    seen, images = [], []
     for r in rows:
         si = r.get("source_image", "")
         if si and si not in seen:
@@ -240,19 +304,17 @@ def build_json(
     documents = []
     for source_image in images:
         image_rows = _rows_for_image(rows, source_image)
-        doc        = _build_document(source_image, image_rows)
-        documents.append(doc)
-        # print(f"  built doc: {source_image}  "
-        #     #   f"eq={len(doc['equations'])}  "
-        #       f"code={len(doc['code'])}  "
-        #       f"fig={len(doc['figures'])}  "
-        #       f"text_len={len(doc['text'])}")
+        text       = _build_document(source_image, image_rows)
+        documents.append({"source_image": source_image, "text": text})
 
     if out_path:
         os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(documents, f, indent=indent, ensure_ascii=False)
-        print(f"  JSON saved → {out_path}")
+            for doc in documents:
+                # f.write(f"=== {doc['source_image']} ===\n\n")
+                f.write(doc["text"])
+                f.write("\n\n")
+        print(f"  TXT saved → {out_path}")
 
     return documents
 

@@ -1,0 +1,144 @@
+by combining semantics-aware segmentation with the Owen value, enabling accurate, context-aware attributions. Unlike rigid axis-aligned segmentation, O-Shap dynamically adapts to image semantics, enhancing both precision and efficiency.
+
+that some of these axioms become ill-suited when applied to image data, motivating their reformulation.
+
+Reformulating Axioms for Image Data: Oven Value
+
+III
+
+METHODS
+
+While the Shapley value offers a theoretically sound attribu
+
+Notations and Shapley Value-Based XAI Method
+
+"tion method under its standard axioms, two of these, Symmetry and Dummy, are fundamentally misaligned with image data"
+
+We denote the machine learning model under explanation as f(.), and the input feature set by N = {1, ...., i, ...., N}, where |N| represents the total number of features. For vision
+
+In such settings, the model output and CNN-based models.
+
+depends not only on individual feature values but also on their
+
+$$f(x) \text{ is typically the backbone of image classification, the backbone of } f(x);$$
+
+spatial arrangement and interactions within local neighboring
+pixels. As we argue below, these characteristics violate the
+characteristics.
+
+a convolutional neural network (CNN), due to its strong inductive biases for spatial locality, weight sharing, and
+
+assumptions underlying the axioms Symmetry and Dummy, thereby motivating a principled reformulation of them tailored
+
+$\mathcal{E}$
+
+to image data.
+
+$$x_i$$
+
+Shapley value-based XAI methods assign an importance
+
+$$In Proposition █, the symmetry axiom assumes that if two$$
+
+features yield equal marginal contributions across all sheets
+
+$$\sum_{i=1}^n x_i$$
+
+entering is marginal effect across all possible feature subsets
+
+then they should receive equal attribution. However, in CNN
+
+based models of vision tasks, the contribution of a pixel depends
+
+$$\Gamma$$
+
+$$ \left| N - 1 \right| $$
+
+$$f(...)$$
+
+on its spatial location and its interaction with neighboring pixels
+
+$$ \varphi_i = \sum_{\mathcal{S} \subseteq \mathbb{N} \setminus \{i\}} \left( \frac{1}{|\mathcal{S}|} \int_{s \in \mathcal{S}} f_{SU(1)}(s_{U(1)}) - f_{SU(1)}(s_{S}) \right) $$
+(1)
+where $S \subseteq \mathbb{N} \setminus \{i\}$ ranges over all subsets of $N$ excluding $i$, and
+
+through local receptive fields. Even if two pixels ' and 'j' are
+
+visually or statistically similar, they may arrive different filters
+
+due to positional differences, resulting in asymmetric marginal
+
+the term (f_s(S_i)(x_s(i)) - f_s(x_s)) represents the marginal contribution of feature i when added to the subset S [13]. The weighting factor (1/N) ((N-1)/|S|) ensures a fair averaging over all subset sizes. In Eq. (1), x_s denotes a perturbed version of the input image x, where features (pixels) in subset S are retained
+
+f(xsu{i}) = f(xsu{j})
+for all S ⊆ N \{(i,j)\} rarely holds in image-based models,
+rendering the symmetry axiom inapplicable in practice.
+
+zero marginal contribution in all contexts must receive zero attribution, i.e., f(x_S∪{i}) = f(x_S), ∀S ⊆ N \ {i} → φ_i = 0. However, in CNN-based models, this statement can be violated due to the structure of convolutional kernels, which aggregate information across local receptive fields. Let G ⊆ N
+
+and the rest are replaced with baseline values, such as zeros or dataset means [ ]
+
+$$ \frac{d^2 y}{dx^2} + y = 0 $$
+
+$$ \frac{1}{2} $$
+
+f(x_s u(i)) =
+f(x_s), ∀S ⊆ G \ {i} because the output of the convolutional filter remains stable as long as the remaining pixels in G
+
+properties, also referred to as axioms, form the theoretical
+
+foundation of Shapley-based explanations. We formally state
+
+them below.
+
+That is, pixel ’s influence is entirely absorbed by its neighbors within the receptive field. Thus, although
+
+Proposition 1 (Axiomatic Characterization of the Shapley
+
+$$x \in \mathcal{X} = \left\{x_1, \dots, x_i, \dots \right\} \mathcal{N} = \left\{1, \dots, i, \dots, 1 \right\}$$
+
+no individual pixel in G has marginal effect, the collective
+
+presence of the group is necessary to activate the corresponding
+
+$$\phi = \frac{\partial R}{\partial f}$$
+
+$$ \text{The dummy axiom therefore incorrectly} $$
+
+is the unique attribution satisfying the following four axioms.
+
+$$ \varphi_i \approx 0 \text{ for all } i \in G, \text{ fulfilling to reflect the non-additive} $$
+
+∑ feature attributions equals the
+
+group-level semantics encoded by convolutional kernels.
+
+total model difference: Σᵢ φᵢ = f(x) - f(x₀).
+• (Linearity): For any two models f₁, f₂ : X → R, the
+ Shapley value of their sum equals the sum of their
+ individual Shapley values: φᵢ¹ + f₂ = φᵢ¹ + φᵢ² , vi ∈ N.
+
+structural limitation motivates a reformulation of the dummy
+axiom to operate at the group level, consistent with the way
+CNNs pool and represent information.
+
+To address the mismatch between the standard Stapley
+
+$$ (Symmetry): \quad \text{If two features } i \text{ and } j \text{ contribute } $$
+
+axioms and structured feature domains such as images, we
+reformulate the problematic Symmetry and Dummy axioms in
+
+f(x ⊆ u ∩ v) = f(x ⊆ u ∩ v), for all 
+S ⊆ N(\{\{i, j\}\}), they receive equal attribution: φᵢ = φⱼ
+
+$$\mathcal{G} = \{G_1, \dots, G_k, \dots, G_K\} \text{ denote a fixed hierarchical partition over the feature set } N, i.e., N = \bigcup_{k=1}^K G_k \text{ and } G_k \cap G_k' = \emptyset, k \neq k'$$
+
+f(x_S∪{i}) = f(x_S) for all S ⊆ N \ {i}, then it receives zero attribution: φ_i = 0.
+
+Eq. 1: $$The \text{axioms} \text{in} \text{Proposition} \text{[1]} \text{measure} \text{that} \text{the} \text{Shapley} \text{value} \text{in} \text{Eq.} \text{[1]} \text{fairly} \text{distributes} \text{the} \text{model} \text{output} \text{among} \text{input} \text{features} \text{by} \text{accounting} \text{for} \text{all} \text{possible} \text{interactions.}$$
+
+of Features (e.g., a speckled or semantic segment). We retain
+
+the original forms of the Efficiency and Linearity axioms, but replace the remaining two as follows:
+

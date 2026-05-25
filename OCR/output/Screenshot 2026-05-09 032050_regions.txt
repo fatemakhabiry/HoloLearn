@@ -1,0 +1,33 @@
+=== ..\..\4th comp\2nd sem\Computer vision\project\test\Screenshot 2026-05-09 032050.png ===
+
+$$
+\begin{pmatrix}
+    0 & -1 \\
+    1 & 0
+\end{pmatrix}
+$$
+
+$$\Phi(t) = e^{At} = \int [sI - A]^{-1} dt$$
+
+$$ \Phi(0) = I $$
+
+$$ \phi^{-1}(t) = \phi(-t) $$
+
+$$ \phi(t_1 + t_2) = \phi(t_1) \phi(t_2) = \phi(t_1) \otimes \phi(t_2) $$
+
+$$ \tau \epsilon \alpha(\tau) \text{ is done simply by taking wires.} $$
+
+zero-input
+
+$$x(t) = L^{-1}\left\{s(s-a)^{-1} (x(0) + Bu(s))\right\}$$
+
+zero-state
+
+response
+
+response
+
+$$x(t) = L(\{\phi(S)\})x(t) + L(\{\phi(S)U(S)\})x(t)$$
+
+$$ \begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix} $$
+

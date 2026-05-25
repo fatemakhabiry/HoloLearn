@@ -95,8 +95,8 @@ def run_cca_pipeline(image_path, output_dir="output/crops",
     print("[5/6] Region grouping...")
     regions = group_blobs_into_regions(
         blobs, font_size,
-        img_width=width,
-        img_height=height,
+        # img_width=width,
+        # img_height=height,
         h_gap_factor=h_gap_factor,
         line_v_factor=line_v_factor,
         para_v_factor=None,
@@ -139,22 +139,21 @@ def run_vlm_stage(csv_path, api_key, model="gpt-4o", base_url=None):
     )
 
 
-def run_json_stage(csv_path, output_dir):
+def run_txt_stage(csv_path, output_dir):
     """
-    Stage 9: assemble completed CSV into structured JSON.
+    Stage 9: assemble completed CSV into plain text output.
 
-    Saves <output_dir>/<csv_stem>.json and returns (docs, json_path).
+    Saves <output_dir>/<csv_stem>.txt and returns (docs, txt_path).
     """
-    from csv_to_json import build_json
-    print("[9] Assembling JSON output...")
-    json_path = os.path.join(
+    from OCR.csv_to_txt import build_txt
+    print("[9] Assembling TXT output...")
+    txt_path = os.path.join(
         output_dir,
-        os.path.splitext(os.path.basename(csv_path))[0] + ".json"
+        os.path.splitext(os.path.basename(csv_path))[0] + ".txt"
     )
-    docs = build_json(csv_path, out_path=json_path)
-    print(f"    → {json_path}")
-    return docs, json_path
-
+    docs = build_txt(csv_path, out_path=txt_path)
+    print(f"    → {txt_path}")
+    return docs, txt_path
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Convenience: run everything end-to-end
@@ -173,9 +172,9 @@ def run_full_pipeline(image_path, model_path, api_key,
     )
     csv_path = run_classifier_stage(csv_path, model_path, classifier_device)
     csv_path = run_vlm_stage(csv_path, api_key, vlm_model, vlm_base_url)
-    docs, json_path = run_json_stage(csv_path, output_dir)
+    docs, txt_path = run_txt_stage(csv_path, output_dir)
 
-    # ── Delete crop files now that JSON is saved ──────────────────────────
+    # ── Delete crop files now that TXT is saved ──────────────────────────
     deleted = 0
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
@@ -197,26 +196,26 @@ def run_full_pipeline(image_path, model_path, api_key,
     print(f"\n{'='*60}")
     print(f"Done.")
     print(f"  CSV      → {csv_path}")
-    print(f"  JSON     → {json_path}")
+    print(f"  TXT      → {txt_path}")
     print(f"  docs     → {len(docs)} document(s)")
     print(f"  deleted  → {deleted} crop file(s)")
-    return docs, json_path, csv_path
+    return docs, txt_path, csv_path
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Entry point
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    image_path        = "images/img5.png"
-    model_path        = "model/modelv3.pth"
-    output_dir        = "outputv3/"
+    image_path        = r"D:\4th comp\2nd sem\Computer vision\project\test\test3.jpeg"
+    model_path        = "model/modelv4.pth"
+    output_dir        = "output"
     classifier_device = "cpu"
     api_key           = "ollama"
    # "gemma3:4b" "qwen2.5vl:3b" "moondream" "MedAIBase/PaddleOCR-VL:0.9b" "qwen3-vl:2b"
-    vlm_model         ="gemma3:4b" 
+    vlm_model         ="gemma3:4b"
     vlm_base_url      = "http://localhost:11434/v1"
 
-    docs, json_path, csv_path = run_full_pipeline(
+    docs, txt_path, csv_path = run_full_pipeline(
         image_path        = image_path,
         model_path        = model_path,
         output_dir        = output_dir,

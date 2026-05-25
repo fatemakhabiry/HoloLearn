@@ -41,12 +41,14 @@ LABEL_MAP = {
 
 def build_model(n_classes=5, dropout=0.3):
     """Exactly the same architecture you used during training."""
-    model = models.mobilenet_v3_small(weights="IMAGENET1K_V1")
+    # model = models.mobilenet_v3_small(weights="IMAGENET1K_V1")
+    model = models.efficientnet_b0(weights="IMAGENET1K_V1")
 
     for param in model.features.parameters():
         param.requires_grad = False
 
-    in_features = model.classifier[0].in_features
+    # in_features = model.classifier[0].in_features
+    in_features = model.classifier[1].in_features
     model.classifier = nn.Sequential(
         nn.Linear(in_features, 256),
         nn.Hardswish(),

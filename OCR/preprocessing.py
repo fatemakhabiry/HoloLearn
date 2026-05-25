@@ -408,12 +408,26 @@ def _resize_if_needed(img, max_dim):
     return img.resize((new_w, new_h), Image.LANCZOS), True
 
 
+def _check_and_fix_polarity(binary):
+    """
+    If more than 60% of pixels are ink (=1), the image has a dark background.
+    Invert so that ink always = minority class (actual glyphs).
+    """
+    h, w = len(binary), len(binary[0])
+    total = h * w
+    ink_count = sum(binary[r][c] for r in range(h) for c in range(w))
+    ink_ratio = ink_count / total
+    if ink_ratio > 0.60:
+        print(f"      polarity inverted (ink_ratio={ink_ratio:.2%})")
+        return [[1 - binary[r][c] for c in range(w)] for r in range(h)], True
+    return binary, False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # PUBLIC ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def preprocess(path, gaussian_noise=False, negative_noise=False,
-               unconnected=False, fix_skew=True, tile_size=None, max_dim=2000):
+               unconnected=False, fix_skew=False, tile_size=None, max_dim=2000):
     """
     Run the full preprocessing pipeline on a single image.
 
@@ -473,6 +487,7 @@ def preprocess(path, gaussian_noise=False, negative_noise=False,
     print(f"      tile_size={effective_tile}px  "
           f"({'auto' if tile_size is None else 'caller-set'})")
     binary, global_threshold = _adaptive_binarize(gray, tile_size=effective_tile)
+    binary, _ = _check_and_fix_polarity(binary)
 
     # Step 7: Optional morphological cleanup
     if negative_noise:
