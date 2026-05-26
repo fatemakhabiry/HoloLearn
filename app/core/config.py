@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     RAG_TIMEOUT_INGEST  : int           = 600   # 10 min — ingest is slow
     RAG_TIMEOUT_QUERY   : int           = 60    # 1 min — query is fast
 
+    # TTS Service (Chatterbox)
+    TTS_ENV_PYTHON       : Optional[str] = None   # path to chatterbox venv python
+    TTS_SCRIPT           : Optional[str] = None   # path to educational_tts_pipeline.py
+    TTS_VOICE_CACHE_DIR  : Optional[str] = None   # voice_cache folder
+    TTS_PRESET           : str           = "engaging_narration"
+    TTS_AUDIO_DIR        : Optional[str] = None   # output audio directory
+
     # Storage
     VOICE_UPLOADS_DIR   : Optional[str] = None
     TTS_AUDIO_DIR       : Optional[str] = None
