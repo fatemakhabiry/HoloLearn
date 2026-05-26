@@ -67,13 +67,13 @@ FALLBACK_PROMPT = (
     "  diagram  → plain-English description\n"
     "if it contains mixed items (e.g. text + eqn, digram +eqn), label with the dominant type. and transcript each with its format"
     "if the image is blank or unreadable, respond with LABEL:text and an empty transcription."
-    "Output only LABEL line + content. No commentary. "
+    "Output only LABEL line + content. No commentary Don't hallucinate and don't make things up. "
 )
 
 # Tight prompts — plain output, no label needed (CNN already classified)
 LABEL_PROMPTS = {
     "text": (
-        "You are a precise OCR engine. "
+        "You are a precise OCR engine.you Don't hallucinate and don't make things up. "
         "Transcribe every word in this image exactly as written. "
         "Output plain text only — no markdown, no commentary, no extra formatting. "
         "Preserve line breaks where they are meaningful. "
@@ -218,7 +218,7 @@ def _call_vlm(client, model: str, prompt: str, image_path: str, retries: int = 3
         try:
             response = client.chat.completions.create(
                 model=model,
-                temperature=0.001,
+                temperature=0,
                 max_tokens=2048,
                 messages=[{
                     "role": "user",
