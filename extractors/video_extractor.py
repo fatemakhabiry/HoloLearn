@@ -353,7 +353,7 @@ class VideoExtractor:
         # ── Import pipeline stages ────────────────────────────────────────────
         # OCR_PIPELINE_DIR was injected into sys.path in __init__
         try:
-            from pipeline import (
+            from OCR.pipeline import (
                 run_cca_pipeline,
                 run_classifier_stage,
                 run_vlm_stage,
@@ -1206,3 +1206,6 @@ if __name__ == "__main__":
             print(f"\n✗ Failed: {result['error']}")
     else:
         print("No file selected.")
+
+
+        

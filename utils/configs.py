@@ -236,14 +236,14 @@ TEMP_DIR.mkdir(exist_ok=True)
 # Set OCR_PIPELINE_DIR in .env or update the default below to match your machine
 OCR_PIPELINE_DIR: str = os.getenv(
     "OCR_PIPELINE_DIR",
-    r"D:\HoloLearn-AI\OCR"   # default — override in .env if different
+    r"../OCR"   # default — override in .env if different
 )
 
 # CNN classifier model file (.pth)
 # Set CNN_MODEL_PATH in .env or update the default below
 CNN_MODEL_PATH: str = os.getenv(
     "CNN_MODEL_PATH",
-    r"D:\HoloLearn-AI\OCR\model\modelv3.pth"
+    r"../OCR/model/modelv4.pth"
 )
 
 # Device for CNN inference: "cuda" for GPU, "cpu" for CPU-only machines
@@ -251,7 +251,7 @@ CLASSIFIER_DEVICE: str = os.getenv("CLASSIFIER_DEVICE", "cpu")
 
 # VLM transcription model (runs via Ollama locally)
 # Examples: "qwen2.5vl:3b", "gemma3:4b", "moondream"
-VLM_MODEL: str = os.getenv("VLM_MODEL", "qwen2.5vl:3b")
+VLM_MODEL: str = os.getenv("VLM_MODEL", "gemma3:4b")
 
 # Ollama base URL — change port if you configured Ollama differently
 VLM_BASE_URL: str = os.getenv("VLM_BASE_URL", "http://localhost:11434/v1")
