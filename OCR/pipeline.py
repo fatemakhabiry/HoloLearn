@@ -27,12 +27,12 @@ for _p in (_HERE, _ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from blob_detector       import BlobDocumentTypeDetector
-from region_grouping     import group_blobs_into_regions
-from preprocessing       import preprocess
-from blob_analysis       import run_blob_analysis
-from frame_line_detector import filter_line_blobs
-from crop_extractor      import extract_crops
+from .blob_detector       import BlobDocumentTypeDetector
+from .region_grouping     import group_blobs_into_regions
+from .preprocessing       import preprocess
+from .blob_analysis       import run_blob_analysis
+from .frame_line_detector import filter_line_blobs
+from .crop_extractor      import extract_crops
 
 
 def _detect_density(blobs, font_size, width, height, debug):

@@ -37,7 +37,7 @@ Thresholds (tuned at 300 DPI)
   blobs_per_line         < 12              >= 25
 """
 
-from base import BaseDocumentTypeDetector, DocumentTypeResult
+from .base import BaseDocumentTypeDetector, DocumentTypeResult
 
 
 class BlobDocumentTypeDetector(BaseDocumentTypeDetector):
