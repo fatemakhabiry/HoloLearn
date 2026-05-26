@@ -14,7 +14,7 @@ from pydantic import BaseModel, field_validator
 from sqlmodel import Session, select
 import httpx
 
-from app.api.deps import get_current_teacher
+from app.api.deps import get_current_teacher ,get_current_student
 from app.core.config import settings
 from app.core.database import get_session, engine
 from app.models.user import User
@@ -22,6 +22,7 @@ from app.models.lecture import Lecture, LectureStatus, LectureType
 from app.models.resource import Resource, ResourceType
 from app.models.agent_session import AgentSession, AgentStatus
 from app.models.lecture_version import LectureVersion, VersionStatus
+from app.models.enrollment import Enrollment
 from app.models.generated_content import GeneratedContent, ContentType
 from app.services.agent_client import start_agent, resume_agent, get_agent_state, extract_resource
 from app.services.agent_service import sync_state_to_db  # FIX — lives in service layer, not here
@@ -907,6 +908,39 @@ async def get_content(
     }
 
 
+@router.get("/lecture/{lecture_id}/content")
+async def get_content_by_lecture(
+    lecture_id: int,
+    db:         Session = Depends(get_session),
+    teacher:    User    = Depends(get_current_teacher),
+):
+    """Return all generated content for a lecture by lecture_id."""
+    lecture = db.get(Lecture, lecture_id)
+    if not lecture or lecture.teacher_id != teacher.user_id:
+        raise HTTPException(404, "Lecture not belong to you")
+
+    content_rows = db.exec(
+        select(GeneratedContent).where(
+            GeneratedContent.lecture_id == lecture_id
+        )
+    ).all()
+    if not content_rows:
+        raise HTTPException(425, "Content not ready yet")
+
+    return {
+        "lecture_id": lecture_id,
+        "content": [
+            {
+                "type":         row.content_type,
+                "file_path":    row.file_path,
+                "answers_path": row.answers_path,
+                "extra_path":   row.extra_path,
+            }
+            for row in content_rows
+        ],
+    }
+
+
 @router.get("/{session_id}/script")
 async def get_script_path(
     session_id: int,
@@ -1047,6 +1081,99 @@ async def download_content_file(
         filename   = filename,
     )
 
+@router.get("/lecture/{lecture_id}/content/{content_type}/download")
+async def download_content_file_by_lecture(
+    lecture_id:   int,
+    content_type: str,
+    file_key:     str = "primary",  # primary | answers | extra
+    db:           Session = Depends(get_session),
+    student:      User    = Depends(get_current_student),
+):
+    """
+    Stream a generated content file to a student by lecture_id.
+
+    content_type: script | worksheet | quiz | summary | knowledge_graph
+    file_key:     primary (default) | answers | extra
+    """
+    # Fetch lecture
+    lecture = db.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(404, "Lecture not found")
+
+    # Verify student is enrolled in the course
+    enrollment = db.exec(
+        select(Enrollment).where(
+            Enrollment.course_code == lecture.course_code,
+            Enrollment.student_id == student.user_id,
+        )
+    ).first()
+    if not enrollment:
+        raise HTTPException(403, "You are not enrolled in this course")
+
+    # Validate content_type
+    try:
+        ct = ContentType(content_type.lower())
+    except ValueError:
+        raise HTTPException(
+            400,
+            f"Invalid content_type '{content_type}'. "
+            f"Allowed: script, worksheet, quiz, summary, knowledge_graph"
+        )
+
+    # Find the content row
+    content_row = db.exec(
+        select(GeneratedContent).where(
+            GeneratedContent.lecture_id   == lecture_id,
+            GeneratedContent.content_type == ct,
+        )
+    ).first()
+
+    if not content_row:
+        raise HTTPException(404, f"{content_type} not generated yet")
+
+    # Select which file to serve
+    if file_key == "primary":
+        file_path = content_row.file_path
+    elif file_key == "answers":
+        file_path = content_row.answers_path
+        if not file_path:
+            raise HTTPException(404, f"No answers file for {content_type}")
+    elif file_key == "extra":
+        file_path = content_row.extra_path
+        if not file_path:
+            raise HTTPException(404, f"No extra file for {content_type}")
+    else:
+        raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
+
+    # Verify file exists on disk
+    path = Path(file_path)
+    if not path.exists():
+        raise HTTPException(404, f"File not found on disk: {path}")
+
+    # Determine media type from extension
+    ext = path.suffix.lower()
+    media_type_map = {
+        ".pdf":  "application/pdf",
+        ".txt":  "text/plain",
+        ".html": "text/html",
+        ".json": "application/json",
+        ".mmd":  "text/plain",
+    }
+    media_type = media_type_map.get(ext, "application/octet-stream")
+
+    # Build a clean filename
+    filename = f"{lecture.course_code}_{content_type}"
+    if file_key == "answers":
+        filename += "_answers"
+    elif file_key == "extra":
+        filename += "_extra"
+    filename += ext
+
+    return FileResponse(
+        path       = str(path),
+        media_type = media_type,
+        filename   = filename,
+    )
 
 @router.get("/{session_id}/feedback-suggestions")
 async def get_feedback_suggestions(
