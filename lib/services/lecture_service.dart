@@ -412,8 +412,8 @@ class LectureService {
       final fileSize = await file.length();
       print('📦 File size: ${fileSize / 1024} KB');
 
-      if (fileSize > 10 * 1024 * 1024) {
-        throw Exception('File too large. Maximum 10MB.');
+      if (fileSize > 500 * 1024 * 1024) {
+        throw Exception('File too large. Maximum 500MB.');
       }
 
       FormData formData = FormData.fromMap({

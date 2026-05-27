@@ -560,7 +560,7 @@ class LectureProcessingModel {
       case 'failed':
         return 'Failed';
       default:
-        return 'Unknown';
+        return 'Extraction';
     }
   }
 

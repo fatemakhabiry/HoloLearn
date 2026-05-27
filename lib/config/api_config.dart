@@ -93,7 +93,7 @@ class ApiConfig {
   static const Duration tokenExpiry = Duration(minutes: 30);
 
   // ===== API Timeouts =====
-  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration connectionTimeout = Duration(minutes: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
   // ===== Helper Methods =====
