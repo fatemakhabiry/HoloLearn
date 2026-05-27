@@ -68,8 +68,13 @@ class _ResearchAgentScreenState extends State<ResearchAgentScreen> {
       if (!mounted) return;
       setState(() {
         _isSearching = false;
-        _errorText = e.toString().replaceFirst('Exception: ', '');
       });
+          CustomErrorHandler.show(
+          context,
+          message: e.toString().replaceFirst('Exception: ', ''),
+          type: ErrorType.fail,
+        );
+        await Future.delayed(const Duration(seconds: 5));
     }
   }
 

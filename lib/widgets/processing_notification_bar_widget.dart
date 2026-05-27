@@ -37,21 +37,21 @@ class ProcessingNotificationBar extends StatelessWidget {
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: AppStyles.spacingM),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppStyles.spacingL,
+            horizontal: AppStyles.spacingM,
             vertical: AppStyles.spacingS,
           ),
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
-            border: Border.all(color: barColor),
-            borderRadius: BorderRadius.circular(AppStyles.radiusM),
+            border: Border.all(color: barColor,width: 1.5),
+            borderRadius: BorderRadius.circular(AppStyles.radiusPill),
           ),
           child: Row(
             children: [
               // ── Status icon ──────────────────────────────────────
               if (isDone || isAwaiting)
-                Icon(Icons.check_sharp, color: barColor, size: 16)
+                Icon(Icons.check_sharp, color: barColor, size: 24)
               else if (isFailed)
-                Icon(Icons.error_outline, color: barColor, size: 16)
+                Icon(Icons.error_outline, color: barColor, size: 24)
               else
                 SizedBox(
                   width: 16,

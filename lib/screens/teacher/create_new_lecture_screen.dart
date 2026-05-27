@@ -116,7 +116,9 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     }
 
     final hasFile = _selectedFiles.isNotEmpty;
-    final hasUrl = _lectureUrls.any((url) => url.trim().isNotEmpty);
+    final hasUrl = _urlControllers.any(
+      (controller) => controller.text.trim().isNotEmpty,
+    );
 
     if (selectedInputType == 'prepared' && !hasFile) {
       _showError('Please upload a file for the prepared lecture.');
@@ -178,7 +180,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     //       : AppRoutes.lectureSetup,
     // );
   }
- 
+
   void _handleGeneratedFlow() {
     final resourceProvider = Provider.of<ResourceStateProvider>(
       context,
@@ -343,10 +345,17 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
         'png',
         'gif',
         'webp',
+        'mp4',
+        'mov',
+        'avi',
+        'mkv',
+        'webm',
+        'mpeg',
       ],
-      isRequired: true,
+      isRequired: selectedInputType == 'prepared',
       headerText: 'DRAG & DROP OR BROWSE FILES',
-      subheaderText: 'PDF, PPTX, PPT, JPG, JPEG, PNG, GIF, WEBP',
+      subheaderText:
+          'PDF, PPTX, PPT, JPG, JPEG, PNG, GIF, WEBP, MP4, MOV, AVI, MKV, WEBM, MPEG',
       onFilesSelected: _onFilesSelected,
       allowMultiple: allowMultiple,
     );
@@ -405,7 +414,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
               fontWeight: AppFonts.bold,
               fontSize: AppFonts.fontSizeXS,
               letterSpacing: 1.2,
-              color: context.textPrimary
+              color: context.textPrimary,
             ),
           ),
           const SizedBox(height: AppStyles.spacingM),
