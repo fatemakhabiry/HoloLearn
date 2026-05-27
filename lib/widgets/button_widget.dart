@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hololearn/constants/app_themes.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 
@@ -227,7 +228,7 @@ class CustomDropdown extends StatelessWidget {
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item, style: AppStyles.bodyMedium.copyWith(color: textColor)),
+              child: Text(item, style: AppStyles.bodyMedium.copyWith(color: context.textPrimary)),
             );
           }).toList(),
           onChanged: enabled ? onChanged : null,

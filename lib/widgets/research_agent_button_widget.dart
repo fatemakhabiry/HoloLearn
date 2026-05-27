@@ -6,7 +6,6 @@ import '../constants/constants.dart';
 
 /// Animated pill button that cycles through phrases with a typewriter effect.
 /// Tap navigates to the Research Agent screen.
-///
 /// Usage:
 ///   ResearchAgentButton(onTap: () => Navigator.pushNamed(context, AppRoutes.researchAgent))
 class ResearchAgentButton extends StatefulWidget {

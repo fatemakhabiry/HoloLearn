@@ -144,17 +144,12 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                     if (index == 0) {
                       return Column(
                         children: [
-                          CustomButton(
-                            text: 'Research Agent',
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.researchAgent,
-                              );
-                            },
-                            buttonType: ButtonType.secondary,
-                            fullWidth: true,
+                        ResearchAgentButton(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.researchAgent,
                           ),
+                        ),
                           const SizedBox(height: AppStyles.spacingL),
                         ],
                       );
