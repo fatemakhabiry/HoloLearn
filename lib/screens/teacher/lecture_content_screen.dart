@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/schedule_models.dart';
 import '../../services/local_file_service.dart';
-import '../../utils/storage_helper.dart';
+// import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../constants/constants.dart';
 import '../../models/lecture_models.dart';
@@ -23,13 +23,14 @@ class LectureContentScreen extends StatefulWidget {
 }
 
 class _LectureContentScreenState extends State<LectureContentScreen> {
-  int _sessionId = 0; // ← no longer a getter, now a real field
+  // int _sessionId = 0; // ← no longer a getter, now a real field
 
   int get _lectureId => widget.lecture.lectureId ?? 0;
   // Which content types are available for this lecture
   List<GenContentType> get _contentTypes {
     final allTypes = [
       GenContentType.lecture,
+      GenContentType.summary,
       GenContentType.script,
       GenContentType.worksheet,
       GenContentType.quiz,
@@ -53,18 +54,19 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSessionId();
+    // _loadSessionId();
+    _checkCache();
   }
 
-  Future<void> _loadSessionId() async {
-    final sessionId = await StorageHelper.getSessionIdForLecture(_lectureId);
-    if (sessionId == null) {
-      _showError('Session not found for this lecture.');
-      return;
-    }
-    setState(() => _sessionId = sessionId);
-    _checkCache(); // ← move this here, after sessionId is loaded
-  }
+  // Future<void> _loadSessionId() async {
+  //   final sessionId = await StorageHelper.getSessionIdForLecture(_lectureId);
+  //   if (sessionId == null) {
+  //     _showError('Session not found for this lecture.');
+  //     return;
+  //   }
+  //   setState(() => _sessionId = sessionId);
+  //   _checkCache(); // ← move this here, after sessionId is loaded
+  // }
 
   /// Check which files are already on disk
   Future<void> _checkCache() async {
@@ -92,15 +94,16 @@ class _LectureContentScreenState extends State<LectureContentScreen> {
       // ── Call your existing service method ──────────────────────────────
       final bytes;
       if (type == GenContentType.lecture) {
-         bytes= await LectureService.getLecturePdfBytes(_sessionId, appState);
+         bytes= await LectureService.getLecturePdfBytes(_lectureId, appState);
       } else {
          bytes = await LectureService.getLectureGeneratedResourceBytes(
-          _sessionId,
+          _lectureId,
           type,
           appState,
         );
         // ───────────────────────────────────────────────────────────────────
       }
+
       final file = await LocalFileService.save(_lectureId, type, bytes);
 
       if (mounted) setState(() => _cached[type] = true);

@@ -4,6 +4,9 @@ import 'package:http/http.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/lecture_state_provider.dart';
+import '../services/biometric_service.dart';
+import '../state/processing_notifier.dart';
 import '../widgets/widgets.dart';
 import '../routes/app_routes.dart';
 import '../constants/constants.dart';
@@ -58,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
 
       setState(() {
         _emailController.text = appState.email;
-        _rememberMe = appState.rememberMe;
+        // _rememberMe = appState.rememberMe;
         if (savedPassword != null && savedPassword.isNotEmpty) {
           _passwordController.text = savedPassword;
         }
@@ -66,43 +69,118 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Future<void> _handleLogin() async {
+  //   setState(() {
+  //     is_loading = true;
+  //   });
+  //   try {
+  //     data = await AuthService.login(email: email!, password: password!);
+
+  //     // Set app state
+  //     final appState = Provider.of<AppStateProvider>(context, listen: false);
+  //     await appState.setEmail(data!['user']['email']);
+  //     await appState.setUserName(data!['user']['full_name']);
+  //     await appState.setUserRole(data!['user']['role']);
+  //     await appState.setAccessToken(data!['access_token']);
+  //     await appState.setRememberMe(_rememberMe);
+
+  //     // Save password securely so auto-login works on next app launch
+  //     if (_rememberMe) {
+  //       await StorageHelper.savePassword(password!);
+  //     } else {
+  //       // If user unchecked Remember Me, clear any previously saved password
+  //       await StorageHelper.savePassword('');
+  //     }
+
+  //     if (mounted) {
+  //       if (appState.userRole == 'teacher') {
+  //         Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
+  //       } else {
+  //         Navigator.pushReplacementNamed(context, AppRoutes.studentDashboard);
+  //       }
+  //     }
+  //   } on ClientException {
+  //     error_message = 'Cannot connect to server. Check internet or URL.';
+  //   } on SocketException {
+  //     error_message = 'No internet connection.';
+  //   } on TimeoutException {
+  //     error_message = 'Request timed out.';
+  //   } catch (e) {
+  //     error_message = e.toString().replaceFirst('Exception: ', '');
+  //   } finally {
+  //     if (error_message != null) {
+  //       CustomErrorHandler.show(
+  //         context,
+  //         message: error_message!,
+  //         type: ErrorType.fail,
+  //       );
+  //       error_message = null;
+  //     }
+  //     if (mounted) {
+  //       setState(() {
+  //         is_loading = false;
+  //       });
+  //     }
+  //   }
+  // }
   Future<void> _handleLogin() async {
     setState(() {
       is_loading = true;
     });
     try {
-      data = await AuthService.login(email: email!, password: password!);
+      final data = await AuthService.login(email: email!, password: password!);
 
-      // Set app state
       final appState = Provider.of<AppStateProvider>(context, listen: false);
-      await appState.setEmail(data!['user']['email']);
-      await appState.setUserName(data!['user']['full_name']);
-      await appState.setUserRole(data!['user']['role']);
-      await appState.setAccessToken(data!['access_token']);
-      await appState.setRememberMe(_rememberMe);
+      await appState.setUserData(
+        email: data['user']['email'],
+        userName: data['user']['full_name'],
+        role: data['user']['role'],
+        accessToken: data['access_token'],
+      );
+      final sessionId = data['user']['latest_session_id'];
 
-      // Save password securely so auto-login works on next app launch
-      if (_rememberMe) {
-        await StorageHelper.savePassword(password!);
-      } else {
-        // If user unchecked Remember Me, clear any previously saved password
-        await StorageHelper.savePassword('');
+      if (sessionId != null) {
+        await StorageHelper.saveOngoingSessionId(sessionId as int);
       }
 
-      // print('🔑 Access Token: ${appState.accessToken}');
-      // print('✅ Remember Me: $_rememberMe'); // NEW: Debug log
+      if (_rememberMe) {
+        await StorageHelper.savePassword(password!);
+        await StorageHelper.saveEmail(email!);
+        await StorageHelper.saveRememberMe(true);
 
-      // Show success message
+        // Silently enable biometrics if device supports it — no extra prompt
+        final bioAvailable = await BiometricService.isAvailable();
+        await StorageHelper.saveBiometricEnabled(bioAvailable);
+      } else {
+        await StorageHelper.savePassword('');
+        await StorageHelper.saveBiometricEnabled(false);
+      }
+
       if (mounted) {
-        // CustomErrorHandler.show(
-        //   context,
-        //   message: 'Login successful',
-        //   type: ErrorType.success,
-        // );
-        // Wait 3 seconds
-        // await Future.delayed(const Duration(seconds: 3));
-
         if (appState.userRole == 'teacher') {
+          final lectureState = Provider.of<LectureStateProvider>(
+            context,
+            listen: false,
+          );
+          final processingNotifier = Provider.of<ProcessingNotifier>(
+            context,
+            listen: false,
+          );
+
+          // Restore lecture state (including ongoingSessionId) from storage
+          await lectureState.init();
+
+          // If a session was in progress when the app was killed, resume polling
+          if (lectureState.hasOngoingSession) {
+            try {
+              await processingNotifier
+                  .resumeIfNeeded(appState)
+                  .timeout(const Duration(seconds: 3));
+            } catch (_) {
+              // If resuming fails (e.g. session expired), just continue to dashboard
+            }
+          }
+
           Navigator.pushReplacementNamed(context, AppRoutes.teacherDashboard);
         } else {
           Navigator.pushReplacementNamed(context, AppRoutes.studentDashboard);

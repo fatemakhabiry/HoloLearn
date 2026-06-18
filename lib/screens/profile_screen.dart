@@ -73,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.pop(context);
         final appState = Provider.of<AppStateProvider>(context, listen: false);
         appState.clearAuth();
+        // appState.setRememberMe(false);
         Navigator.pushNamed(context, AppRoutes.login);
       },
     );

@@ -193,7 +193,7 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
       //   appState,
       // );
       final bytes = await LectureService.getLecturePdfBytes(
-        lectureState.sessionId,
+        lectureState.lectureId,
         appState,
       );
 
@@ -232,7 +232,7 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
 
     try {
       final bytes = await LectureService.getLectureGeneratedResourceBytes(
-        lectureState.sessionId,
+        lectureState.lectureId,
         GenContentType.script,
         appState,
       );

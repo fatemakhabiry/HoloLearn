@@ -11,6 +11,7 @@ class LectureScheduleCard extends StatelessWidget {
   final String? timeRange;
   final String? status;
   final String? lectureType; // ← add
+  final String? coursecode; // ← add
   final String editButtonText;
   final String cancelButtonText;
   final VoidCallback? onEdit;
@@ -24,6 +25,7 @@ class LectureScheduleCard extends StatelessWidget {
     this.timeRange,
     this.status,
     this.lectureType, // ← add
+    this.coursecode, // ← add
     this.editButtonText = 'EDIT',
     this.cancelButtonText = 'CANCEL',
     this.onEdit,
@@ -31,9 +33,7 @@ class LectureScheduleCard extends StatelessWidget {
     this.onViewContent,
   });
 
-bool _hasContent() =>
-    onViewContent != null; // ← both types have content now
-
+  bool _hasContent() => onViewContent != null; // ← both types have content now
 
   @override
   Widget build(BuildContext context) {
@@ -50,20 +50,45 @@ bool _hasContent() =>
           // Lecture Title
           Text(
             lectureTitle,
-            style: AppStyles.bodyLarge.copyWith(fontWeight: AppFonts.bold,color: context.textPrimary),
+            style: AppStyles.bodyLarge.copyWith(
+              fontWeight: AppFonts.bold,
+              color: context.textPrimary,
+            ),
           ),
-          const SizedBox(height: AppStyles.spacingS),
+          const SizedBox(height: AppStyles.spacingXS),
+          if (date != null && date != '' && timeRange != null && timeRange != '') ...[
+            // Date and Time
+            Text(
+              '$date . $timeRange',
+              style: AppStyles.bodyMedium.copyWith(
+                color: context.textSecondary,
+              ),
+            ),
 
-          // Date and Time
-          Text(
-            '$date . $timeRange',
-            style: AppStyles.bodyMedium.copyWith(color:  context.textSecondary),
-          ),
-
-          const SizedBox(height: AppStyles.spacingL),
-
+            const SizedBox(height: AppStyles.spacingXS),
+          ],
+          if (status != null && status != '') ...[
+            // Date only (if time is not provided)
+            Text(
+              date!,
+              style: AppStyles.bodyMedium.copyWith(
+                color: context.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppStyles.spacingXS),
+          ],
           // Action Buttons
+          Text(
+            lectureType != null ? lectureType! : '',
+            style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
+          ),
+          const SizedBox(height: AppStyles.spacingXS),
 
+          Text(
+            coursecode != null ? coursecode! : '',
+            style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
+          ),
+          const SizedBox(height: AppStyles.spacingL),
           // Action Buttons
           Column(
             children: [
@@ -94,7 +119,7 @@ bool _hasContent() =>
                   text: 'VIEW CONTENT',
                   prefixIcon: Icon(
                     Icons.folder_open_outlined,
-                    color:Theme.of(context).cardColor,
+                    color: Theme.of(context).cardColor,
                   ),
                   onPressed: onViewContent!,
                   buttonType: ButtonType.primary,

@@ -53,7 +53,7 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
         CustomErrorHandler.show(
           context,
           message:
-              'Failed to load lectures: ${e.toString().replaceAll('Exception: ', '')}',
+              'Failed to load lectures: ${e.toString().replaceAll('Exception: ' '', '')}',
           type: ErrorType.fail,
         );
       }
@@ -110,12 +110,12 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
               .then((_) async {
                 // Clear locally cached files for this lecture
                 LocalFileService.clearLecture(myLectures[index].lectureId!);
-                await StorageHelper.clearLectureSessionId(
-                  myLectures[index].lectureId!,
-                );
-                await StorageHelper.clearLectureType(
-                  myLectures[index].lectureId!,
-                );
+                // await StorageHelper.clearLectureSessionId(
+                //   myLectures[index].lectureId!,
+                // );
+                // await StorageHelper.clearLectureType(
+                //   myLectures[index].lectureId!,
+                // );
                 // Refresh data after deletion
                 setState(() {
                   isLoading = false;
@@ -235,30 +235,30 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
       return;
     } else {
       // For prepared lectures, we can directly navigate to content
-      lecture.lectureType = await StorageHelper.getLectureType(
-        lecture.lectureId!,
-      );
+      // lecture.lectureType = await StorageHelper.getLectureType(
+      //   lecture.lectureId!,
+      // );
 
-      StorageHelper.getSessionIdForLecture(lecture.lectureId!).then((
-        sessionId,
-      ) {
-        if (!mounted) return;
+      // StorageHelper.getSessionIdForLecture(lecture.lectureId!).then((
+      //   sessionId,
+      // ) {
+      //   if (!mounted) return;
 
-        if (sessionId == null) {
-          CustomErrorHandler.show(
-            context,
-            message: 'Content not available yet.',
-            type: ErrorType.info,
-          );
-          return;
-        }
+      //   if (sessionId == null) {
+      //     CustomErrorHandler.show(
+      //       context,
+      //       message: 'Content not available yet.',
+      //       type: ErrorType.info,
+      //     );
+      //     return;
+      //   }
 
         Navigator.pushNamed(
           context,
           AppRoutes.lectureContent,
           arguments: lecture,
         );
-      });
+      // });
     }
   }
 
@@ -301,13 +301,10 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
                               ),
                               child: LectureScheduleCard(
                                 lectureTitle: lecture.lectureTitle,
-                                date: lecture.formattedDate == ''
-                                    ? 'Drafted'
-                                    : lecture.formattedDate,
-                                timeRange: lecture.timeRange == ''
-                                    ? ''
-                                    : lecture.timeRange,
+                                date:  lecture.formattedDate,
+                                timeRange:lecture.timeRange,
                                 status: lecture.status,
+                                coursecode: lecture.courseCode, // ← add
                                 lectureType: lecture.lectureType, // ← add
                                 editButtonText: 'RESCHEDULE',
                                 cancelButtonText: 'DELETE ',

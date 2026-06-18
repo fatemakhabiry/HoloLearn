@@ -52,6 +52,8 @@ dependencies:
   path_provider: ^2.1.4
   open_file: ^3.5.10
   lottie: ^3.3.3
+  local_auth: ^2.3.0
+
   
 dev_dependencies:
   flutter_test:

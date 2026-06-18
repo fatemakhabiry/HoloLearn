@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../services/biometric_service.dart';
 import '../../utils/storage_helper.dart';
 import '../../widgets/widgets.dart';
 import '../../routes/app_routes.dart';
@@ -182,6 +183,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
   }
 
   void _handleGeneratedFlow() {
+    
     final resourceProvider = Provider.of<ResourceStateProvider>(
       context,
       listen: false,
@@ -230,6 +232,28 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     if (!_validateInputs()) return;
     _formKey.currentState!.save();
     setState(() => _isLoading = true);
+    final available = await BiometricService.isAvailable();
+    if (available) {
+      try {
+        final authenticated = await BiometricService.authenticate(
+          reason: 'Authenticate to generate this lecture',
+        );
+        if (!authenticated) {
+          if (mounted) setState(() => _isLoading = false); //  reset before returning
+          return;
+        }
+      } on BiometricException catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false); 
+          CustomErrorHandler.show(
+            context,
+            message: e.message,
+            type: ErrorType.fail,
+          );
+        }
+        return;
+      }
+    }
     try {
       if (selectedInputType == 'prepared') {
         await _handlePreparedFlow();

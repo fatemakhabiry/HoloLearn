@@ -1,8 +1,10 @@
 class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
-      // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
-      'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
+      //fatma
+      "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
+      //Ahmed
+      // 'https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1';
       // 'http://10.0.2.2:8000/api/v1';
 
   // ===== Authentication Endpoints =====
@@ -49,9 +51,9 @@ class ApiConfig {
   // static const String getLectureContentEndpoint =
   //     '/session/{session_id}/content';
   static const String getLecturePdfEndpoint =
-      '/session/{session_id}/lecture-pdf';
+      '/session/{lecture_id}/lecture-pdf';
   static const String getLectureGeneratedResourceEndpoint =
-      "/session/{session_id}/content/{content_type}/download";
+      "/session/{lecture_id}/content/{content_type}/download";
 
   static const String publishLectureEndpoint =
       '/lecture/{lecture_id}/confirm-and-publish';

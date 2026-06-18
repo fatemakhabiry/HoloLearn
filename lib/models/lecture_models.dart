@@ -229,6 +229,7 @@ enum GenContentType {
   knowledgeGraph,
   worksheetAnswers,
   quizAnswers,
+  summary,
   unknown;
  
   static GenContentType fromString(String? value) {
@@ -240,6 +241,7 @@ enum GenContentType {
       case 'worksheet_answers': return GenContentType.worksheetAnswers;
       case 'quiz_answers':   return GenContentType.quizAnswers;
       case 'lecture':        return GenContentType.lecture;
+      case 'summary':        return GenContentType.summary;
       default:               return GenContentType.unknown;
     }
   }
@@ -247,11 +249,13 @@ enum GenContentType {
   static String toApiString(GenContentType type) {
     switch (type) {
       case GenContentType.script:           return 'script';
+      case GenContentType.lecture:          return 'lecture';
       case GenContentType.worksheet:        return 'worksheet';
       case GenContentType.quiz:             return 'quiz';
       case GenContentType.knowledgeGraph:   return 'knowledge_graph';
       case GenContentType.worksheetAnswers: return 'worksheet';
       case GenContentType.quizAnswers:      return 'quiz';
+      case GenContentType.summary:          return 'summary';
       default:                              return 'unknown';
     }
   }
@@ -265,6 +269,7 @@ enum GenContentType {
       case GenContentType.knowledgeGraph:   return 'Knowledge Graph';
       case GenContentType.worksheetAnswers: return 'Worksheet Answers';
       case GenContentType.quizAnswers:      return 'Quiz Answers';
+      case GenContentType.summary:          return 'Summary';
       default:                              return 'Unknown';
     }
   }
@@ -278,6 +283,7 @@ enum GenContentType {
       case GenContentType.knowledgeGraph:   return Icons.account_tree_outlined;
       case GenContentType.worksheetAnswers: return Icons.check_circle_outline;
       case GenContentType.quizAnswers:      return Icons.fact_check_outlined;
+      case GenContentType.summary:          return Icons.summarize_outlined;
       default:                              return Icons.file_present_outlined;
     }
   }

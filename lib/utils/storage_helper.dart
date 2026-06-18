@@ -329,4 +329,17 @@ class StorageHelper {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_isDarkModeKey) ?? false;
   }
+
+// ========== Biometric ==========
+static const String _biometricEnabledKey = 'biometric_enabled';
+
+static Future<void> saveBiometricEnabled(bool value) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_biometricEnabledKey, value);
+}
+
+static Future<bool> getBiometricEnabled() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(_biometricEnabledKey) ?? false;
+}
 }

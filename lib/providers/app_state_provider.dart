@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:hololearn/providers/lecture_state_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/storage_helper.dart';
 
@@ -37,8 +39,8 @@ class AppStateProvider extends ChangeNotifier {
   }
 
   Future<bool> tryAutoLogin() async {
-    final shouldAutoLogin = await StorageHelper.shouldAutoLogin();
-    if (!shouldAutoLogin) return false;
+    // final shouldAutoLogin = await StorageHelper.shouldAutoLogin();
+    // if (!shouldAutoLogin) return false;
 
     final savedEmail = await StorageHelper.getEmail();
     final savedPassword = await StorageHelper.getPassword();
@@ -51,14 +53,43 @@ class AppStateProvider extends ChangeNotifier {
         email: savedEmail,
         password: savedPassword,
       );
-      setEmail(data['user']['email']);
-      setUserName(data['user']['full_name']);
-      setUserRole(data['user']['role']);
-      setAccessToken(data['access_token']);
+      setUserData(
+        accessToken: data['access_token'],
+        email: data['user']['email'],
+        userName: data['user']['full_name'],
+        role: data['user']['role'],
+      );
+      if (data['user']['role'] == 'teacher') {
+      final sessionId = data['user']['latest_session_id'];
+
+      if (sessionId != null) {
+        await StorageHelper.saveOngoingSessionId(sessionId as int);
+      }
+      }
       return true;
     } catch (_) {
+      Exception('Auto-login failed: Please check your credentials.');
       return false;
     }
+  }
+
+  Future<void> setUserData({
+    required String email,
+    required String userName,
+    required String role,
+    required String accessToken,
+  }) async {
+    _email = email;
+    _userName = userName;
+    _userRole = role;
+    _accessToken = accessToken;
+
+    await StorageHelper.saveEmail(email);
+    await StorageHelper.saveUserName(userName);
+    await StorageHelper.saveUserRole(role);
+    await StorageHelper.saveAccessToken(accessToken);
+
+    notifyListeners();
   }
 
   // Setters with notification and persistence
@@ -115,8 +146,8 @@ class AppStateProvider extends ChangeNotifier {
   }
 
   // Clear all auth data on logout
-  Future<void> clearAuth({bool keepEmail = true}) async {
-    _email = keepEmail ? _email : "";
+  Future<void> clearAuth() async {
+    _email = "";
     _userName = "";
     _userRole = "";
     _accessToken = "";

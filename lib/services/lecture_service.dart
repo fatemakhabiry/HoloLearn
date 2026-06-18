@@ -671,8 +671,29 @@ class LectureService {
   // }
 
   // /// GET /sessions/{session_id}/lecture-pdf
-  static Future<List<int>> getLecturePdfBytes(
-    int sessionId,
+  // static Future<List<int>> getLecturePdfBytes(
+  //   int sessionId,
+  //   AppStateProvider appState,
+  // ) async {
+  //   final res = await _client
+  //       .get(
+  //         Uri.parse(
+  //           ApiConfig.getUrl(
+  //             ApiConfig.getLecturePdfEndpoint,
+  //           ).replaceAll('{session_id}', sessionId.toString()),
+  //         ),
+  //         headers: _headers(appState.accessToken),
+  //       )
+  //       .timeout(ApiConfig.connectionTimeout);
+
+  //   if (res.statusCode == 404) {
+  //     throw const ApiException('No PDF available yet.', statusCode: 404);
+  //   }
+  //   _checkStatus(res);
+  //   return res.bodyBytes;
+  // }
+    static Future<List<int>> getLecturePdfBytes(
+    int lectureId,
     AppStateProvider appState,
   ) async {
     final res = await _client
@@ -680,7 +701,7 @@ class LectureService {
           Uri.parse(
             ApiConfig.getUrl(
               ApiConfig.getLecturePdfEndpoint,
-            ).replaceAll('{session_id}', sessionId.toString()),
+            ).replaceAll('{lecture_id}', lectureId.toString()),
           ),
           headers: _headers(appState.accessToken),
         )
@@ -692,96 +713,9 @@ class LectureService {
     _checkStatus(res);
     return res.bodyBytes;
   }
-  // static Future<List<int>> getContentBytes(
-  //   int sessionId,
-  //   AppStateProvider appState,
-  // ) async {
-  //   final res = await _client
-  //       .get(
-  //         Uri.parse(
-  //           ApiConfig.getUrl(
-  //             ApiConfig.getLectureContentEndpoint,
-  //           ).replaceAll('{session_id}', sessionId.toString()),
-  //         ),
-  //         headers: _headers(appState.accessToken),
-  //       )
-  //       .timeout(ApiConfig.connectionTimeout);
-
-  //   if (res.statusCode == 404) {
-  //     throw const ApiException('No content available yet.', statusCode: 404);
-  //   }
-  //   _checkStatus(res);
-  //   return res.bodyBytes;
-  // }
-  // static Future<List<int>> getLectureGeneratedResourceBytes(
-  //   int sessionId,
-  //   GenContentType contentType,
-  //   AppStateProvider appState,
-  // ) async {
-  //   String contentTypePathParam = GenContentType.toApiString(contentType);
-  //   String content_type = '';
-  //   String file_key = '';
-
-  //   switch (contentType) {
-  //     case GenContentType.script:
-  //       content_type = 'text/plain';
-  //       file_key = 'primary';
-  //       break;
-  //     case GenContentType.lecture:
-  //       content_type = 'application/pdf';
-  //       file_key = 'primary';
-  //       break;
-  //     case GenContentType.worksheet:
-  //       content_type = 'application/pdf';
-  //       file_key = 'primary';
-  //       break;
-  //     case GenContentType.quiz:
-  //       content_type = 'application/pdf';
-  //       file_key = 'primary';
-  //       break;
-  //     case GenContentType.knowledgeGraph:
-  //       content_type = 'text/html';
-  //       file_key = 'primary';
-  //       break;
-  //     case GenContentType.worksheetAnswers:
-  //       content_type = 'application/pdf';
-  //       file_key = 'answers';
-  //       break;
-  //     case GenContentType.quizAnswers:
-  //       content_type = 'application/pdf';
-  //       file_key = 'answers';
-  //       break;
-  //     default:
-  //       throw Exception('Unsupported content type');
-  //   }
-
-  //   final res = await _client
-  //       .get(
-  //         Uri.parse(
-  //           ApiConfig.getUrl(ApiConfig.getLectureGeneratedResourceEndpoint)
-  //               .replaceAll('{session_id}', sessionId.toString())
-  //               .replaceAll('{content_type}', contentTypePathParam),
-  //         ),
-  //         headers: {
-  //           'Content-Type': content_type,
-  //           'Accept': content_type,
-  //           'ngrok-skip-browser-warning': 'true',
-  //           'Authorization': 'Bearer $appState.accessToken',
-  //         },
-  //         queryParams: {
-  //           'file_key': file_key,
-  //         },
-  //       )
-  //       .timeout(ApiConfig.connectionTimeout);
-
-  //   if (res.statusCode == 404) {
-  //     throw const ApiException('No content available yet.', statusCode: 404);
-  //   }
-  //   _checkStatus(res);
-  //   return res.bodyBytes;
-  // }
+ 
   static Future<List<int>> getLectureGeneratedResourceBytes(
-    int sessionId,
+    int lectureId,
     GenContentType contentType,
     AppStateProvider appState,
   ) async {
@@ -798,6 +732,8 @@ class LectureService {
         fileKey = 'primary';
     }
     switch (contentType) {
+      // case GenContentType.lecture:
+      // contenType='application/json';
       case GenContentType.script:
         contenType = 'text/plain';
       case GenContentType.knowledgeGraph:
@@ -809,7 +745,7 @@ class LectureService {
 
     final uri = Uri.parse(
       ApiConfig.getUrl(ApiConfig.getLectureGeneratedResourceEndpoint)
-          .replaceAll('{session_id}', sessionId.toString())
+          .replaceAll('{lecture_id}', lectureId.toString())
           .replaceAll('{content_type}', contentTypePathParam),
     ).replace(queryParameters: {'file_key': fileKey});
 
