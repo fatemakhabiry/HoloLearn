@@ -30,7 +30,8 @@ class FullTimeSlot2(BaseModel):
     teacher_name: str                      # Always present
     start_time: Optional[datetime] = None  # Null if draft
     end_time: Optional[datetime] = None    # Null if draft
-    status: str                            # "scheduled" or "draft"
+    status: str                        # "scheduled" or "draft"
+    lecture_type: str
 
 
 class CancelScheduleResponse(BaseModel):

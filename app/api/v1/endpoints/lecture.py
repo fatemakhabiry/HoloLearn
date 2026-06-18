@@ -487,7 +487,8 @@ def get_all_my_lectures(
                         teacher_name=teacher_name,
                         start_time=start_datetime,
                         end_time=end_datetime,
-                        status=schedule.status
+                        status=schedule.status,
+                        lecture_type=lecture.lecture_type
                     )
                 )
         else:
@@ -500,7 +501,9 @@ def get_all_my_lectures(
                     teacher_name=teacher_name,
                     start_time=None,
                     end_time=None,
-                    status=lecture.status.value
+                    status=lecture.status.value,
+                    lecture_type=lecture.lecture_type
+
                 )
             )
     
