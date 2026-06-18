@@ -1067,17 +1067,17 @@ class VideoExtractor:
 
             equations_file = audio_file = ocr_file = None
 
-            if equations_text and equations_text.strip():
-                equations_file = output_dir / f"{resource_name}_equations.txt"
-                equations_file.write_text(equations_text, encoding='utf-8')
+            # if equations_text and equations_text.strip():
+            #     equations_file = output_dir / f"{resource_name}_equations.txt"
+            #     equations_file.write_text(equations_text, encoding='utf-8')
 
-            if audio_text and audio_text.strip():
-                audio_file = output_dir / f"{resource_name}_audio_transcript.txt"
-                audio_file.write_text(audio_text, encoding='utf-8')
+            # if audio_text and audio_text.strip():
+            #     audio_file = output_dir / f"{resource_name}_audio_transcript.txt"
+            #     audio_file.write_text(audio_text, encoding='utf-8')
 
-            if ocr_text and ocr_text.strip():
-                ocr_file = output_dir / f"{resource_name}_screen_text.txt"
-                ocr_file.write_text(ocr_text, encoding='utf-8')
+            # if ocr_text and ocr_text.strip():
+            #     ocr_file = output_dir / f"{resource_name}_screen_text.txt"
+            #     ocr_file.write_text(ocr_text, encoding='utf-8')
 
             # ── Metadata ──────────────────────────────────────────────────────
             metadata = {
@@ -1098,10 +1098,10 @@ class VideoExtractor:
                 "frames_processed":        len(frames_data),
                 "ocr_model":               _model_path,
                 "vlm_model":               _vlm_model,
-                "extracted_text_path":     str(text_file),
-                "audio_transcript_path":   str(audio_file)     if audio_file     else None,
-                "screen_text_path":        str(ocr_file)       if ocr_file       else None,
-                "equations_file_path":     str(equations_file) if equations_file else None,
+                # "extracted_text_path":     str(text_file),
+                # "audio_transcript_path":   str(audio_file)     if audio_file     else None,
+                # "screen_text_path":        str(ocr_file)       if ocr_file       else None,
+                # "equations_file_path":     str(equations_file) if equations_file else None,
             }
 
             metadata_file = output_dir / f"{resource_name}_metadata.json"

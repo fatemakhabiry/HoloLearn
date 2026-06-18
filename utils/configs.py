@@ -232,6 +232,9 @@ TEMP_DIR.mkdir(exist_ok=True)
 # ==================== OCR PIPELINE CONFIGURATION ====================
 # Standalone CCA → CNN → VLM pipeline (replaces EasyOCR + pix2tex entirely)
 
+OCR_ENABLED: bool = os.getenv("OCR_ENABLED", "true").lower() == "true"
+
+
 # Absolute path to the OCR pipeline folder (pipeline.py lives here)
 # Set OCR_PIPELINE_DIR in .env or update the default below to match your machine
 OCR_PIPELINE_DIR: str = os.getenv(
@@ -269,7 +272,7 @@ MAX_FRAMES_PER_VIDEO  = 1000   # hard cap to prevent runaway processing
 SCENE_CHANGE_THRESHOLD = 10.0
 
 # Video formats accepted by the extractor
-SUPPORTED_VIDEO_FORMATS = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv']
+SUPPORTED_VIDEO_FORMATS = ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm']
 
 # ==================== AUDIO PROCESSING CONFIGURATION ====================
 SUPPORTED_AUDIO_FORMATS = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac']
@@ -346,6 +349,8 @@ def print_config_status():
     print("=" * 80)
 
     print("\nOCR PIPELINE:")
+    print(f"  Enabled:           {OCR_ENABLED}")   # ← add
+
     print(f"  Pipeline dir:      {OCR_PIPELINE_DIR}")
     print(f"  CNN model:         {CNN_MODEL_PATH}")
     print(f"  Classifier device: {CLASSIFIER_DEVICE.upper()}")

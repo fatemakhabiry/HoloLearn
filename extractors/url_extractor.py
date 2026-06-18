@@ -1690,7 +1690,14 @@ class URLExtractor:
                 "source_url": url,
             }
 
-        with self.downloader.download_ctx(url, filename_hint="resource_video") as tmp_path:
+        # ── Unique filename per request ───────────────────────────────────────
+        # "resource_video" is a fixed name — concurrent requests collide on the
+        # same WAV temp file (resource_video_audio.wav) causing WinError 32.
+        # Adding a short UUID suffix makes every download/extraction independent.
+        import uuid
+        unique_hint = f"resource_video_{uuid.uuid4().hex[:8]}"
+
+        with self.downloader.download_ctx(url, filename_hint=unique_hint) as tmp_path:
             extractor = VideoExtractor()
             result = extractor.extract(
                 video_path=str(tmp_path),
