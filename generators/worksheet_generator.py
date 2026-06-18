@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import Image as RLImage
+
 
 import tiktoken
 from xml.sax.saxutils import escape
@@ -611,6 +613,13 @@ Output ONLY this JSON schema (no other text):
             spaceAfter=30,
             alignment=TA_CENTER,
         )
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), "icon-01.png")
+        if os.path.exists(logo_path):
+            logo = RLImage(logo_path, width=0.7 * inch, height=0.7 * inch)
+            logo.hAlign = "CENTER"
+            story.append(logo)
+            story.append(Spacer(1, 0.1 * inch))
 
         story.append(Paragraph(f"Worksheet: {escape(title)}", title_style))
         story.append(Paragraph(f"Course: {escape(course_code)}", styles["Normal"]))
@@ -694,6 +703,14 @@ Output ONLY this JSON schema (no other text):
             textColor=colors.HexColor("#0d47a1"),
         )
 
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), "icon-01.png")
+        if os.path.exists(logo_path):
+            logo = RLImage(logo_path, width=0.7 * inch, height=0.7 * inch)
+            logo.hAlign = "CENTER"
+            story.append(logo)
+            story.append(Spacer(1, 0.1 * inch))
+            
         story.append(Paragraph(f"Answer Key: {escape(title)}", title_style))
         story.append(Paragraph(f"Course: {escape(course_code)}", styles["Normal"]))
         story.append(Spacer(1, 0.25 * inch))

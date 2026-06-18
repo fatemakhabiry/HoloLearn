@@ -14,6 +14,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import Image as RLImage
+
 
 import tiktoken
 
@@ -295,6 +297,14 @@ RETURN THIS EXACT JSON SCHEMA:
             spaceAfter=20, alignment=TA_CENTER,
         )
 
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), "icon-01.png")
+        if os.path.exists(logo_path):
+            logo = RLImage(logo_path, width=0.7 * inch, height=0.7 * inch)
+            logo.hAlign = "CENTER"
+            story.append(logo)
+            story.append(Spacer(1, 0.1 * inch))
+
         story.append(Paragraph(f"QUIZ: {title}", title_style))
         story.append(Paragraph(f"Course: {course}", styles["Normal"]))
         story.append(Paragraph(f"Time Limit: {time_limit} minutes", styles["Normal"]))
@@ -336,6 +346,14 @@ RETURN THIS EXACT JSON SCHEMA:
             fontSize=20, textColor=colors.HexColor("#d32f2f"),
             spaceAfter=20, alignment=TA_CENTER,
         )
+
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), "icon-01.png")
+        if os.path.exists(logo_path):
+            logo = RLImage(logo_path, width=0.7 * inch, height=0.7 * inch)
+            logo.hAlign = "CENTER"
+            story.append(logo)
+            story.append(Spacer(1, 0.1 * inch))
 
         story.append(Paragraph(f"ANSWER KEY: {title}", title_style))
         story.append(Paragraph(f"Course: {course}", styles["Normal"]))
