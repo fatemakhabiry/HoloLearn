@@ -12,6 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.platypus import Image as RLImage
 
 import tiktoken
 
@@ -314,6 +315,13 @@ REQUIREMENTS:
             "Body", parent=styles["Normal"],
             fontSize=11, alignment=TA_JUSTIFY, spaceAfter=10, leading=14,
         )
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), "icon-01.png")
+        if os.path.exists(logo_path):
+            logo = RLImage(logo_path, width=0.7 * inch, height=0.7 * inch)
+            logo.hAlign = "CENTER"
+            story.append(logo)
+            story.append(Spacer(1, 0.1 * inch))
 
         story.append(Paragraph("Comprehensive Summary", title_style))
         story.append(Paragraph(title, subtitle_style))
@@ -331,12 +339,17 @@ REQUIREMENTS:
             if line.isupper() and not line.startswith(("•", "→")):
                 story.append(Paragraph(line.title(), section_style))
             elif line and line[0].isdigit() and ". " in line[:4]:
+                clean_line = re.sub(r"\*\*(.+?)\*\*", r"\1", line)  # strip **bold** markdown
                 story.append(Spacer(1, 0.1 * inch))
-                story.append(Paragraph(f"<b>{line}</b>", body_style))
-            elif line.startswith("•"):
-                story.append(Paragraph(f"• {line[1:].strip()}", body_style))
+                story.append(Paragraph(f"<b>{clean_line}</b>", body_style))
+            elif line.startswith("•") or line.startswith("-"):
+                content = line.lstrip("•-").strip()
+                if ": " in content:
+                    term, _, definition = content.partition(": ")
+                    content = f"<b>{term}:</b> {definition}"
+                story.append(Paragraph(f"• {content}", body_style))
             elif line.startswith("→"):
-                story.append(Paragraph(f"    → {line[1:].strip()}", body_style))
+                story.append(Paragraph(f"• {line[1:].strip()}", body_style))
             elif line.endswith(":") and len(line.split()) <= 3:
                 story.append(Spacer(1, 0.05 * inch))
                 story.append(Paragraph(f"<b>{line}</b>", styles["Normal"]))
@@ -379,6 +392,101 @@ if __name__ == "__main__":
         title="Introduction to NetSecurity"
     )
     print("✅ Complete!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
