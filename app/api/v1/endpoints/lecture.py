@@ -142,6 +142,109 @@ async def create_lecture_draft(
 # 2: Confirm & Publish (PUBLIC SCHEDULE)
 # ============================================
 
+# @router.post("/{lecture_id}/confirm-and-publish", response_model=ConfirmPublishResponse)
+# async def confirm_and_publish_lecture(
+#     lecture_id: int,
+#     request_data: ConfirmPublishRequest,
+#     session: Session = Depends(get_session),
+#     current_user: User = Depends(get_current_teacher)
+# ):
+#     """
+#     Confirm and publish lecture by reserving a schedule slot
+    
+#     ✅ UPDATED: No schedule ownership check - schedules are public!
+#     Any teacher can use any available slot.
+#     """
+    
+#     # Get lecture
+#     lecture = session.get(Lecture, lecture_id)
+    
+#     if not lecture:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f"Lecture with ID {lecture_id} not found"
+#         )
+    
+#     # Verify lecture ownership
+#     if lecture.teacher_id != current_user.user_id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="You can only publish your own lectures"
+#         )
+    
+#     # Get schedule slot
+#     schedule = session.get(Schedule, request_data.schedule_id)
+    
+#     if not schedule:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f"Schedule slot with ID {request_data.schedule_id} not found"
+#         )
+    
+#     # ✅ REMOVED: schedule.teacher_id check (schedules are public!)
+    
+#     # Verify schedule is available
+#     if schedule.lecture_id is not None:
+#         raise HTTPException(
+#             status_code=status.HTTP_409_CONFLICT,
+#             detail="This schedule slot is already reserved"
+#         )
+    
+#     if schedule.status != "available":
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=f"This schedule slot is not available (status: {schedule.status})"
+#         )
+    
+#     # Reserve the schedule
+#     schedule.lecture_id = lecture_id
+#     schedule.status = "scheduled"
+#     session.add(schedule)
+    
+#     # Update lecture status
+#     lecture.status = LectureStatus.COMPLETED
+#     session.add(lecture)
+    
+#     session.commit()
+#     session.refresh(lecture)
+#     session.refresh(schedule)
+#     # ── Trigger RAG indexing ───────────────────────────────────────
+#     # Only for prepared lectures — generated lectures trigger from
+#     # generation_worker.py after agent completes
+#     if lecture.lecture_type == LectureType.PREPARED:
+#         if lecture.local_file_path and Path(lecture.local_file_path).exists():
+#             from arq import create_pool
+#             from arq.connections import RedisSettings
+
+#             redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+#             await redis.enqueue_job(
+#                 "run_rag_ingest",
+#                 lecture_id = lecture.lecture_id,
+#                 file_path  = lecture.local_file_path,
+#             )
+#             await redis.close()
+#         else:
+#             # Log warning — file missing but don't block publish
+#             import logging
+#             logging.getLogger(__name__).warning(
+#                 f"[RAG] Prepared lecture {lecture.lecture_id} published "
+#                 f"but local_file_path missing or not on disk — skipping RAG ingest"
+#             )
+#     # ─────────────────────────────────────────────────────────────
+#     return ConfirmPublishResponse(
+#         message="Lecture published and scheduled successfully",
+#         lecture_id=lecture.lecture_id,
+#         schedule_id=schedule.schedule_id,
+#         lecture_title=lecture.title,
+#         course_code=lecture.course_code,
+#         lecture_status=lecture.status.value,
+#         schedule_status=schedule.status,
+#         scheduled_date=schedule.date,
+#         start_time=schedule.start_time,
+#         end_time=schedule.end_time
+#     )
+
+
 @router.post("/{lecture_id}/confirm-and-publish", response_model=ConfirmPublishResponse)
 async def confirm_and_publish_lecture(
     lecture_id: int,
@@ -150,69 +253,88 @@ async def confirm_and_publish_lecture(
     current_user: User = Depends(get_current_teacher)
 ):
     """
-    Confirm and publish lecture by reserving a schedule slot
-    
-    ✅ UPDATED: No schedule ownership check - schedules are public!
-    Any teacher can use any available slot.
+    Confirm and publish lecture by reserving a schedule slot.
     """
-    
     # Get lecture
     lecture = session.get(Lecture, lecture_id)
-    
     if not lecture:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Lecture with ID {lecture_id} not found"
         )
-    
+
     # Verify lecture ownership
     if lecture.teacher_id != current_user.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only publish your own lectures"
         )
-    
+
     # Get schedule slot
     schedule = session.get(Schedule, request_data.schedule_id)
-    
     if not schedule:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Schedule slot with ID {request_data.schedule_id} not found"
         )
-    
-    # ✅ REMOVED: schedule.teacher_id check (schedules are public!)
-    
+
     # Verify schedule is available
     if schedule.lecture_id is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This schedule slot is already reserved"
         )
-    
+
     if schedule.status != "available":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"This schedule slot is not available (status: {schedule.status})"
         )
-    
+
     # Reserve the schedule
     schedule.lecture_id = lecture_id
-    schedule.status = "scheduled"
+    schedule.status     = "scheduled"
     session.add(schedule)
-    
+
     # Update lecture status
     lecture.status = LectureStatus.COMPLETED
     session.add(lecture)
-    
+
     session.commit()
     session.refresh(lecture)
     session.refresh(schedule)
+
     # ── Trigger RAG indexing ───────────────────────────────────────
-    # Only for prepared lectures — generated lectures trigger from
-    # generation_worker.py after agent completes
+    # Priority:
+    #   1. extracted_txt_path — text already extracted by agent (best)
+    #   2. local_file_path    — original uploaded file (fallback)
+    # Generated lectures trigger from generation_worker.py instead
     if lecture.lecture_type == LectureType.PREPARED:
-        if lecture.local_file_path and Path(lecture.local_file_path).exists():
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        # Determine which file to send to RAG
+        file_to_index = None
+
+        if lecture.extracted_txt_path and Path(lecture.extracted_txt_path).exists():
+            file_to_index = lecture.extracted_txt_path
+            _logger.info(
+                f"[RAG] Using extracted txt for lecture {lecture.lecture_id}: "
+                f"{file_to_index}"
+            )
+        elif lecture.local_file_path and Path(lecture.local_file_path).exists():
+            file_to_index = lecture.local_file_path
+            _logger.warning(
+                f"[RAG] extracted_txt_path missing — "
+                f"falling back to original file for lecture {lecture.lecture_id}"
+            )
+        else:
+            _logger.warning(
+                f"[RAG] Prepared lecture {lecture.lecture_id} published "
+                f"but no file found to index — skipping RAG ingest"
+            )
+
+        if file_to_index:
             from arq import create_pool
             from arq.connections import RedisSettings
 
@@ -220,28 +342,22 @@ async def confirm_and_publish_lecture(
             await redis.enqueue_job(
                 "run_rag_ingest",
                 lecture_id = lecture.lecture_id,
-                file_path  = lecture.local_file_path,
+                file_path  = file_to_index,
             )
             await redis.close()
-        else:
-            # Log warning — file missing but don't block publish
-            import logging
-            logging.getLogger(__name__).warning(
-                f"[RAG] Prepared lecture {lecture.lecture_id} published "
-                f"but local_file_path missing or not on disk — skipping RAG ingest"
-            )
     # ─────────────────────────────────────────────────────────────
+
     return ConfirmPublishResponse(
-        message="Lecture published and scheduled successfully",
-        lecture_id=lecture.lecture_id,
-        schedule_id=schedule.schedule_id,
-        lecture_title=lecture.title,
-        course_code=lecture.course_code,
-        lecture_status=lecture.status.value,
-        schedule_status=schedule.status,
-        scheduled_date=schedule.date,
-        start_time=schedule.start_time,
-        end_time=schedule.end_time
+        message          = "Lecture published and scheduled successfully",
+        lecture_id       = lecture.lecture_id,
+        schedule_id      = schedule.schedule_id,
+        lecture_title    = lecture.title,
+        course_code      = lecture.course_code,
+        lecture_status   = lecture.status.value,
+        schedule_status  = schedule.status,
+        scheduled_date   = schedule.date,
+        start_time       = schedule.start_time,
+        end_time         = schedule.end_time
     )
 
 

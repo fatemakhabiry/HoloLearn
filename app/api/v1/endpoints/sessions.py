@@ -124,40 +124,42 @@ async def _build_agent_state(
     type_map: dict[str, list] = {}
 
     for r in resources:
-        # Normalize to lowercase key for internal agent logic
         key = r.resource_type.value.lower()
         if key == "document":
             key = "docx"
-
-        if key not in type_map:
-            type_map[key] = []
 
         if key == "image":
             type_map.setdefault("images", []).append({
                 "path":    r.file_path,
                 "caption": r.query,
             })
-        else:
-            file_ext = Path(r.file_path).suffix.lower()
+            continue
 
-            if file_ext == ".txt":
-                text = Path(r.file_path).read_text(
+        # ── No extraction here — agent extracts in background ────────────────
+        # Passing file_path/url directly so POST /start returns 200 immediately.
+        # nodes.py _resolve_entry() handles extraction inside generate_lecture.
+        entry: dict = {"text": "", "query": r.query}
+
+        if r.file_path.startswith(("http://", "https://")):
+            entry["url"] = r.file_path        # YouTube / website
+        else:
+            # .txt files are cheap — read them now, everything else deferred
+            if Path(r.file_path).suffix.lower() == ".txt":
+                entry["text"] = Path(r.file_path).read_text(
                     encoding="utf-8", errors="ignore"
                 )
             else:
-                text = await extract_resource(r.file_path, key)
+                entry["file_path"] = r.file_path   # PDF / PPTX / video / audio
 
-            if not text:
-                print(f"[sessions] ⚠ empty text from {r.file_path}")
-                continue
-
-            type_map[key].append({"text": text, "query": r.query})
+        if key not in type_map:
+            type_map[key] = []
+        type_map[key].append(entry)
 
     for key, entries in type_map.items():
-        if key != "images":
-            source[key] = entries
-        else:
+        if key == "images":
             source["images"] = entries
+        else:
+            source[key] = entries
 
     return {
         "meta": {
@@ -183,7 +185,6 @@ async def _build_agent_state(
         "current_step": "starting",
         "error":        None,
     }
-
 
 async def _upload_to_drive(
     file_path: str,
@@ -516,6 +517,96 @@ async def start_generated_session(
     }
 
 
+# @router.post("/start-prepared/{lecture_id}")
+# async def start_prepared_session(
+#     lecture_id: int,
+#     db:         Session = Depends(get_session),
+#     teacher:    User    = Depends(get_current_teacher),
+# ):
+#     """Start content generation for an existing prepared lecture."""
+#     lecture = db.get(Lecture, lecture_id)
+
+#     if not lecture:
+#         raise HTTPException(404, "Lecture not found")
+#     if lecture.teacher_id != teacher.user_id:
+#         raise HTTPException(403, "Not your lecture")
+#     if lecture.lecture_type != LectureType.PREPARED:
+#         raise HTTPException(400, "Use /start for generated lectures")
+#     if not lecture.final_content:
+#         raise HTTPException(400, "Lecture has no file — upload first")
+
+#     existing = db.exec(
+#         select(AgentSession).where(AgentSession.lecture_id == lecture_id)
+#     ).first()
+#     if existing:
+#         if existing.status == AgentStatus.DONE:
+#             raise HTTPException(400, "Content already generated for this lecture")
+#         if existing.status not in (AgentStatus.FAILED,):
+#             raise HTTPException(400, f"Session already active: {existing.status}")
+
+#     prepared_text = await _extract_from_drive(lecture.final_content)
+
+#     if not prepared_text:
+#         raise HTTPException(422, "Could not extract text from lecture file")
+
+#     print(f"[sessions] extracted {len(prepared_text):,} chars for lecture {lecture_id}")
+
+#     thread_id     = str(uuid.uuid4())
+#     agent_session = AgentSession(
+#         lecture_id = lecture.lecture_id,
+#         thread_id  = thread_id,
+#         status     = AgentStatus.GENERATING_CONTENT,
+#     )
+#     db.add(agent_session)
+#     db.commit()
+#     db.refresh(agent_session)
+
+#     output_dir    = str(Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id))
+#     initial_state = {
+#         "meta": {
+#             "session_id":  str(agent_session.id),
+#             "teacher_id":  str(lecture.teacher_id),
+#             "course_code": lecture.course_code,
+#             "title":       lecture.title,
+#             "output_dir":  output_dir,
+#         },
+#         "source": {
+#             "type":          "prepared_lecture",
+#             "prepared_text": prepared_text,
+#             "pdf":     None, "docx": None, "pptx":    None,
+#             "audio":   None, "video": None, "website": None,
+#             "images":  None,
+#         },
+#         "final_lecture":    prepared_text,
+#         "lecture_paths":    None,
+#         "lecture_approval": None,
+#         "generated_content": {
+#             "script": None, "worksheet": None, "quiz": None,
+#             "summary": None, "flowchart": None, "knowledge_graph": None,
+#         },
+#         "current_step": "starting",
+#         "error":        None,
+#     }
+
+#     await start_agent(thread_id, initial_state)
+
+#     arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
+#     await arq_pool.enqueue_job(
+#         "sync_agent_state",
+#         session_id=agent_session.id,   # FIX #1 — keyword args, not positional
+#         thread_id=thread_id,
+#         _defer_by=timedelta(seconds=15),
+#     )
+#     await arq_pool.close()
+
+#     return {
+#         "session_id": agent_session.id,
+#         "lecture_id": lecture.lecture_id,
+#         "thread_id":  thread_id,
+#         "status":     "started",
+#     }
+
+
 @router.post("/start-prepared/{lecture_id}")
 async def start_prepared_session(
     lecture_id: int,
@@ -549,6 +640,20 @@ async def start_prepared_session(
         raise HTTPException(422, "Could not extract text from lecture file")
 
     print(f"[sessions] extracted {len(prepared_text):,} chars for lecture {lecture_id}")
+
+    # ── Save extracted text to disk for RAG ───────────────────────
+    # _extract_from_drive() returns text in memory only — save it
+    # so confirm-and-publish can send it to RAG instead of re-extracting
+    extracted_dir = Path(settings.OUTPUTS_DIR_AGENT) / str(lecture.lecture_id)
+    extracted_dir.mkdir(parents=True, exist_ok=True)
+    extracted_txt = extracted_dir / f"{lecture.lecture_id}_extracted.txt"
+    extracted_txt.write_text(prepared_text, encoding="utf-8")
+
+    lecture.extracted_txt_path = str(extracted_txt.resolve())
+    db.add(lecture)
+    db.commit()
+    db.refresh(lecture)
+    # ─────────────────────────────────────────────────────────────
 
     thread_id     = str(uuid.uuid4())
     agent_session = AgentSession(
@@ -592,7 +697,7 @@ async def start_prepared_session(
     arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
     await arq_pool.enqueue_job(
         "sync_agent_state",
-        session_id=agent_session.id,   # FIX #1 — keyword args, not positional
+        session_id=agent_session.id,
         thread_id=thread_id,
         _defer_by=timedelta(seconds=15),
     )
@@ -604,7 +709,6 @@ async def start_prepared_session(
         "thread_id":  thread_id,
         "status":     "started",
     }
-
 
 
 # ── Progress metadata map ──────────────────────────────────────────────────────

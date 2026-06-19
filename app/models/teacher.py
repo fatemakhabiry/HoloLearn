@@ -71,6 +71,7 @@ class Teacher(TeacherBase, table=True):
     # Optional speedup: pre-baked .pt voice file from a previous TTS run.
     # If present, skips ~30s voice cloning on subsequent generation jobs.
     cached_voice_path: Optional[str] = Field(default=None)
+    reference_embedding: Optional[str] = Field(default=None)
 
     # ── Relationships ──────────────────────────────────────────────
     user: Optional["User"] = Relationship(back_populates="teacher")

@@ -48,7 +48,9 @@ async def get_agent_state(thread_id: str) -> dict:
 async def extract_resource(file_path: str, resource_type: str) -> str:
     """Call AI service to extract text from a resource file."""
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=10.0, read=1800.0, write=10.0, pool=5.0)
+        ) as client:
             r = await client.post(
                 f"{settings.AI_SERVICE_URL}/extract",
                 json={"file_path": file_path, "resource_type": resource_type},

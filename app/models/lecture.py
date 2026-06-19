@@ -34,6 +34,7 @@ class LectureBase(SQLModel):
     final_content: Optional[str] = None  # URL to final lecture (Drive link)
     is_indexed: bool = Field(default=False)
     local_file_path: Optional[str] = Field(default=None)  # path to file on disk
+    extracted_txt_path: Optional[str] = Field(default=None)  # ← ADD
 
 class Lecture(LectureBase, table=True):
     """Database model"""

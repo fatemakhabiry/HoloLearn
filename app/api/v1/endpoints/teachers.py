@@ -12,6 +12,7 @@ from app.core.file_utils import save_teacher_file, delete_teacher_file, ensure_u
 from app.models.user import User
 from app.models.teacher import Teacher, TeacherPublic, TeacherUpdate, TeacherProfileStatus
 from app.workers.onboarding_worker import run_onboarding
+from app.core.database import engine
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,21 @@ async def upload_teacher_photo(
     session.add(teacher)
     session.commit()
     session.refresh(teacher)
+    # ── Dispatch reference-embedding extraction ─────────────────────
+    # Always runs, independent of AI server availability.
+    background_tasks.add_task(
+        _extract_reference_embedding,
+        teacher_id=teacher.user_id,
+        photo_path=photo_path,
+    )
 
+    # ── Dispatch preprocessing to AI server ────────────────────────
+    if ai_server_ready:
+        background_tasks.add_task(
+            _dispatch_preprocess,
+            teacher_id=teacher.user_id,
+            photo_path=photo_path,
+        )
     # ── Dispatch preprocessing to AI server ────────────────────────
     if ai_server_ready:
         background_tasks.add_task(
@@ -86,6 +101,7 @@ async def upload_teacher_photo(
         )
 
     return teacher
+
 
 
 async def _dispatch_preprocess(teacher_id: int, photo_path: str) -> None:
@@ -126,7 +142,51 @@ async def _dispatch_preprocess(teacher_id: int, photo_path: str) -> None:
         )
     except httpx.TimeoutException:
         logger.error(f"[Onboarding:{teacher_id}] AI server did not respond within 15 seconds.")
+# Add this function in teachers.py, near _dispatch_preprocess
 
+def _extract_reference_embedding(teacher_id: int, photo_path: str) -> None:
+    """
+    Background task — extracts an ArcFace reference embedding from the raw
+    teacher photo and stores it on Teacher.reference_embedding.
+
+    Deliberately NOT async: this is CPU-bound work (DeepFace inference),
+    so Starlette runs it in a thread pool automatically rather than
+    blocking the event loop, the way it would for a plain async def here.
+
+    Independent of _dispatch_preprocess and ai_server_ready — ArcFace runs
+    locally on this machine and doesn't need the AI server at all, so
+    identity verification keeps working even before that's configured.
+    """
+    from app.services.face_verification import (
+        extract_embedding,
+        embedding_to_json,
+        NoFaceDetectedError,
+        MultipleFacesDetectedError,
+        FaceVerificationError,
+    )
+
+    try:
+        embedding = extract_embedding(photo_path)
+    except NoFaceDetectedError:
+        logger.warning(f"[ReferenceEmbedding:{teacher_id}] No face detected in {photo_path}")
+        return
+    except MultipleFacesDetectedError as e:
+        logger.warning(f"[ReferenceEmbedding:{teacher_id}] {e}")
+        return
+    except FaceVerificationError as e:
+        logger.error(f"[ReferenceEmbedding:{teacher_id}] Extraction failed: {e}")
+        return
+
+    with Session(engine) as session:
+        teacher = session.get(Teacher, teacher_id)
+        if not teacher:
+            logger.error(f"[ReferenceEmbedding:{teacher_id}] Teacher not found in DB")
+            return
+        teacher.reference_embedding = embedding_to_json(embedding)
+        session.add(teacher)
+        session.commit()
+
+    logger.info(f"[ReferenceEmbedding:{teacher_id}] Stored ({len(embedding)} dims)")
 
 @router.post("/upload-voice", response_model=TeacherPublic)
 async def upload_teacher_voice(
