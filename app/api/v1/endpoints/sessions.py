@@ -28,6 +28,7 @@ from app.services.agent_client import start_agent, resume_agent, get_agent_state
 from app.services.agent_service import sync_state_to_db  # FIX — lives in service layer, not here
 from arq import create_pool
 from arq.connections import RedisSettings as ArqRedisSettings
+from fastapi.responses import FileResponse, RedirectResponse
 
 router = APIRouter()
 
@@ -271,6 +272,176 @@ async def _extract_from_drive(drive_link: str) -> str:
         print(f"[sessions] Drive extraction error: {e}")
         return ""
 
+
+# async def _sync_state_to_db(
+#     agent_session: AgentSession,
+#     lecture:       Lecture,
+#     state:         dict,
+#     db:            Session,
+# ) -> None:
+#     """Sync agent state to DB after every status poll."""
+#     current_step  = state.get("current_step")
+#     lecture_paths = state.get("lecture_paths") or {}
+#     approval      = state.get("lecture_approval") or {}
+
+#     priority = {
+#         "starting":           0,
+#         "generating_lecture": 1,
+#         "awaiting_approval":  2,
+#         "regenerating":       3,
+#         "generating_content": 4,
+#         "done":               5,
+#         "failed":             6,
+#     }
+
+#     try:
+#         agent_session.status = AgentStatus(current_step)
+#     except ValueError:
+#         pass
+
+#     agent_session.updated_at = datetime.utcnow()
+
+#     if lecture_paths.get("txt") and lecture.lecture_type == LectureType.GENERATED:
+
+#         existing_versions = db.exec(
+#             select(LectureVersion).where(
+#                 LectureVersion.lecture_id == lecture.lecture_id
+#             )
+#         ).all()
+
+#         existing = next(
+#             (v for v in existing_versions
+#              if v.pdf_path == lecture_paths.get("pdf")),
+#             None,
+#         )
+
+#         approval_status = approval.get("status", "pending")
+#         version_status  = (
+#             VersionStatus.APPROVED  if approval_status == "approved"
+#             else VersionStatus.REJECTED if approval_status == "rejected"
+#             else VersionStatus.PENDING
+#         )
+
+#         if not existing:
+#             version_number = len(existing_versions) + 1
+#             print(f"[sync] saving lecture version {version_number}")
+#             db.add(LectureVersion(
+#                 lecture_id       = lecture.lecture_id,
+#                 version_number   = version_number,
+#                 pdf_path         = lecture_paths.get("pdf"),
+#                 txt_path         = lecture_paths.get("txt"),
+#                 json_path        = lecture_paths.get("json"),
+#                 status           = version_status,
+#                 teacher_feedback = approval.get("teacher_feedback"),
+#             ))
+#         else:
+#             version_priority = {
+#                 "pending":  0,
+#                 "rejected": 1,
+#                 "approved": 2,
+#             }
+#             current_version_priority = version_priority.get(
+#                 existing.status.value if hasattr(existing.status, 'value') else str(existing.status), 0
+#             )
+#             new_version_priority = version_priority.get(
+#                 version_status.value if hasattr(version_status, 'value') else str(version_status), 0
+#             )
+
+#             if new_version_priority >= current_version_priority:
+#                 existing.status           = version_status
+#                 existing.teacher_feedback = approval.get("teacher_feedback")
+#                 db.add(existing)
+#             else:
+#                 print(
+#                     f"[sync] skipping version status downgrade: "
+#                     f"{version_status} < {existing.status}"
+#                 )
+
+#     if current_step == "done":
+#         gc = state.get("generated_content") or {}
+
+#         type_to_key = {
+#             ContentType.SCRIPT:          "script",
+#             ContentType.WORKSHEET:       "worksheet",
+#             ContentType.QUIZ:            "quiz",
+#             ContentType.SUMMARY:         "summary",
+#             ContentType.KNOWLEDGE_GRAPH: "knowledge_graph",
+#         }
+
+#         for content_type, gc_key in type_to_key.items():
+#             paths = gc.get(gc_key)
+#             if not paths:
+#                 continue
+
+#             already = db.exec(
+#                 select(GeneratedContent).where(
+#                     GeneratedContent.lecture_id   == lecture.lecture_id,
+#                     GeneratedContent.content_type == content_type,
+#                 )
+#             ).first()
+#             if already:
+#                 continue
+
+#             if content_type == ContentType.SUMMARY:
+#                 print(f"[sync] SUMMARY paths dict = {paths}")  # ← add this
+#                 primary_path = paths.get("pdf")
+#                 if not primary_path:
+#                     print(f"[sync] ⚠ no .pdf summary path found: {paths}")
+#                     continue
+
+#             else :
+#                 primary_path = (
+#                     paths.get("pdf")           or
+#                     paths.get("txt")           or
+#                     paths.get("questions_pdf") or
+#                     paths.get("quiz_pdf")      or
+#                     paths.get("html")          or
+#                     paths.get("script_path")   or
+#                     next((v for v in paths.values() if v), None)
+#                 )
+
+#             if not primary_path:
+#                 print(f"[sync] ⚠ no primary path for {gc_key}: {paths}")
+#                 continue
+
+#             answers_path = (
+#                 paths.get("answers_pdf") or
+#                 paths.get("answer_pdf")  or
+#                 paths.get("answers")
+#             )
+
+#             extra_path = (
+#                 paths.get("mmd")  or
+#                 paths.get("json") or
+#                 paths.get("extra")
+#             )
+
+#             print(f"[sync] saving {gc_key} → {primary_path}")
+#             db.add(GeneratedContent(
+#                 lecture_id   = lecture.lecture_id,
+#                 content_type = content_type,
+#                 file_path    = primary_path,
+#                 answers_path = answers_path,
+#                 extra_path   = extra_path,
+#             ))
+
+#         if (
+#             lecture.lecture_type == LectureType.GENERATED
+#             and lecture_paths.get("pdf")
+#             and not lecture.final_content
+#         ):
+#             pdf_path = lecture_paths["pdf"]
+#             filename = f"{lecture.course_code}_{lecture.title}_approved.pdf"
+#             await _upload_to_drive(pdf_path, filename, lecture, db)
+
+#         lecture.status = LectureStatus.DRAFT
+
+#     elif current_step == "failed":
+#         lecture.status = LectureStatus.FAILED
+
+#     db.add(agent_session)
+#     db.add(lecture)
+#     db.commit()
 
 async def _sync_state_to_db(
     agent_session: AgentSession,
@@ -778,8 +949,13 @@ async def get_status(
     # Do not let a live AI service state overwrite a manually set
     # terminal status (failed/done) in the DB
     db_is_terminal = agent_session.status in (AgentStatus.DONE, AgentStatus.FAILED)
+    needs_drive_retry = (
+    lecture.lecture_type == LectureType.GENERATED
+    and agent_session.status == AgentStatus.DONE
+    and not lecture.final_content
+    )
 
-    if state and not db_is_terminal:
+    if state and (not db_is_terminal or needs_drive_retry):
         await _sync_state_to_db(agent_session, lecture, state, db)
 
     current_step = state.get("current_step") if state and not db_is_terminal else agent_session.status.value
@@ -1070,20 +1246,57 @@ async def get_script_path(
     }
 
 
-@router.get("/{session_id}/lecture-pdf")
-async def get_lecture_pdf(
-    session_id: int,
+# @router.get("/{session_id}/lecture-pdf")
+# async def get_lecture_pdf(
+#     session_id: int,
+#     db:         Session = Depends(get_session),
+#     teacher:    User    = Depends(get_current_teacher),
+# ):
+#     """Stream the latest generated lecture PDF to Flutter."""
+#     agent_session, lecture = _get_session_or_404(session_id, db, teacher)
+
+#     latest_version = db.exec(
+#         select(LectureVersion)
+#         .where(LectureVersion.lecture_id == lecture.lecture_id)
+#         .order_by(LectureVersion.version_number.desc())
+#     ).first()
+
+#     if not latest_version or not latest_version.pdf_path:
+#         raise HTTPException(404, "No lecture PDF available yet")
+
+#     pdf_path = Path(latest_version.pdf_path)
+#     if not pdf_path.exists():
+#         raise HTTPException(404, f"PDF file not found on disk: {pdf_path}")
+
+#     return FileResponse(
+#         path       = str(pdf_path),
+#         media_type = "application/pdf",
+#         filename   = f"lecture_v{latest_version.version_number}.pdf",
+#     )
+
+@router.get("/{lecture_id}/lecture-pdf")
+async def get_lecture_pdf_by_lecture(
+    lecture_id: int,
     db:         Session = Depends(get_session),
     teacher:    User    = Depends(get_current_teacher),
 ):
-    """Stream the latest generated lecture PDF to Flutter."""
-    agent_session, lecture = _get_session_or_404(session_id, db, teacher)
+    """Stream the latest generated lecture PDF to Flutter, by lecture_id."""
+    lecture = db.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(404, "Lecture not found")
+
+    # Verify teacher owns this lecture
+    if lecture.teacher_id != teacher.user_id:
+        raise HTTPException(403, "You do not own this lecture")
 
     latest_version = db.exec(
         select(LectureVersion)
         .where(LectureVersion.lecture_id == lecture.lecture_id)
         .order_by(LectureVersion.version_number.desc())
     ).first()
+
+    print(f"DEBUG: latest_version = {latest_version}")
+
 
     if not latest_version or not latest_version.pdf_path:
         raise HTTPException(404, "No lecture PDF available yet")
@@ -1097,93 +1310,92 @@ async def get_lecture_pdf(
         media_type = "application/pdf",
         filename   = f"lecture_v{latest_version.version_number}.pdf",
     )
-
-@router.get("/{session_id}/content/{content_type}/download")
-async def download_content_file(
-    session_id:   int,
-    content_type: str,
-    file_key:     str = "primary",  # primary | answers | extra
-    db:           Session = Depends(get_session),
-    teacher:      User    = Depends(get_current_teacher),
-):
-    """
-    Stream a generated content file to Flutter.
+# @router.get("/{session_id}/content/{content_type}/download")
+# async def download_content_file(
+#     session_id:   int,
+#     content_type: str,
+#     file_key:     str = "primary",  # primary | answers | extra
+#     db:           Session = Depends(get_session),
+#     teacher:      User    = Depends(get_current_teacher),
+# ):
+#     """
+#     Stream a generated content file to Flutter.
     
-    content_type: script | worksheet | quiz | summary | knowledge_graph
-    file_key:     primary (default) | answers | extra
+#     content_type: script | worksheet | quiz | summary | knowledge_graph
+#     file_key:     primary (default) | answers | extra
     
-    Examples:
-    GET /sessions/15/content/worksheet/download              → questions PDF
-    GET /sessions/15/content/worksheet/download?file_key=answers → answers PDF
-    GET /sessions/15/content/script/download                 → script TXT
-    GET /sessions/15/content/knowledge_graph/download        → HTML file
-    """
-    agent_session, lecture = _get_session_or_404(session_id, db, teacher)
+#     Examples:
+#     GET /sessions/15/content/worksheet/download              → questions PDF
+#     GET /sessions/15/content/worksheet/download?file_key=answers → answers PDF
+#     GET /sessions/15/content/script/download                 → script TXT
+#     GET /sessions/15/content/knowledge_graph/download        → HTML file
+#     """
+#     agent_session, lecture = _get_session_or_404(session_id, db, teacher)
 
-    # Validate content_type
-    try:
-        ct = ContentType(content_type.lower())
-    except ValueError:
-        raise HTTPException(
-            400,
-            f"Invalid content_type '{content_type}'. "
-            f"Allowed: script, worksheet, quiz, summary, knowledge_graph"
-        )
+#     # Validate content_type
+#     try:
+#         ct = ContentType(content_type.lower())
+#     except ValueError:
+#         raise HTTPException(
+#             400,
+#             f"Invalid content_type '{content_type}'. "
+#             f"Allowed: script, worksheet, quiz, summary, knowledge_graph"
+#         )
 
-    # Find the content row
-    content_row = db.exec(
-        select(GeneratedContent).where(
-            GeneratedContent.lecture_id   == lecture.lecture_id,
-            GeneratedContent.content_type == ct,
-        )
-    ).first()
+#     # Find the content row
+#     content_row = db.exec(
+#         select(GeneratedContent).where(
+#             GeneratedContent.lecture_id   == lecture.lecture_id,
+#             GeneratedContent.content_type == ct,
+#         )
+#     ).first()
 
-    if not content_row:
-        raise HTTPException(404, f"{content_type} not generated yet")
+#     if not content_row:
+#         raise HTTPException(404, f"{content_type} not generated yet")
 
-    # Select which file to serve
-    if file_key == "primary":
-        file_path = content_row.file_path
-    elif file_key == "answers":
-        file_path = content_row.answers_path
-        if not file_path:
-            raise HTTPException(404, f"No answers file for {content_type}")
-    elif file_key == "extra":
-        file_path = content_row.extra_path
-        if not file_path:
-            raise HTTPException(404, f"No extra file for {content_type}")
-    else:
-        raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
+#     # Select which file to serve
+#     if file_key == "primary":
+#         file_path = content_row.file_path
+#     elif file_key == "answers":
+#         file_path = content_row.answers_path
+#         if not file_path:
+#             raise HTTPException(404, f"No answers file for {content_type}")
+#     elif file_key == "extra":
+#         file_path = content_row.extra_path
+#         if not file_path:
+#             raise HTTPException(404, f"No extra file for {content_type}")
+#     else:
+#         raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
 
-    # Verify file exists on disk
-    path = Path(file_path)
-    if not path.exists():
-        raise HTTPException(404, f"File not found on disk: {path}")
+#     # Verify file exists on disk
+#     path = Path(file_path)
+#     if not path.exists():
+#         raise HTTPException(404, f"File not found on disk: {path}")
 
-    # Determine media type from extension
-    ext = path.suffix.lower()
-    media_type_map = {
-        ".pdf":  "application/pdf",
-        ".txt":  "text/plain",
-        ".html": "text/html",
-        ".json": "application/json",
-        ".mmd":  "text/plain",
-    }
-    media_type = media_type_map.get(ext, "application/octet-stream")
+#     # Determine media type from extension
+#     ext = path.suffix.lower()
+#     media_type_map = {
+#         ".pdf":  "application/pdf",
+#         ".txt":  "text/plain",
+#         ".html": "text/html",
+#         ".json": "application/json",
+#         ".mmd":  "text/plain",
+#     }
+#     media_type = media_type_map.get(ext, "application/octet-stream")
 
-    # Build a clean filename for Flutter
-    filename = f"{lecture.course_code}_{content_type}"
-    if file_key == "answers":
-        filename += "_answers"
-    elif file_key == "extra":
-        filename += "_extra"
-    filename += ext
+#     # Build a clean filename for Flutter
+#     filename = f"{lecture.course_code}_{content_type}"
+#     if file_key == "answers":
+#         filename += "_answers"
+#     elif file_key == "extra":
+#         filename += "_extra"
+#     filename += ext
 
-    return FileResponse(
-        path       = str(path),
-        media_type = media_type,
-        filename   = filename,
-    )
+#     return FileResponse(
+#         path       = str(path),
+#         media_type = media_type,
+#         filename   = filename,
+#     )
 
 @router.get("/lecture/{lecture_id}/content/{content_type}/download")
 async def download_content_file_by_lecture(
@@ -1278,6 +1490,203 @@ async def download_content_file_by_lecture(
         media_type = media_type,
         filename   = filename,
     )
+
+
+
+
+@router.get("/{lecture_id}/content/{content_type}/download")
+async def download_content_file_by_lecture_teacher(
+    lecture_id:   int,
+    content_type: str,
+    file_key:     str = "primary",  # primary | answers | extra
+    db:           Session = Depends(get_session),
+    teacher:      User    = Depends(get_current_teacher),  # ← changed
+):
+    """
+    Stream a generated content file to a teacher by lecture_id.
+
+    content_type: script | worksheet | quiz | summary | knowledge_graph
+    file_key:     primary (default) | answers | extra
+    """
+    # Fetch lecture
+    lecture = db.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(404, "Lecture not found")
+
+    # Verify teacher owns this lecture
+    if lecture.teacher_id != teacher.user_id:  # ← changed (no enrollment check)
+        raise HTTPException(403, "You do not own this lecture")
+
+    # Validate content_type
+    try:
+        ct = ContentType(content_type.lower())
+    except ValueError:
+        raise HTTPException(
+            400,
+            f"Invalid content_type '{content_type}'. "
+            f"Allowed: script, worksheet, quiz, summary, knowledge_graph"
+        )
+
+    # Find the content row
+    content_row = db.exec(
+        select(GeneratedContent).where(
+            GeneratedContent.lecture_id   == lecture_id,
+            GeneratedContent.content_type == ct,
+        )
+    ).first()
+
+    if not content_row:
+        raise HTTPException(404, f"{content_type} not generated yet")
+
+    # Select which file to serve
+    if file_key == "primary":
+        file_path = content_row.file_path
+    elif file_key == "answers":
+        file_path = content_row.answers_path
+        if not file_path:
+            raise HTTPException(404, f"No answers file for {content_type}")
+    elif file_key == "extra":
+        file_path = content_row.extra_path
+        if not file_path:
+            raise HTTPException(404, f"No extra file for {content_type}")
+    else:
+        raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
+
+    # Verify file exists on disk
+    path = Path(file_path)
+    if not path.exists():
+        raise HTTPException(404, f"File not found on disk: {path}")
+
+    # Determine media type from extension
+    ext = path.suffix.lower()
+    media_type_map = {
+        ".pdf":  "application/pdf",
+        ".txt":  "text/plain",
+        ".html": "text/html",
+        ".json": "application/json",
+        ".mmd":  "text/plain",
+    }
+    media_type = media_type_map.get(ext, "application/octet-stream")
+
+    # Build a clean filename
+    filename = f"{lecture.course_code}_{content_type}"
+    if file_key == "answers":
+        filename += "_answers"
+    elif file_key == "extra":
+        filename += "_extra"
+    filename += ext
+
+    return FileResponse(
+        path       = str(path),
+        media_type = media_type,
+        filename   = filename,
+    )
+
+
+# @router.get("/{lecture_id}/content/{content_type}/download")
+# async def download_content_file_by_lecture_teacher(
+#     lecture_id:   int,
+#     content_type: str,
+#     file_key:     str = "primary",  # primary | answers | extra
+#     db:           Session = Depends(get_session),
+#     teacher:      User    = Depends(get_current_teacher),
+# ):
+#     """
+#     Stream a generated content file to a teacher by lecture_id.
+
+#     content_type: lecture | script | worksheet | quiz | summary | knowledge_graph
+#     file_key:     primary (default) | answers | extra  (ignored for content_type=lecture)
+#     """
+#     # Fetch lecture
+#     lecture = db.get(Lecture, lecture_id)
+#     if not lecture:
+#         raise HTTPException(404, "Lecture not found")
+
+#     # Verify teacher owns this lecture
+#     if lecture.teacher_id != teacher.user_id:
+#         raise HTTPException(403, "You do not own this lecture")
+
+#     # ── Special case: content_type = "lecture" → serve the lecture's own final_content file
+#     if content_type.lower() == "lecture":
+#         if not lecture.final_content:
+#             raise HTTPException(404, "Lecture content not generated yet")
+
+#         if lecture.final_content.startswith("http"):
+#             # It's a hosted link (e.g. Google Drive) — redirect instead of streaming
+#             return RedirectResponse(url=lecture.final_content)
+
+#         path = Path(lecture.final_content)
+#         if not path.exists():
+#             raise HTTPException(404, f"File not found on disk: {path}")
+
+#         ext = path.suffix.lower()
+#         media_type_map = {
+#             ".pdf":  "application/pdf",
+#             ".txt":  "text/plain",
+#             ".html": "text/html",
+#             ".json": "application/json",
+#             ".mmd":  "text/plain",
+#         }
+#         media_type = media_type_map.get(ext, "application/octet-stream")
+
+#         filename = f"{lecture.course_code}_lecture{ext}"
+#         return FileResponse(path=str(path), media_type=media_type, filename=filename)
+
+#     # ── Normal generated-content types
+#     try:
+#         ct = ContentType(content_type.lower())
+#     except ValueError:
+#         raise HTTPException(
+#             400,
+#             f"Invalid content_type '{content_type}'. "
+#             f"Allowed: lecture, script, worksheet, quiz, summary, knowledge_graph"
+#         )
+
+#     content_row = db.exec(
+#         select(GeneratedContent).where(
+#             GeneratedContent.lecture_id   == lecture_id,
+#             GeneratedContent.content_type == ct,
+#         )
+#     ).first()
+
+#     if not content_row:
+#         raise HTTPException(404, f"{content_type} not generated yet")
+
+#     if file_key == "primary":
+#         file_path = content_row.file_path
+#     elif file_key == "answers":
+#         file_path = content_row.answers_path
+#         if not file_path:
+#             raise HTTPException(404, f"No answers file for {content_type}")
+#     elif file_key == "extra":
+#         file_path = content_row.extra_path
+#         if not file_path:
+#             raise HTTPException(404, f"No extra file for {content_type}")
+#     else:
+#         raise HTTPException(400, f"Invalid file_key '{file_key}'. Allowed: primary, answers, extra")
+
+#     path = Path(file_path)
+#     if not path.exists():
+#         raise HTTPException(404, f"File not found on disk: {path}")
+
+#     ext = path.suffix.lower()
+#     media_type_map = {
+#         ".pdf":  "application/pdf",
+#         ".txt":  "text/plain",
+#         ".html": "text/html",
+#         ".json": "application/json",
+#         ".mmd":  "text/plain",
+#     }
+#     media_type = media_type_map.get(ext, "application/octet-stream")
+
+#     filename = f"{lecture.course_code}_{content_type}"
+#     if file_key == "answers":
+#         filename += "_answers"
+#     elif file_key == "extra":
+#         filename += "_extra"
+#     filename += ext
+
+#     return FileResponse(path=str(path), media_type=media_type, filename=filename)
 
 @router.get("/{session_id}/feedback-suggestions")
 async def get_feedback_suggestions(
