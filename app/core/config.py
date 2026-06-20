@@ -89,6 +89,14 @@ class Settings(BaseSettings):
     VOICE_UPLOADS_DIR   : Optional[str] = None
     TTS_AUDIO_DIR       : Optional[str] = None
 
+
+    # STT (Whisper) — used for transcribing student voice questions
+    GROQ_API_KEY_WHISPER: Optional[str] = None
+
+    # Q&A PDF Export
+    QA_EXPORT_DIR          : str = "outputs/qa_exports"
+    QA_EXPORT_EXPIRY_HOURS : int = 48
+
     # ── Pipeline Paths ─────────────────────────────────────────────
     # Absolute paths on the machine running the pipeline (Windows)
     # Optional so the app starts even without pipeline configured

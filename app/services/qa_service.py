@@ -360,12 +360,15 @@ import logging
 from datetime import datetime
 from typing import Optional
 from sqlmodel import Session, select
-
+import os
+from pathlib import Path
 from app.core.database import engine
 from app.models.lecture import Lecture
 from app.models.lecture_index import LectureIndex, IndexStatus
 from app.models.qa_session import QASession
 from app.models.qa_message import QAMessage, MessageRole
+from app.models.user import User
+from app.core.config import settings
 from app.rag_client import client as rag_client
 from app.rag_client.exceptions import (
     RAGServiceUnavailableError,
@@ -434,20 +437,56 @@ async def ask(
         lecture_id = lecture_id,
     )
 
-    # ── 4. Prepare the query ───────────────────────────────────────
+    # # ── 4. Prepare the query ───────────────────────────────────────
+    # voice_input_path: Optional[str] = None
+
+    # if voice_file:
+    #     # Save voice file → pass absolute path to RAG
+    #     voice_input_path = await save_voice_file(
+    #         file       = voice_file,
+    #         student_id = student_id,
+    #         lecture_id = lecture_id,
+    #     )
+    #     query = voice_input_path   # RAG detects it's a path and transcribes
+
+    # elif text:
+    #     query = text
+
+    # else:
+    #     raise HTTPException(
+    #         status_code=422,
+    #         detail="Either text or voice_file must be provided.",
+    #     )
+
+    # ── 4. Prepare the query — transcribe voice in OUR backend ──────
     voice_input_path: Optional[str] = None
 
     if voice_file:
-        # Save voice file → pass absolute path to RAG
+        # Save voice file → get absolute path
         voice_input_path = await save_voice_file(
             file       = voice_file,
             student_id = student_id,
             lecture_id = lecture_id,
         )
-        query = voice_input_path   # RAG detects it's a path and transcribes
+
+        # Transcribe ourselves — RAG should never see raw audio.
+        # This guarantees QAMessage.content_text is always real text,
+        # which the PDF export depends on.
+        from app.services.stt_service import transcribe_voice
+        try:
+            question_text = await transcribe_voice(voice_input_path)
+        except Exception as e:
+            logger.error(f"[QAService] Transcription failed: {e}")
+            raise HTTPException(
+                status_code=422,
+                detail="Could not transcribe voice message. Please try again.",
+            )
+
+        query = question_text   # plain text now — never an audio path
 
     elif text:
-        query = text
+        question_text = text
+        query         = text
 
     else:
         raise HTTPException(
@@ -455,17 +494,30 @@ async def ask(
             detail="Either text or voice_file must be provided.",
         )
 
-    # ── 5. Save student QAMessage ──────────────────────────────────
+    # # ── 5. Save student QAMessage ──────────────────────────────────
+    # # Save question first so it appears in history even if RAG fails
+    # student_message = QAMessage(
+    #     session_id       = session.id,
+    #     role             = MessageRole.STUDENT,
+    #     content_text     = text if text else "[voice message]",
+    #     voice_input_path = voice_input_path,
+    # )
+    # db.add(student_message)
+    # db.commit()
+    # db.refresh(student_message)
+
+   # ── 5. Save student QAMessage ──────────────────────────────────
+    # content_text is now always real text — typed or transcribed.
     # Save question first so it appears in history even if RAG fails
     student_message = QAMessage(
         session_id       = session.id,
         role             = MessageRole.STUDENT,
-        content_text     = text if text else "[voice message]",
+        content_text     = question_text,
         voice_input_path = voice_input_path,
     )
-    db.add(student_message)
-    db.commit()
-    db.refresh(student_message)
+    db.add(student_message)        # ← ADD THIS
+    db.commit()                    # ← ADD THIS
+    db.refresh(student_message)    # ← ADD THIS
 
     # ── 6. Call RAG /query ─────────────────────────────────────────
     try:
@@ -520,7 +572,23 @@ async def ask(
     db.add(session)
     db.commit()
     db.refresh(assistant_message)
+    # ── Invalidate any cached PDF export — new content exists now ──
+    from app.models.qa_export import QAExport, ExportStatus
 
+    stale_exports = db.exec(
+        select(QAExport).where(
+            QAExport.student_id == student_id,
+            QAExport.lecture_id == lecture_id,
+            QAExport.status     == ExportStatus.READY,
+        )
+    ).all()
+
+    for export in stale_exports:
+        export.status = ExportStatus.EXPIRED
+        db.add(export)
+
+    if stale_exports:
+        db.commit()
     logger.info(
         f"[QAService] ✓ answered — "
         f"student={student_id} lecture={lecture_id} "
@@ -536,6 +604,86 @@ async def ask(
         "timestamp"   : rag_response.timestamp,
     }
 
+
+# ── Export PDF ───────────────────────────────────────────────────────────────
+
+async def export_pdf(lecture_id: int, student_id: int, db: Session) -> str:
+    """
+    Get or create a PDF transcript of this student's Q&A history
+    for this lecture. Reuses a non-expired export if one exists.
+
+    Returns absolute path to the PDF file to stream.
+    """
+    from datetime import timedelta
+    from app.models.qa_export import QAExport, ExportStatus
+    from app.models.lecture import Lecture
+    from app.services.qa_pdf import build_qa_pdf
+
+    # 1. Find this student's session for this lecture
+    qa_session = db.exec(
+        select(QASession).where(
+            QASession.student_id == student_id,
+            QASession.lecture_id == lecture_id,
+        )
+    ).first()
+
+    if not qa_session:
+        raise HTTPException(
+            status_code=404,
+            detail="You haven't asked any questions in this lecture yet.",
+        )
+
+    # 2. Reuse existing non-expired export if present
+    existing = db.exec(
+        select(QAExport).where(
+            QAExport.student_id == student_id,
+            QAExport.lecture_id == lecture_id,
+            QAExport.status     == ExportStatus.READY,
+            QAExport.expires_at > datetime.utcnow(),
+        )
+    ).first()
+
+    if existing and existing.file_path and Path(existing.file_path).exists():
+        logger.info(f"[QAService] Reusing existing export — student={student_id} lecture={lecture_id}")
+        return existing.file_path
+
+    # 3. Build a fresh PDF from this session's messages
+    messages = db.exec(
+        select(QAMessage)
+        .where(QAMessage.session_id == qa_session.id)
+        .order_by(QAMessage.created_at.asc())
+    ).all()
+
+    if not messages:
+        raise HTTPException(
+            status_code=404,
+            detail="You haven't asked any questions in this lecture yet.",
+        )
+
+    lecture = db.get(Lecture, lecture_id)
+    student = db.get(User, student_id)
+
+    pdf_path = build_qa_pdf(
+        messages      = messages,
+        lecture_id    = lecture_id,
+        student_id    = student_id,
+        lecture_title = lecture.title if lecture else f"Lecture {lecture_id}",
+        student_name  = student.full_name if student else f"Student {student_id}",
+    )
+
+    new_export = QAExport(
+        student_id    = student_id,
+        lecture_id    = lecture_id,
+        status        = ExportStatus.READY,
+        file_path     = pdf_path,
+        message_count = len(messages),
+        expires_at    = datetime.utcnow() + timedelta(hours=settings.QA_EXPORT_EXPIRY_HOURS),
+    )
+    db.add(new_export)
+    db.commit()
+
+    logger.info(f"[QAService] Built new export — student={student_id} lecture={lecture_id}")
+    return pdf_path
 
 # ── History ───────────────────────────────────────────────────────────────────
 

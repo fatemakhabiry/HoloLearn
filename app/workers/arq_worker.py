@@ -5,6 +5,7 @@ from arq.cron import cron
 
 from app.core.config import settings
 from app.workers.generation_worker import run_generation
+from app.workers.qa_export_worker import cleanup_expired_qa_exports
 from app.workers.rag_ingest_worker import run_rag_ingest
 from app.tasks.session_tasks_arq import sync_agent_state, detect_stuck_sessions
 
@@ -35,4 +36,5 @@ class WorkerSettings:
 
     cron_jobs = [
         cron(detect_stuck_sessions, minute={0, 10, 20, 30, 40, 50}),
+        cron(cleanup_expired_qa_exports, hour=set(range(24)), minute=0),  # every hour
     ]

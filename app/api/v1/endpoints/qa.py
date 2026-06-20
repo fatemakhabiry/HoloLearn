@@ -149,7 +149,34 @@ async def stream_answer_audio(
         media_type = "audio/wav",
         filename  = f"answer_{message_id}.wav",
     )
+# ============================================
+# 7: Export Q&A History as PDF
+# ============================================
 
+@router.get("/{lecture_id}/export-pdf", status_code=status.HTTP_200_OK)
+async def export_pdf(
+    lecture_id  : int,
+    session     : Session = Depends(get_session),
+    current_user: User    = Depends(get_current_user),
+):
+    """
+    Download a PDF transcript of this student's Q&A history for this lecture.
+
+    - Reuses an existing export if generated within the last
+      QA_EXPORT_EXPIRY_HOURS (default 48h).
+    - Generates a fresh one otherwise (resets the expiry window).
+    """
+    pdf_path = await qa_service.export_pdf(
+        lecture_id = lecture_id,
+        student_id = current_user.user_id,
+        db         = session,
+    )
+
+    return FileResponse(
+        path        = pdf_path,
+        media_type  = "application/pdf",
+        filename    = f"qa_transcript_lecture_{lecture_id}.pdf",
+    )
 
 # ============================================
 # 5: Clear Session
@@ -169,4 +196,33 @@ async def clear_session(
         session_id = session_id,
         student_id = current_user.user_id,
         db         = session,
+    )
+
+# ============================================
+# 7: Export Q&A History as PDF
+# ============================================
+
+@router.get("/{lecture_id}/export-pdf", status_code=status.HTTP_200_OK)
+async def export_pdf(
+    lecture_id  : int,
+    session     : Session = Depends(get_session),
+    current_user: User    = Depends(get_current_user),
+):
+    """
+    Download a PDF transcript of this student's Q&A history for this lecture.
+
+    - Reuses an existing export if generated within the last
+      QA_EXPORT_EXPIRY_HOURS (default 48h).
+    - Generates a fresh one otherwise (resets the expiry window).
+    """
+    pdf_path = await qa_service.export_pdf(
+        lecture_id = lecture_id,
+        student_id = current_user.user_id,
+        db         = session,
+    )
+
+    return FileResponse(
+        path        = pdf_path,
+        media_type  = "application/pdf",
+        filename    = f"qa_transcript_lecture_{lecture_id}.pdf",
     )

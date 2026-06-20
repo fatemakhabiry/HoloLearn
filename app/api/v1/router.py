@@ -51,7 +51,6 @@ from app.api.v1.endpoints import (
     internal,
     qa,
     research,
-    identity,
 
 )
 
@@ -75,7 +74,3 @@ api_router.include_router(
     tags=["research"],
 )
 
-# No prefix here on purpose — identity.py's route is already declared as
-# "/lecture/{lecture_id}/verify-identity", so this lands under the same
-# /lecture/{id}/... path family as lecture.router without double-prefixing.
-api_router.include_router(identity.router,       tags=["Identity Verification"])

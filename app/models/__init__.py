@@ -11,3 +11,4 @@ from app.models.lecture_index import LectureIndex    # ← ADD
 from app.models.qa_session import QASession          # ← ADD
 from app.models.qa_message import QAMessage          # ← ADD
 from app.models.identity_verification import IdentityVerification
+from app.models.qa_export import QAExport
