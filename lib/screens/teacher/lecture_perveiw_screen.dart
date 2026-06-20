@@ -84,12 +84,11 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
     try {
       final lectureState = context.read<LectureStateProvider>();
       final appState = context.read<AppStateProvider>();
- 
+
       await LectureService.approve(lectureState.ongoingSessionId!, appState);
- 
- 
+
       if (!mounted) return;
- 
+
       // Resume polling — server will move to generating_content
       Provider.of<ProcessingNotifier>(
         context,
@@ -119,17 +118,13 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
       }
     }
   }
+
   void _handleavtartoptions() async {
     final appState = context.read<AppStateProvider>();
     appState.setLectureId(context.read<LectureStateProvider>().lectureId);
     await AvatarService.checkAvatarStatus(appState);
     if (!mounted) return;
-    Navigator.pushNamed(
-      context,
-      appState.isFirstTimeLogin
-          ? AppRoutes.createAvatar
-          : AppRoutes.lectureSetup,
-    );
+    Navigator.pushNamed(context, AppRoutes.createAvatar);
   }
 
   void _onLoadFailed() {
@@ -355,7 +350,10 @@ class _LecturePreviewScreenState extends State<LecturePreviewScreen> {
                 else
                   SelectableText(
                     text,
-                    style: AppStyles.bodyMedium.copyWith(height: 1.5,color: context.textPrimary),
+                    style: AppStyles.bodyMedium.copyWith(
+                      height: 1.5,
+                      color: context.textPrimary,
+                    ),
                   ),
               ],
             ),

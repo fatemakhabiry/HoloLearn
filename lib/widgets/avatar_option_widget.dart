@@ -162,3 +162,28 @@ class LectureInputOptions {
     ),
   ];
 }
+class PhotoVoiceInputOptions {
+  static const List<SelectableOption> _base = [
+    SelectableOption(
+      id: 'upload',
+      title: 'Upload',
+      description: 'Upload Your photo and voice sample',
+    ),
+    SelectableOption(
+      id: 'default',
+      title: 'Default',
+      description: 'Use default avatars',
+    ),
+  ];
+
+  static const SelectableOption _reuse = SelectableOption(
+    id: 'reuse',
+    title: 'Use Existing',
+    description: 'Reuse your previously created avatar',
+  );
+
+  /// Pass `isFirstTime: false` to prepend the "Use Existing" option.
+  static List<SelectableOption> options({bool isFirstTime = true}) {
+    return isFirstTime ? _base : [_reuse, ..._base];
+  }
+}

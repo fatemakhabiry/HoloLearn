@@ -16,3 +16,4 @@ export 'processing_notification_bar_widget.dart';
 export 'content_tile_widget.dart';
 export 'loading_overlay_widget.dart';
 export 'research_agent_button_widget.dart';
+export 'default_avatar_widget.dart';

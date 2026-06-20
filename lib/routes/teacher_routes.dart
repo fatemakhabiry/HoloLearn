@@ -11,9 +11,7 @@ class TeacherRoutes {
         );
 
       case AppRoutes.lectureHistory:
-        return MaterialPageRoute(
-          builder: (_) => const LectureHistoryScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const LectureHistoryScreen());
 
       case AppRoutes.createNewLecture:
         return MaterialPageRoute(
@@ -26,7 +24,8 @@ class TeacherRoutes {
           builder: (_) =>
               EditLectureScreen(scheduleId: args['scheduleId'] as int),
         );
-
+      case AppRoutes.createAvatar:
+        return MaterialPageRoute(builder: (_) => const CreateAvatarScreen());
       default:
         return null;
     }

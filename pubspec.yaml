@@ -53,6 +53,8 @@ dependencies:
   open_file: ^3.5.10
   lottie: ^3.3.3
   local_auth: ^2.3.0
+  audioplayers: ^6.0.0
+  
 
   
 dev_dependencies:
@@ -87,6 +89,7 @@ flutter:
     - assets/images/vertical logo-02.png
     - assets/animation/Logo Animation.json
     - assets/animation/Loading animation.json
+    - assets/avatars/
 
 # flutter_launcher_icons:
 

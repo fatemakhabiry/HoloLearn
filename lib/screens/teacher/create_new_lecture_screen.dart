@@ -176,14 +176,14 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     // if (!mounted) return;
     // Navigator.pushNamed(
     //   context,
-    //   appState.isFirstTimeLogin
-    //       ? AppRoutes.createAvatar
-    //       : AppRoutes.lectureSetup,
+    //   // appState.isFirstTimeLogin
+    //   //     ?
+    //   AppRoutes.createAvatar,
+    //   // : AppRoutes.lectureSetup,
     // );
   }
 
   void _handleGeneratedFlow() {
-    
     final resourceProvider = Provider.of<ResourceStateProvider>(
       context,
       listen: false,
@@ -239,12 +239,13 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
           reason: 'Authenticate to generate this lecture',
         );
         if (!authenticated) {
-          if (mounted) setState(() => _isLoading = false); //  reset before returning
+          if (mounted)
+            setState(() => _isLoading = false); //  reset before returning
           return;
         }
       } on BiometricException catch (e) {
         if (mounted) {
-          setState(() => _isLoading = false); 
+          setState(() => _isLoading = false);
           CustomErrorHandler.show(
             context,
             message: e.message,

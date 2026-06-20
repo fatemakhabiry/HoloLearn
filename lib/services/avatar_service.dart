@@ -20,7 +20,9 @@ class AvatarService {
   );
 
   /// Check avatar status
-  static Future<Map<String, dynamic>> checkAvatarStatus(AppStateProvider appState) async {
+  static Future<Map<String, dynamic>> checkAvatarStatus(
+    AppStateProvider appState,
+  ) async {
     final uri = Uri.parse(ApiConfig.getUrl(ApiConfig.avatarStatusEndpoint));
 
     final response = await http.get(
@@ -34,10 +36,10 @@ class AvatarService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      
+
       // Update app state with profile setup status
       appState.setFirstTimeLogin(data['needs_profile_setup'] ?? false);
-      
+
       print('First time login: ${appState.isFirstTimeLogin}');
       return data;
     } else {
@@ -136,93 +138,92 @@ class AvatarService {
   }
 
   /// Upload only voice sample
- static Future<Map<String, dynamic>> uploadVoiceSample({
-  required AppStateProvider appState,
-  required File voiceFile,
-}) async {
-  try {
-    print('📤 Starting voice sample upload with Dio...');
+  static Future<Map<String, dynamic>> uploadVoiceSample({
+    required AppStateProvider appState,
+    required File voiceFile,
+  }) async {
+    try {
+      print('📤 Starting voice sample upload with Dio...');
 
-    // Validate file exists
-    if (!await voiceFile.exists()) {
-      throw 'Voice file not found';
-    }
+      // Validate file exists
+      if (!await voiceFile.exists()) {
+        throw 'Voice file not found';
+      }
 
-    // Check file size (max 10MB for audio)
-    final fileSize = await voiceFile.length();
-    print('Voice file size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+      // Check file size (max 10MB for audio)
+      final fileSize = await voiceFile.length();
+      print('Voice file size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
 
-    if (fileSize > 10 * 1024 * 1024) {
-      throw 'Voice file too large. Maximum 10MB allowed.';
-    }
+      if (fileSize > 10 * 1024 * 1024) {
+        throw 'Voice file too large. Maximum 10MB allowed.';
+      }
 
-    // Detect file extension and set content type
-    final fileName = voiceFile.path.split('/').last;
-    final extension = fileName.split('.').last.toLowerCase();
+      // Detect file extension and set content type
+      final fileName = voiceFile.path.split('/').last;
+      final extension = fileName.split('.').last.toLowerCase();
 
-    String contentType;
-    switch (extension) {
-      case 'm4a':
-        contentType = 'audio/mp4';
-        break;
-      case 'mp3':
-        contentType = 'audio/mpeg';
-        break;
-      case 'wav':
-        contentType = 'audio/wav';
-        break;
-      case 'ogg':
-        contentType = 'audio/ogg';
-        break;
-      default:
-        contentType = 'audio/mpeg';
-    }
+      String contentType;
+      switch (extension) {
+        case 'm4a':
+          contentType = 'audio/mp4';
+          break;
+        case 'mp3':
+          contentType = 'audio/mpeg';
+          break;
+        case 'wav':
+          contentType = 'audio/wav';
+          break;
+        case 'ogg':
+          contentType = 'audio/ogg';
+          break;
+        default:
+          contentType = 'audio/mpeg';
+      }
 
-    print('File: $fileName, Content-Type: $contentType');
+      print('File: $fileName, Content-Type: $contentType');
 
-    // ✅ FIX: Changed 'voice_sample' to 'voice' to match backend
-    FormData formData = FormData.fromMap({
-      'voice': await MultipartFile.fromFile(
-        voiceFile.path,
-        filename: fileName,
-        contentType: DioMediaType.parse(contentType),
-      ),
-    });
+      // ✅ FIX: Changed 'voice_sample' to 'voice' to match backend
+      FormData formData = FormData.fromMap({
+        'voice': await MultipartFile.fromFile(
+          voiceFile.path,
+          filename: fileName,
+          contentType: DioMediaType.parse(contentType),
+        ),
+      });
 
-    // Make API request
-    final response = await _dio.post(
-      ApiConfig.getUrl(ApiConfig.teacherUploadVoiceEndpoint),
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer ${appState.accessToken}',
+      // Make API request
+      final response = await _dio.post(
+        ApiConfig.getUrl(ApiConfig.teacherUploadVoiceEndpoint),
+        data: formData,
+        options: Options(
+          headers: {'Authorization': 'Bearer ${appState.accessToken}'},
+          validateStatus: (status) => status != null && status < 500,
+        ),
+        onSendProgress: (sent, total) {
+          final progress = (sent / total * 100).toStringAsFixed(0);
+          print('Voice upload progress: $progress%');
         },
-        validateStatus: (status) => status != null && status < 500,
-      ),
-      onSendProgress: (sent, total) {
-        final progress = (sent / total * 100).toStringAsFixed(0);
-        print('Voice upload progress: $progress%');
-      },
-    );
+      );
 
-    // Handle response
-    if (response.statusCode == 200) {
-      print('✅ Voice sample uploaded successfully!');
-      return response.data as Map<String, dynamic>;
-    } else {
-      final errorMessage = _extractErrorMessage(response);
-      print('❌ Error response: ${response.data}');
-      throw errorMessage;
+      // Handle response
+      if (response.statusCode == 200) {
+        print('✅ Voice sample uploaded successfully!');
+        return response.data as Map<String, dynamic>;
+      } else {
+        final errorMessage = _extractErrorMessage(response);
+        print('❌ Error response: ${response.data}');
+        throw errorMessage;
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'voice sample');
+    } catch (e) {
+      if (e is String) {
+        throw e;
+      }
+      throw 'Failed to upload voice sample: ${e.toString()}';
     }
-  } on DioException catch (e) {
-    throw _handleDioError(e, 'voice sample');
-  } catch (e) {
-    if (e is String) {
-      throw e;
-    }
-    throw 'Failed to upload voice sample: ${e.toString()}';
   }
-}
+
   /// Extract error message from response
   static String _extractErrorMessage(Response response) {
     try {
@@ -273,5 +274,39 @@ class AvatarService {
     } else {
       return 'Network error: ${e.message}';
     }
+  }
+
+  static Future<bool> verifyPhotoIdentity({
+    required AppStateProvider appState,
+    required File selectedPhoto,
+    required File liveCapture,
+  }) async {
+    final formData = FormData.fromMap({
+      "photo": await MultipartFile.fromFile(
+        selectedPhoto.path,
+        filename: "photo.jpg",
+      ),
+      "live_capture": await MultipartFile.fromFile(
+        liveCapture.path,
+        filename: "live.jpg",
+      ),
+    });
+
+    final response = await _dio.post(
+        ApiConfig.getUrl(ApiConfig.teacherUploadPhotoEndpoint),
+      data: formData,
+      options: Options(
+        headers: {'Authorization': 'Bearer ${appState.accessToken}'},
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data;
+      // Adjust this key to match your actual API response shape
+      return data['verified'] == true || data['match'] == true;
+    }
+
+    throw Exception(response.data?['detail'] ?? 'Verification failed');
   }
 }
