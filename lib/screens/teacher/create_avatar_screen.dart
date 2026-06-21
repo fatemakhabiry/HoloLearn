@@ -42,6 +42,12 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   // it's already proof-of-liveness.
   File? liveCaptureFile;
 
+  // True once `selectedImage` has already been verified AND saved on the
+  // backend via /upload-photo (from either _uploadPhoto or _takePhoto).
+  // _finishAndGenerate() uses this to skip a redundant re-upload of the
+  // same photo + live capture pair.
+  bool _photoAlreadySaved = false;
+
   String? message;
   DefaultAvatarOption? _selectedDefaultAvatar;
 
@@ -147,16 +153,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
   // ========== IMAGE PICKING ==========
 
-  /// "UPLOAD PHOTO" — pick a photo from camera or gallery.
-  ///
-  /// - If the source is the **gallery**, we can't trust the file wasn't of
-  ///   someone else, so we require one extra live front-camera shot purely
-  ///   to verify identity against the picked photo.
-  /// - If the source is the **camera**, the picked image IS already a live
-  ///   capture — no second verification shot is needed. We still run it
-  ///   through the same verification call for consistency with the backend
-  ///   (which always expects a `live_capture` field), using the same image
-  ///   for both slots.
+  /// "UPLOAD PHOTO" — pick a photo from the gallery, then require a fresh
+  /// front-camera live shot to verify the picked photo is really this
+  /// person. Calls `AvatarService.uploadPhoto` directly — this both
+  /// verifies AND saves the photo on the backend in one call, so there's
+  /// no separate stateless pre-check step here.
   Future<void> _uploadPhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -173,77 +174,70 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
       File liveShotFile;
 
-        // Gallery pick — require a fresh front-camera shot to verify
-        // the picked photo is really this person.
-        final cameraStatus = await Permission.camera.request();
-        if (!cameraStatus.isGranted) {
-          CustomErrorHandler.show(
-            context,
-            message: 'Camera access is required to verify your identity.',
-            type: ErrorType.fail,
-          );
-          return;
-        }
-
-        if (!mounted) return;
+      // Gallery pick — require a fresh front-camera shot to verify
+      // the picked photo is really this person.
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
         CustomErrorHandler.show(
           context,
-          message: 'Please look at the camera to verify your identity',
-          type: ErrorType.info,
-          duration: const Duration(seconds: 2),
+          message: 'Camera access is required to verify your identity.',
+          type: ErrorType.fail,
         );
+        return;
+      }
 
-        final ImagePicker verifyPicker = ImagePicker();
-        final XFile? liveShot = await verifyPicker.pickImage(
-          source: ImageSource.camera,
-          preferredCameraDevice: CameraDevice.front,
-          maxWidth: 1280,
-          maxHeight: 720,
-          imageQuality: 85,
+      if (!mounted) return;
+      CustomErrorHandler.show(
+        context,
+        message: 'Please look at the camera to verify your identity',
+        type: ErrorType.info,
+        duration: const Duration(seconds: 2),
+      );
+
+      final ImagePicker verifyPicker = ImagePicker();
+      final XFile? liveShot = await verifyPicker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        maxWidth: 1280,
+        maxHeight: 720,
+        imageQuality: 85,
+      );
+
+      if (liveShot == null) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Identity verification was cancelled.',
+          type: ErrorType.fail,
         );
+        return;
+      }
 
-        if (liveShot == null) {
-          CustomErrorHandler.show(
-            context,
-            message: 'Identity verification was cancelled.',
-            type: ErrorType.fail,
-          );
-          return;
-        }
-
-        liveShotFile = File(liveShot.path);
+      liveShotFile = File(liveShot.path);
 
       setState(() => isLoading = true);
 
       final appState = Provider.of<AppStateProvider>(context, listen: false);
-      final verified = await AvatarService.uploadPhoto(
+
+      // uploadPhoto() only returns normally on a 200 response — any
+      // mismatch (422), no-face-detected, or other failure throws and is
+      // caught below. Reaching this line without an exception already
+      // means the backend verified and saved the photo successfully.
+      // (Its return value is the response body Map, not a bool — never
+      // compare it against `true`.)
+      await AvatarService.uploadPhoto(
         appState: appState,
-        selectedPhoto: pickedFile,
-        liveCapture: liveShotFile,
+        photoFile: pickedFile,
+        liveCaptureFile: liveShotFile,
       );
 
       if (!mounted) return;
       setState(() => isLoading = false);
 
-      if (verified != true) {
-        CustomErrorHandler.show(
-          context,
-          message:
-              'Verification failed — face does not match. Please retake both photos.',
-          type: ErrorType.fail,
-        );
-        setState(() {
-          selectedImage = null;
-          liveCaptureFile = null;
-          hasUploadedPhoto = false;
-        });
-        return;
-      }
-
       setState(() {
         selectedImage = pickedFile;
         liveCaptureFile = liveShotFile;
         hasUploadedPhoto = true;
+        _photoAlreadySaved = true;
       });
 
       CustomErrorHandler.show(
@@ -291,10 +285,28 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
       final capturedFile = File(image.path);
 
+      setState(() => isLoading = true);
+
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+
+      // Same reasoning as _uploadPhoto: this is the real save call, and
+      // it only returns normally on success. The captured selfie is
+      // already a live capture, so it's sent as both `photo` and
+      // `live_capture` — there's nothing else to verify it against.
+      await AvatarService.uploadPhoto(
+        appState: appState,
+        photoFile: capturedFile,
+        liveCaptureFile: capturedFile,
+      );
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
       setState(() {
         selectedImage = capturedFile;
         liveCaptureFile = capturedFile;
         hasUploadedPhoto = true;
+        _photoAlreadySaved = true;
       });
 
       CustomErrorHandler.show(
@@ -304,6 +316,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
       );
     } catch (e) {
       print('Error taking photo: $e');
+      if (mounted) setState(() => isLoading = false);
       CustomErrorHandler.show(
         context,
         message: 'Error taking photo: $e',
@@ -386,11 +399,16 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             voiceFile = File(audioPath!);
           }
 
+          // The photo was already verified and saved on the backend by
+          // _uploadPhoto/_takePhoto, which call /upload-photo directly.
+          // Sending it again here would just re-verify and re-save the
+          // identical photo + live capture, re-triggering background
+          // preprocessing for no reason — so skip it when already saved.
           final result = await AvatarService.uploadAvatar(
             appState: appState,
-            photoFile: selectedImage,
+            photoFile: _photoAlreadySaved ? null : selectedImage,
             voiceFile: voiceFile,
-            liveCaptureFile: liveCaptureFile,
+            liveCaptureFile: _photoAlreadySaved ? null : liveCaptureFile,
           );
 
           print('Upload result: $result');

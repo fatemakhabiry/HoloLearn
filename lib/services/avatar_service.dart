@@ -381,8 +381,8 @@ class AvatarService {
     if (photoFile != null) {
       results['photo'] = await uploadPhoto(
         appState: appState,
-        selectedPhoto: photoFile,
-        liveCapture: liveCaptureFile!,
+        photoFile: photoFile,
+        liveCaptureFile: liveCaptureFile!,
       );
       print('✅ Photo upload result: ${results['photo']}');
     }
@@ -406,14 +406,14 @@ class AvatarService {
   /// provided or this call will fail with a 422 (missing required field).
   static Future<Map<String, dynamic>> uploadPhoto({
     required AppStateProvider appState,
-    required File selectedPhoto,
-    required File liveCapture
+    required File photoFile,
+    required File liveCaptureFile
   }) async {
     try {
       print('📤 Starting photo upload with Dio...');
 
       // Validate file exists
-      if (!await selectedPhoto.exists()) {
+      if (!await photoFile.exists()) {
         throw 'Photo file not found';
       }
 
@@ -421,12 +421,12 @@ class AvatarService {
       //   throw 'A live capture is required to upload a photo. Please retake the photo.';
       // }
 
-      if (!await liveCapture.exists()) {
+      if (!await liveCaptureFile.exists()) {
         throw 'Live capture file not found. Please retake the photo.';
       }
 
       // Check file size (max 5MB for images)
-      final fileSize = await selectedPhoto.length();
+      final fileSize = await photoFile.length();
       print('Photo file size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
 
       if (fileSize > 5 * 1024 * 1024) {
@@ -437,12 +437,12 @@ class AvatarService {
       // `live_capture` fields on this route.
       FormData formData = FormData.fromMap({
         'photo': await MultipartFile.fromFile(
-          selectedPhoto.path,
-          filename: selectedPhoto.path.split('/').last,
+          photoFile.path,
+          filename: photoFile.path.split('/').last,
         ),
         'live_capture': await MultipartFile.fromFile(
-          liveCapture.path,
-          filename: liveCapture.path.split('/').last,
+          liveCaptureFile.path,
+          filename: liveCaptureFile.path.split('/').last,
         ),
       });
 
