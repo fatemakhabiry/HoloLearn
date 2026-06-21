@@ -381,8 +381,8 @@ class AvatarService {
     if (photoFile != null) {
       results['photo'] = await uploadPhoto(
         appState: appState,
-        photoFile: photoFile,
-        liveCaptureFile: liveCaptureFile,
+        selectedPhoto: photoFile,
+        liveCapture: liveCaptureFile!,
       );
       print('✅ Photo upload result: ${results['photo']}');
     }
@@ -406,27 +406,27 @@ class AvatarService {
   /// provided or this call will fail with a 422 (missing required field).
   static Future<Map<String, dynamic>> uploadPhoto({
     required AppStateProvider appState,
-    required File photoFile,
-    required File? liveCaptureFile,
+    required File selectedPhoto,
+    required File liveCapture
   }) async {
     try {
       print('📤 Starting photo upload with Dio...');
 
       // Validate file exists
-      if (!await photoFile.exists()) {
+      if (!await selectedPhoto.exists()) {
         throw 'Photo file not found';
       }
 
-      if (liveCaptureFile == null) {
-        throw 'A live capture is required to upload a photo. Please retake the photo.';
-      }
+      // if (liveCapture == null) {
+      //   throw 'A live capture is required to upload a photo. Please retake the photo.';
+      // }
 
-      if (!await liveCaptureFile.exists()) {
+      if (!await liveCapture.exists()) {
         throw 'Live capture file not found. Please retake the photo.';
       }
 
       // Check file size (max 5MB for images)
-      final fileSize = await photoFile.length();
+      final fileSize = await selectedPhoto.length();
       print('Photo file size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
 
       if (fileSize > 5 * 1024 * 1024) {
@@ -437,12 +437,12 @@ class AvatarService {
       // `live_capture` fields on this route.
       FormData formData = FormData.fromMap({
         'photo': await MultipartFile.fromFile(
-          photoFile.path,
-          filename: photoFile.path.split('/').last,
+          selectedPhoto.path,
+          filename: selectedPhoto.path.split('/').last,
         ),
         'live_capture': await MultipartFile.fromFile(
-          liveCaptureFile.path,
-          filename: liveCaptureFile.path.split('/').last,
+          liveCapture.path,
+          filename: liveCapture.path.split('/').last,
         ),
       });
 

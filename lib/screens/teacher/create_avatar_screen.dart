@@ -159,41 +159,9 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   ///   for both slots.
   Future<void> _uploadPhoto() async {
     try {
-      final ImageSource? source = await showDialog<ImageSource>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Choose Photo Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.primaryColor),
-                title: Text('Camera', style: AppStyles.h3.copyWith(color: context.textPrimary)),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.primaryColor),
-                title: Text('Gallery', style: AppStyles.h3.copyWith(color: context.textPrimary)),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-            ],
-          ),
-        ),
-      );
-
-      if (source == null) return;
-
-      if (source == ImageSource.camera) {
-        final status = await Permission.camera.request();
-        if (!status.isGranted) {
-          CustomErrorHandler.show(context, message: 'Camera permission denied', type: ErrorType.fail);
-          return;
-        }
-      }
-
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
-        source: source,
+        source: ImageSource.gallery,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
@@ -205,11 +173,6 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
       File liveShotFile;
 
-      if (source == ImageSource.camera) {
-        // Already a live capture — reuse it instead of asking for a
-        // second selfie.
-        liveShotFile = pickedFile;
-      } else {
         // Gallery pick — require a fresh front-camera shot to verify
         // the picked photo is really this person.
         final cameraStatus = await Permission.camera.request();
@@ -249,12 +212,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
         }
 
         liveShotFile = File(liveShot.path);
-      }
 
       setState(() => isLoading = true);
 
       final appState = Provider.of<AppStateProvider>(context, listen: false);
-      final verified = await AvatarService.verifyPhotoIdentity(
+      final verified = await AvatarService.uploadPhoto(
         appState: appState,
         selectedPhoto: pickedFile,
         liveCapture: liveShotFile,
@@ -263,10 +225,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
       if (!mounted) return;
       setState(() => isLoading = false);
 
-      if (!verified) {
+      if (verified != true) {
         CustomErrorHandler.show(
           context,
-          message: 'Verification failed — face does not match. Please retake both photos.',
+          message:
+              'Verification failed — face does not match. Please retake both photos.',
           type: ErrorType.fail,
         );
         setState(() {
@@ -305,6 +268,16 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   /// since the backend requires a `live_capture` field on every call.
   Future<void> _takePhoto() async {
     try {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Camera permission denied',
+          type: ErrorType.fail,
+        );
+        return;
+      }
+
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
@@ -403,8 +376,10 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
           setState(() {
             isLoading = true;
           });
-          final appState =
-              Provider.of<AppStateProvider>(context, listen: false);
+          final appState = Provider.of<AppStateProvider>(
+            context,
+            listen: false,
+          );
 
           File? voiceFile;
           if (audioPath != null) {
@@ -519,9 +494,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
           const SizedBox(height: AppStyles.spacingS),
           Text(
             'No need to re-record your voice or re-upload a photo.',
-            style: AppStyles.bodyMedium.copyWith(
-              color: context.textSecondary,
-            ),
+            style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hololearn/widgets/button_widget.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_fonts.dart';
-import '../constants/app_styles.dart';
-import '../constants/app_themes.dart';
+import '../constants/constants.dart';
 
 class LectureScheduleCard extends StatelessWidget {
   final String lectureTitle;
@@ -61,34 +58,32 @@ class LectureScheduleCard extends StatelessWidget {
           //     date != '' &&
           //     timeRange != null &&
           //     timeRange != '') ...[
-            // Date and Time
-            Text(
-              '$date . $timeRange',
-              style: AppStyles.bodyMedium.copyWith(
-                color: context.textSecondary,
+          // Date and Time
+            if (status == 'draft') ...[
+              Text(
+                'Drafted',
+                style: AppStyles.bodyMedium.copyWith(
+                  color: context.textSecondary,
+                ),
               ),
-            ),
+            ] else ...[
+              Text(
+                '$date . $timeRange',
+                style: AppStyles.bodyMedium.copyWith(
+                  color: context.textSecondary,
+                ),
+              ),if (status!=null)...[
+              const SizedBox(height: AppStyles.spacingXS),
+              Text(
+                'Scheduled',
+                style: AppStyles.bodyMedium.copyWith(
+                  color: context.textSecondary,
+                ),
+              ),]
+            ],
 
             const SizedBox(height: AppStyles.spacingXS),
-          // ],
-          // else ...[
-          //   Text(
-          //     'Drafted',
-          //     style: AppStyles.bodyMedium.copyWith(
-          //       color: context.textSecondary,
-          //     ),
-          //   ),
-
-          //   const SizedBox(height: AppStyles.spacingXS),
-          // ],
-
-          // // Action Buttons
-          // Text(
-          //   lectureType != null ? lectureType! : '',
-          //   style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
-          // ),
-          // const SizedBox(height: AppStyles.spacingXS),
-
+          
           Text(
             coursecode != null ? coursecode! : '',
             style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),

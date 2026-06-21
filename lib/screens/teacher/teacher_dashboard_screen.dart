@@ -381,7 +381,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                               coursecode: lecture.courseCode,
                               date: lecture.date,
                               timeRange: lecture.timeRange,
-                              status: lecture.status,
                               editButtonText: "EDIT",
                               cancelButtonText: "CANCLE ",
                               onEdit: () => _handleEdit(lecture),

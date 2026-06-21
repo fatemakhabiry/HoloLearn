@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hololearn/providers/lecture_state_provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/storage_helper.dart';
 

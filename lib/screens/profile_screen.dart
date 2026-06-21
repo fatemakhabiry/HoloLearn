@@ -420,8 +420,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Step 6: Upload
         await AvatarService.uploadPhoto(
           appState: appState,
-          photoFile: processedImage,
-          liveCaptureFile: null, // No live capture in this context
+          selectedPhoto: processedImage,
+          liveCapture: processedImage // No live capture in this context
         );
 
         // Step 7: Update UI on success
