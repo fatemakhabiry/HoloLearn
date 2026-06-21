@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:hololearn/utils/storage_helper.dart';
 import 'package:provider/provider.dart';
 
@@ -289,7 +291,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: "Hologram Sessions",
@@ -374,7 +378,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                             ),
                             child: LectureScheduleCard(
                               lectureTitle: lecture.lectureTitle,
-                              date: lecture.formattedDate,
+                              coursecode: lecture.courseCode,
+                              date: lecture.date,
                               timeRange: lecture.timeRange,
                               status: lecture.status,
                               editButtonText: "EDIT",
@@ -391,7 +396,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
             ),
           ),
         ),
-      ),
+      ),)
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    try {
+      if (Platform.isAndroid || Platform.isIOS) {
+        SystemNavigator.pop();
+      } else {
+        exit(0);
+      }
+    } catch (_) {
+      SystemNavigator.pop();
+    }
+
+    return false;
   }
 }

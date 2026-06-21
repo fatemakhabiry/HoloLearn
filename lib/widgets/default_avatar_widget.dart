@@ -7,12 +7,12 @@ class DefaultAvatars {
     DefaultAvatarOption(
       name: 'Arthur',
       imagePath: 'assets/avatars/arthur.jpeg',
-      audioPath: 'avatars/arthur_voice_sample.mpeg',
+      audioPath: 'avatars/arthur_voice_sample.mp3',
     ),
     DefaultAvatarOption(
       name: 'Adeline',
       imagePath: 'assets/avatars/adeline.jpeg',
-      audioPath: 'avatars/adeline_voice_sample.mpeg',
+      audioPath: 'avatars/adeline_voice_sample.mp3',
     ),
   ];
 }

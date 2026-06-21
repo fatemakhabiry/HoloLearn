@@ -36,6 +36,7 @@ class _StudentLectureContentScreenState
     GenContentType.knowledgeGraph,
     GenContentType.worksheetAnswers,
     GenContentType.quizAnswers,
+    GenContentType.chatHistory
   ];
 
   final Map<GenContentType, bool> _cached = {};
@@ -55,6 +56,7 @@ class _StudentLectureContentScreenState
   }
 
   Future<void> _downloadAndOpen(GenContentType type) async {
+    print('Downloading and opening content type: $type for lecture ID: $_lectureId');
     final appState = context.read<AppStateProvider>();
 
     // Already cached — open directly
@@ -65,15 +67,23 @@ class _StudentLectureContentScreenState
     }
 
     setState(() => _downloading[type] = true);
-
+    final bytes ;
     try {
       // Uses lecture_id — no session_id needed for students
-      final bytes = await LectureService.getStudentLectureContentBytes(
+      if(type==GenContentType.chatHistory)
+      {
+        bytes = await LectureService.getStudentLectureChatHistoryBytes(
+          _lectureId,
+          appState,
+        );
+      }
+      else {
+      bytes = await LectureService.getStudentLectureContentBytes(
         _lectureId,
         type,
         appState,
       );
-
+      }
       final file = await LocalFileService.save(_lectureId, type, bytes);
 
       if (mounted) setState(() => _cached[type] = true);

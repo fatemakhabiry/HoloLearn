@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/lecture_state_provider.dart';
@@ -213,205 +214,212 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: LoadingOverlay(
-        isLoading: is_loading,
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(AppStyles.spacingL),
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppStyles.spacingM,
-                        vertical: AppStyles.spacingS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(
-                          AppStyles.radiusPill,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: LoadingOverlay(
+          isLoading: is_loading,
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(AppStyles.spacingL),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppStyles.spacingM,
+                          vertical: AppStyles.spacingS,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryColor,
+                          borderRadius: BorderRadius.circular(
+                            AppStyles.radiusPill,
+                          ),
+                        ),
+                        child: Text(
+                          'HOLOGRAPHIC LEARNING',
+                          style: AppStyles.caption.copyWith(
+                            color: context.isDark
+                                ? AppColors.darkBackground
+                                : AppColors.white,
+                            fontWeight: AppFonts.semiBold,
+                            letterSpacing: 1.2,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        'HOLOGRAPHIC LEARNING',
-                        style: AppStyles.caption.copyWith(
-                          color: context.isDark
-                              ? AppColors.darkBackground
-                              : AppColors.white,
-                          fontWeight: AppFonts.semiBold,
-                          letterSpacing: 1.2,
+                      const SizedBox(height: AppStyles.spacingM),
+                      // HoloLearn Title
+                      Text(
+                        'HoloLearn',
+                        style: AppStyles.logo.copyWith(
+                          color: context.textPrimary,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: AppStyles.spacingM),
-                    // HoloLearn Title
-                    Text(
-                      'HoloLearn',
-                      style: AppStyles.logo.copyWith(
-                        color: context.textPrimary,
-                      ),
-                    ),
 
-                    const SizedBox(height: AppStyles.spacingXS),
-                    // Subtitle
-                    Text(
-                      'Next-generation virtual education',
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: context.textSecondary,
+                      const SizedBox(height: AppStyles.spacingXS),
+                      // Subtitle
+                      Text(
+                        'Next-generation virtual education',
+                        style: AppStyles.bodyMedium.copyWith(
+                          color: context.textSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppStyles.spacingXL),
-                    // Login Form Card
-                    Container(
-                      padding: const EdgeInsets.all(AppStyles.spacingL),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(AppStyles.radiusXL),
-                        boxShadow: AppStyles.cardShadow,
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomTextFormField(
-                              controller:
-                                  _emailController, // NEW: Add controller
-                              hintText: 'Enter your email',
-                              label: "Email Address",
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email is required';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Enter a valid email';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) => email = value,
-                            ),
-                            const SizedBox(height: AppStyles.spacingL),
-                            CustomTextFormField(
-                              controller:
-                                  _passwordController, // NEW: Add controller
-                              suffixIcon: IconsButton(
-                                size: 24,
-                                iconColor: Colors.grey,
-                                backgroundColor: Colors.transparent,
-                                icon: _obscureText
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                onPressed: () {
-                                  setState(() => _obscureText = !_obscureText);
+                      const SizedBox(height: AppStyles.spacingXL),
+                      // Login Form Card
+                      Container(
+                        padding: const EdgeInsets.all(AppStyles.spacingL),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(
+                            AppStyles.radiusXL,
+                          ),
+                          boxShadow: AppStyles.cardShadow,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CustomTextFormField(
+                                controller:
+                                    _emailController, // NEW: Add controller
+                                hintText: 'Enter your email',
+                                label: "Email Address",
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Email is required';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Enter a valid email';
+                                  }
+                                  return null;
                                 },
+                                onSaved: (value) => email = value,
                               ),
-                              hintText: 'Enter your password',
-                              label: "Password",
-                              obscureText: _obscureText,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) => password = value,
-                            ),
-                            const SizedBox(height: AppStyles.spacingM),
-
-                            // NEW: Remember Me Checkbox Row
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
-                                  activeColor: AppColors.primaryColor,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                Text(
-                                  'Remember me',
-                                  style: AppStyles.bodyMedium.copyWith(
-                                    color: context.textPrimary,
-                                  ),
-                                ),
-                                const Spacer(),
-                                // Forgot Password Link (moved to row)
-                                TextButton(
+                              const SizedBox(height: AppStyles.spacingL),
+                              CustomTextFormField(
+                                controller:
+                                    _passwordController, // NEW: Add controller
+                                suffixIcon: IconsButton(
+                                  size: 24,
+                                  iconColor: Colors.grey,
+                                  backgroundColor: Colors.transparent,
+                                  icon: _obscureText
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   onPressed: () {
-                                    // Navigator.push(
-                                    //   context,
-                                    //   MaterialPageRoute(
-                                    //     builder: (context) =>
-                                    //         const ForgetPasswordPage(),
-                                    //   ),
-                                    // );
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.forgetPassword,
+                                    setState(
+                                      () => _obscureText = !_obscureText,
                                     );
                                   },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
+                                ),
+                                hintText: 'Enter your password',
+                                label: "Password",
+                                obscureText: _obscureText,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Password is required';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) => password = value,
+                              ),
+                              const SizedBox(height: AppStyles.spacingM),
+
+                              // NEW: Remember Me Checkbox Row
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _rememberMe,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _rememberMe = value ?? false;
+                                      });
+                                    },
+                                    activeColor: AppColors.primaryColor,
+                                    materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
                                   ),
-                                  child: Text(
-                                    'Forgot Password?',
-                                    style: AppStyles.link.copyWith(
-                                      color: AppColors.primaryColor,
+                                  Text(
+                                    'Remember me',
+                                    style: AppStyles.bodyMedium.copyWith(
+                                      color: context.textPrimary,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppStyles.spacingL),
+                                  const Spacer(),
+                                  // Forgot Password Link (moved to row)
+                                  TextButton(
+                                    onPressed: () {
+                                      // Navigator.push(
+                                      //   context,
+                                      //   MaterialPageRoute(
+                                      //     builder: (context) =>
+                                      //         const ForgetPasswordPage(),
+                                      //   ),
+                                      // );
+                                      Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.forgetPassword,
+                                      );
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'Forgot Password?',
+                                      style: AppStyles.link.copyWith(
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppStyles.spacingL),
 
-                            // Login Button
-                            CustomButton(
-                              text: 'LOG IN',
-                              fullWidth: true,
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  _formKey.currentState!.save();
-                                  _showbanner = false;
-                                  await _handleLogin();
-                                } else {
-                                  // Form is not valid
-                                  setState(() {
-                                    _showbanner = true;
-                                    message =
-                                        "Please fill all fields correctly!";
-                                  });
-                                }
-                              },
-                            ),
-                          ],
+                              // Login Button
+                              CustomButton(
+                                text: 'LOG IN',
+                                fullWidth: true,
+                                onPressed: () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    _formKey.currentState!.save();
+                                    _showbanner = false;
+                                    await _handleLogin();
+                                  } else {
+                                    // Form is not valid
+                                    setState(() {
+                                      _showbanner = true;
+                                      message =
+                                          "Please fill all fields correctly!";
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    if (_showbanner) ...[
-                      const SizedBox(height: AppStyles.spacingL),
-                      MessageDisplay(
-                        isSuccess: false,
-                        massegeBanner: "Error",
-                        message: message,
-                        onDismiss: () => setState(() => message = ''),
-                      ),
+                      if (_showbanner) ...[
+                        const SizedBox(height: AppStyles.spacingL),
+                        MessageDisplay(
+                          isSuccess: false,
+                          massegeBanner: "Error",
+                          message: message,
+                          onDismiss: () => setState(() => message = ''),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -419,5 +427,19 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    try {
+      if (Platform.isAndroid || Platform.isIOS) {
+        SystemNavigator.pop();
+      } else {
+        exit(0);
+      }
+    } catch (_) {
+      SystemNavigator.pop();
+    }
+
+    return false;
   }
 }

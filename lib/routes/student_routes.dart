@@ -22,6 +22,11 @@ class StudentRoutes {
         return MaterialPageRoute(
           builder: (_) => StudentLectureContentScreen(session: session),
         );
+      case AppRoutes.studentTranscript:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => StudentTranscriptScreen(session: args['session']),
+        );
       default:
         return null;
     }

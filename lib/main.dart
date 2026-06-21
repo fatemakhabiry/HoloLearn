@@ -57,3 +57,40 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+// import 'constants/constants.dart';
+
+// import 'routes/app_routes.dart';
+// import 'routes/route_generator.dart';
+// import 'state/processing_notifier.dart';
+// import 'providers/theme_provider.dart';
+// import 'providers/app_state_provider.dart';
+// import 'providers/lecture_state_provider.dart';
+// import 'providers/resource_state_provider.dart';
+
+
+// final RouteObserver<ModalRoute<void>> routeObserver =
+//     RouteObserver<ModalRoute<void>>();
+
+// void main() async 
+
+//   runApp(MyApp(processingNotifier: processingNotifier, themeProvider: themeProvider));
+// }
+
+// class MyApp extends StatelessWidget {
+//   final ProcessingNotifier processingNotifier;
+//   final ThemeProvider themeProvider;
+
+//   const MyApp({super.key, required this.processingNotifier, required this.themeProvider});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return  MaterialApp(
+//           title: 'HoloLearn',
+//           debugShowCheckedModeBanner: false,
+          
+//     );
+//   }
+// }

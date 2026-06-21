@@ -56,7 +56,11 @@ class LectureScheduleCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppStyles.spacingXS),
-          if (date != null && date != '' && timeRange != null && timeRange != '') ...[
+
+          // if (date != null &&
+          //     date != '' &&
+          //     timeRange != null &&
+          //     timeRange != '') ...[
             // Date and Time
             Text(
               '$date . $timeRange',
@@ -66,23 +70,24 @@ class LectureScheduleCard extends StatelessWidget {
             ),
 
             const SizedBox(height: AppStyles.spacingXS),
-          ],
-          if (status != null && status != '') ...[
-            // Date only (if time is not provided)
-            Text(
-              date!,
-              style: AppStyles.bodyMedium.copyWith(
-                color: context.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppStyles.spacingXS),
-          ],
-          // Action Buttons
-          Text(
-            lectureType != null ? lectureType! : '',
-            style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
-          ),
-          const SizedBox(height: AppStyles.spacingXS),
+          // ],
+          // else ...[
+          //   Text(
+          //     'Drafted',
+          //     style: AppStyles.bodyMedium.copyWith(
+          //       color: context.textSecondary,
+          //     ),
+          //   ),
+
+          //   const SizedBox(height: AppStyles.spacingXS),
+          // ],
+
+          // // Action Buttons
+          // Text(
+          //   lectureType != null ? lectureType! : '',
+          //   style: AppStyles.bodyMedium.copyWith(color: context.textSecondary),
+          // ),
+          // const SizedBox(height: AppStyles.spacingXS),
 
           Text(
             coursecode != null ? coursecode! : '',

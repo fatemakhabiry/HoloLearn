@@ -240,6 +240,7 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
         );
         if (!authenticated) {
           if (mounted)
+            // ignore: curly_braces_in_flow_control_structures
             setState(() => _isLoading = false); //  reset before returning
           return;
         }
@@ -361,10 +362,14 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
     return FileUploadWidget(
       controller: _fileUploadController,
       label: 'Lecture Content',
-      supportedFormats: const [
+      supportedFormats: selectedInputType == 'prepared'
+          ? const ['pdf', 'pptx', 'ppt', 'txt']
+          :
+      const [
         'pdf',
         'pptx',
         'ppt',
+        'txt',
         'jpg',
         'jpeg',
         'png',
@@ -376,11 +381,15 @@ class _CreateNewLectureScreenState extends State<CreateNewLectureScreen> {
         'mkv',
         'webm',
         'mpeg',
+        'wav',
+        'mp3',
       ],
       isRequired: selectedInputType == 'prepared',
       headerText: 'DRAG & DROP OR BROWSE FILES',
       subheaderText:
-          'PDF, PPTX, PPT, JPG, JPEG, PNG, GIF, WEBP, MP4, MOV, AVI, MKV, WEBM, MPEG',
+          selectedInputType == 'prepared'
+              ? 'PDF, PPTX, PPT, TXT'
+              : 'PDF, PPTX, PPT, JPG, JPEG, PNG, GIF, WEBP, MP4, MOV, AVI, MKV, WEBM, MPEG''WAV, MP3',
       onFilesSelected: _onFilesSelected,
       allowMultiple: allowMultiple,
     );

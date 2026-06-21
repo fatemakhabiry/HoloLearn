@@ -230,6 +230,7 @@ enum GenContentType {
   worksheetAnswers,
   quizAnswers,
   summary,
+  chatHistory,
   unknown;
  
   static GenContentType fromString(String? value) {
@@ -242,6 +243,7 @@ enum GenContentType {
       case 'quiz_answers':   return GenContentType.quizAnswers;
       case 'lecture':        return GenContentType.lecture;
       case 'summary':        return GenContentType.summary;
+      case 'chat_history':   return GenContentType.chatHistory;
       default:               return GenContentType.unknown;
     }
   }
@@ -256,6 +258,7 @@ enum GenContentType {
       case GenContentType.worksheetAnswers: return 'worksheet';
       case GenContentType.quizAnswers:      return 'quiz';
       case GenContentType.summary:          return 'summary';
+      case GenContentType.chatHistory:      return 'chat_history';
       default:                              return 'unknown';
     }
   }
@@ -270,6 +273,7 @@ enum GenContentType {
       case GenContentType.worksheetAnswers: return 'Worksheet Answers';
       case GenContentType.quizAnswers:      return 'Quiz Answers';
       case GenContentType.summary:          return 'Summary';
+      case GenContentType.chatHistory:      return 'Chat History';
       default:                              return 'Unknown';
     }
   }
@@ -284,6 +288,7 @@ enum GenContentType {
       case GenContentType.worksheetAnswers: return Icons.check_circle_outline;
       case GenContentType.quizAnswers:      return Icons.fact_check_outlined;
       case GenContentType.summary:          return Icons.summarize_outlined;
+      case GenContentType.chatHistory:      return Icons.chat_bubble_outline;
       default:                              return Icons.file_present_outlined;
     }
   }

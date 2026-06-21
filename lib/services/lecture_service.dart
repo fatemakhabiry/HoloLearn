@@ -692,7 +692,7 @@ class LectureService {
   //   _checkStatus(res);
   //   return res.bodyBytes;
   // }
-    static Future<List<int>> getLecturePdfBytes(
+  static Future<List<int>> getLecturePdfBytes(
     int lectureId,
     AppStateProvider appState,
   ) async {
@@ -713,7 +713,7 @@ class LectureService {
     _checkStatus(res);
     return res.bodyBytes;
   }
- 
+
   static Future<List<int>> getLectureGeneratedResourceBytes(
     int lectureId,
     GenContentType contentType,
@@ -768,14 +768,15 @@ class LectureService {
 
     return res.bodyBytes;
   }
-    /// Student: download lecture content by lecture_id (no session_id needed)
+
+  /// Student: download lecture content by lecture_id (no session_id needed)
   static Future<List<int>> getStudentLectureContentBytes(
     int lectureId,
     GenContentType contentType,
     AppStateProvider appState,
   ) async {
     final contentTypeParam = GenContentType.toApiString(contentType);
- 
+
     String fileKey;
     switch (contentType) {
       case GenContentType.worksheetAnswers:
@@ -785,7 +786,7 @@ class LectureService {
       default:
         fileKey = 'primary';
     }
- 
+
     String acceptType;
     switch (contentType) {
       case GenContentType.script:
@@ -797,13 +798,13 @@ class LectureService {
       default:
         acceptType = 'application/pdf';
     }
- 
+
     final uri = Uri.parse(
       ApiConfig.getUrl(ApiConfig.getStudentLectureContentEndpoint)
           .replaceAll('{lecture_id}', lectureId.toString())
           .replaceAll('{content_type}', contentTypeParam),
     ).replace(queryParameters: {'file_key': fileKey});
- 
+
     final res = await _client
         .get(
           uri,
@@ -814,9 +815,32 @@ class LectureService {
           },
         )
         .timeout(ApiConfig.connectionTimeout);
- 
+
     if (res.statusCode == 404) {
       throw const ApiException('Content not available yet.', statusCode: 404);
+    }
+    _checkStatus(res);
+    return res.bodyBytes;
+  }
+
+  static Future<List<int>> getStudentLectureChatHistoryBytes(
+    int lectureId,
+    AppStateProvider appState,
+  ) async {
+    final res = await _client
+        .get(
+          Uri.parse(ApiConfig.getUrl(ApiConfig.qaHistoryPdfEndpoint)
+              .replaceAll('{lecture_id}', lectureId.toString())),
+          headers: {
+            'Authorization': 'Bearer ${appState.accessToken}',
+            'ngrok-skip-browser-warning': 'true',
+            'Accept': 'application/pdf',
+          },
+        )
+        .timeout(ApiConfig.connectionTimeout);
+
+    if (res.statusCode == 404) {
+      throw const ApiException('Chat history not available...', statusCode: 404);
     }
     _checkStatus(res);
     return res.bodyBytes;

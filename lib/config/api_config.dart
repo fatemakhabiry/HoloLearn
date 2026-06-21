@@ -2,9 +2,9 @@ class ApiConfig {
   // UPDATE THIS WITH YOUR NGROK URL OR LOCAL IP
   static const String baseUrl =
       //fatma
-      "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
+      // "https://unflinchingly-effortful-deacon.ngrok-free.dev/api/v1";
       //Ahmed
-      // "https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1";
+      "https://unpointed-lynne-paradingly.ngrok-free.dev/api/v1";
 
   // ===== Authentication Endpoints =====
   static const String loginEndpoint = '/auth/login';
@@ -18,6 +18,7 @@ class ApiConfig {
   static const String avatarStatusEndpoint = '/teachers/profile-status';
   static const String teacherUploadPhotoEndpoint = '/teachers/upload-photo';
   static const String teacherUploadVoiceEndpoint = '/teachers/upload-voice';
+  static const String teacherVerifyPhotoEndpoint = '/teachers/verify-photo';
 
   // ===== Password Reset / OTP Endpoints =====
   static const String forgotPasswordEndpoint =
@@ -72,24 +73,21 @@ class ApiConfig {
   static const String studentLectureEndpoint = '/student/upcoming-lectures';
   static const String getStudentLectureContentEndpoint =
       "/session/lecture/{lecture_id}/content/{content_type}/download";
+  static const String lectureTranscriptEndpoint =
+      '/lecture/{lecture_id}/transcript';
+
   // ===== Q&A Endpoints =======
-  /// POST /qa/{lecture_id}/ask
   /// Body: multipart — text (String) OR voice_file (audio)
   static const String qaAskEndpoint = '/qa/{lecture_id}/ask';
-
-  /// GET /qa/{lecture_id}/history?page=&page_size=
-  static const String qaHistoryEndpoint = '/qa/{lecture_id}/history';
-
-  /// GET /qa/{lecture_id}/status
+  static const String qaHistoryEndpoint = "/qa/{lecture_id}/history";
+  static const String qaHistoryPdfEndpoint ="/qa/{lecture_id}/export-pdf"; 
   static const String qaIndexStatusEndpoint = '/qa/{lecture_id}/status';
-
-  /// GET /qa/audio/{message_id}
   static const String qaAudioEndpoint = '/qa/audio/{message_id}';
-
-  /// DELETE /qa/session/{session_id}
   static const String qaClearSessionEndpoint = '/qa/session/{session_id}';
+
   // ===== Research Agent Endpoints =======
   static const String researchAgentEndpoint = '/research';
+
   // ===== Token Settings =====
   static const Duration tokenExpiry = Duration(minutes: 30);
 

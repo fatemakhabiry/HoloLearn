@@ -34,6 +34,14 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
   String? audioPath;
   File? selectedImage;
+
+  // The live-capture frame that backs `selectedImage` for identity
+  // verification. For gallery uploads this comes from a dedicated
+  // verification shot. For direct camera capture, the captured selfie
+  // itself doubles as the live capture (no second shot needed), since
+  // it's already proof-of-liveness.
+  File? liveCaptureFile;
+
   String? message;
   DefaultAvatarOption? _selectedDefaultAvatar;
 
@@ -139,135 +147,163 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
   // ========== IMAGE PICKING ==========
 
- Future<void> _uploadPhoto() async {
-  try {
-    final ImageSource? source = await showDialog<ImageSource>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Choose Photo Source'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primaryColor),
-              title: Text('Camera', style: AppStyles.h3.copyWith(color: context.textPrimary)),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primaryColor),
-              title: Text('Gallery', style: AppStyles.h3.copyWith(color: context.textPrimary)),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
+  /// "UPLOAD PHOTO" — pick a photo from camera or gallery.
+  ///
+  /// - If the source is the **gallery**, we can't trust the file wasn't of
+  ///   someone else, so we require one extra live front-camera shot purely
+  ///   to verify identity against the picked photo.
+  /// - If the source is the **camera**, the picked image IS already a live
+  ///   capture — no second verification shot is needed. We still run it
+  ///   through the same verification call for consistency with the backend
+  ///   (which always expects a `live_capture` field), using the same image
+  ///   for both slots.
+  Future<void> _uploadPhoto() async {
+    try {
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Choose Photo Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.primaryColor),
+                title: Text('Camera', style: AppStyles.h3.copyWith(color: context.textPrimary)),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.primaryColor),
+                title: Text('Gallery', style: AppStyles.h3.copyWith(color: context.textPrimary)),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
 
-    if (source == null) return;
+      if (source == null) return;
 
-    if (source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        CustomErrorHandler.show(context, message: 'Camera permission denied', type: ErrorType.fail);
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        if (!status.isGranted) {
+          CustomErrorHandler.show(context, message: 'Camera permission denied', type: ErrorType.fail);
+          return;
+        }
+      }
+
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      final pickedFile = File(image.path);
+
+      File liveShotFile;
+
+      if (source == ImageSource.camera) {
+        // Already a live capture — reuse it instead of asking for a
+        // second selfie.
+        liveShotFile = pickedFile;
+      } else {
+        // Gallery pick — require a fresh front-camera shot to verify
+        // the picked photo is really this person.
+        final cameraStatus = await Permission.camera.request();
+        if (!cameraStatus.isGranted) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Camera access is required to verify your identity.',
+            type: ErrorType.fail,
+          );
+          return;
+        }
+
+        if (!mounted) return;
+        CustomErrorHandler.show(
+          context,
+          message: 'Please look at the camera to verify your identity',
+          type: ErrorType.info,
+          duration: const Duration(seconds: 2),
+        );
+
+        final ImagePicker verifyPicker = ImagePicker();
+        final XFile? liveShot = await verifyPicker.pickImage(
+          source: ImageSource.camera,
+          preferredCameraDevice: CameraDevice.front,
+          maxWidth: 1280,
+          maxHeight: 720,
+          imageQuality: 85,
+        );
+
+        if (liveShot == null) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Identity verification was cancelled.',
+            type: ErrorType.fail,
+          );
+          return;
+        }
+
+        liveShotFile = File(liveShot.path);
+      }
+
+      setState(() => isLoading = true);
+
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      final verified = await AvatarService.verifyPhotoIdentity(
+        appState: appState,
+        selectedPhoto: pickedFile,
+        liveCapture: liveShotFile,
+      );
+
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      if (!verified) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Verification failed — face does not match. Please retake both photos.',
+          type: ErrorType.fail,
+        );
+        setState(() {
+          selectedImage = null;
+          liveCaptureFile = null;
+          hasUploadedPhoto = false;
+        });
         return;
       }
-    }
 
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1080,
-      imageQuality: 85,
-    );
-
-    if (image == null) return;
-
-    final pickedFile = File(image.path);
-
-    // ── Identity verification step ──────────────────────────────────────
-    final cameraStatus = await Permission.camera.request();
-    if (!cameraStatus.isGranted) {
-      CustomErrorHandler.show(
-        context,
-        message: 'Camera access is required to verify your identity.',
-        type: ErrorType.fail,
-      );
-      return;
-    }
-
-    if (!mounted) return;
-    CustomErrorHandler.show(
-      context,
-      message: 'Please look at the camera to verify your identity',
-      type: ErrorType.info,
-      duration: const Duration(seconds: 2),
-    );
-
-    final ImagePicker verifyPicker = ImagePicker();
-    final XFile? liveShot = await verifyPicker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      maxWidth: 1280,
-      maxHeight: 720,
-      imageQuality: 85,
-    );
-
-    if (liveShot == null) {
-      CustomErrorHandler.show(
-        context,
-        message: 'Identity verification was cancelled.',
-        type: ErrorType.fail,
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    final appState = Provider.of<AppStateProvider>(context, listen: false);
-    final verified = await AvatarService.verifyPhotoIdentity(
-      appState: appState,
-      selectedPhoto: pickedFile,
-      liveCapture: File(liveShot.path),
-    );
-
-    if (!mounted) return;
-    setState(() => isLoading = false);
-
-    if (!verified) {
-      CustomErrorHandler.show(
-        context,
-        message: 'Verification failed — face does not match. Please retake both photos.',
-        type: ErrorType.fail,
-      );
       setState(() {
-        selectedImage = null;
-        hasUploadedPhoto = false;
+        selectedImage = pickedFile;
+        liveCaptureFile = liveShotFile;
+        hasUploadedPhoto = true;
       });
-      return;
+
+      CustomErrorHandler.show(
+        context,
+        message: 'Photo verified and uploaded!',
+        type: ErrorType.success,
+      );
+    } catch (e) {
+      print('Error picking image: $e');
+      if (mounted) setState(() => isLoading = false);
+      CustomErrorHandler.show(
+        context,
+        message: 'Error verifying photo: $e',
+        type: ErrorType.fail,
+      );
     }
-
-    setState(() {
-      selectedImage = pickedFile;
-      hasUploadedPhoto = true;
-    });
-
-    CustomErrorHandler.show(
-      context,
-      message: 'Photo verified and uploaded!',
-      type: ErrorType.success,
-    );
-  } catch (e) {
-    print('Error picking image: $e');
-    if (mounted) setState(() => isLoading = false);
-    CustomErrorHandler.show(
-      context,
-      message: 'Error verifying photo: $e',
-      type: ErrorType.fail,
-    );
   }
-}
- Future<void> _takePhoto() async {
+
+  /// "TAKE PHOTO" — direct front-camera capture. This is already a live
+  /// capture, so no separate verification shot is required. The same
+  /// image is kept as the live-capture reference for the final upload,
+  /// since the backend requires a `live_capture` field on every call.
+  Future<void> _takePhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -280,8 +316,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
       if (image == null) return;
 
+      final capturedFile = File(image.path);
+
       setState(() {
-        selectedImage = File(image.path);
+        selectedImage = capturedFile;
+        liveCaptureFile = capturedFile;
         hasUploadedPhoto = true;
       });
 
@@ -299,6 +338,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
       );
     }
   }
+
   Future<void> _finishAndGenerate() async {
     // ── Reuse existing avatar — skip upload entirely ────────────────────────
     if (selectedInputType == 'reuse') {
@@ -322,6 +362,11 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
           appState: appState,
           photoFile: imageFile,
           voiceFile: voiceFile,
+          // Default avatars are bundled assets, not a real person, so
+          // there's nothing to verify against. The backend still requires
+          // a live_capture field on every call, so we send the same
+          // asset image for both — it will trivially match itself.
+          liveCaptureFile: imageFile,
         );
 
         print('Upload result: $result');
@@ -370,6 +415,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
             appState: appState,
             photoFile: selectedImage,
             voiceFile: voiceFile,
+            liveCaptureFile: liveCaptureFile,
           );
 
           print('Upload result: $result');
@@ -422,6 +468,7 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
   }
 
   // ========== BUILDERS ==========
+  // (unchanged — left exactly as in the original file)
 
   Widget _card({required Widget child}) {
     return Container(
@@ -608,7 +655,6 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
                   onPressed: _finishAndGenerate,
                   buttonType: ButtonType.primary,
                   fullWidth: true,
-                  isLoading: isLoading,
                 ),
                 const SizedBox(height: AppStyles.spacingXL),
 

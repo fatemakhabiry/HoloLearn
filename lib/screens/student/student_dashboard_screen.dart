@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:hololearn/routes/app_routes.dart';
 import 'package:http/http.dart';
 import 'package:flutter/material.dart';
@@ -70,9 +71,13 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     }
   }
 
-  void _handleOpenTranscript(int index) {
-    print('Open Transcript pressed on card index: $index');
-  }
+void _handleOpenTranscript(int index) {
+  Navigator.pushNamed(
+    context,
+    AppRoutes.studentTranscript,
+    arguments: {'session': fetchedLectures[index]},
+  );
+}
 
   void _handleEnterChat(int index) {
     // print('Enter Chat pressed on card index: $index');
@@ -94,7 +99,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       appBar: const CustomAppBar(
         title: 'Upcoming Lectures',
         showBackButton: false,
@@ -172,7 +179,21 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                   },
                 ),
         ),
-      ),
+      ),)
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    try {
+      if (Platform.isAndroid || Platform.isIOS) {
+        SystemNavigator.pop();
+      } else {
+        exit(0);
+      }
+    } catch (_) {
+      SystemNavigator.pop();
+    }
+
+    return false;
   }
 }
