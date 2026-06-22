@@ -274,6 +274,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
       confirmButtonText: 'Yes, Edit',
       cancelButtonText: 'No',
       onConfirm: () async {
+        CustomConfirmationDialog.dismiss(context);
         // Navigate to edit screen with scheduleId
         final result = await Navigator.pushNamed(
           context,

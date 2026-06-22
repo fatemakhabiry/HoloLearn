@@ -166,6 +166,7 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
   }
 
   void _handleReschedule(int index) {
+    
     // ✅ Validate lecture data before showing dialog
     if (myLectures[index].lectureId == null) {
       CustomErrorHandler.show(
@@ -204,7 +205,12 @@ class _LectureHistoryScreenState extends State<LectureHistoryScreen> {
 
           // ✅ Navigate to lecture setup screen
           if (mounted) {
-            Navigator.pushNamed(context, AppRoutes.lectureSetup);
+            if(myLectures[index].status=="draft"){
+              Navigator.pushNamed(context, AppRoutes.createAvatar);
+            }
+            else{
+              Navigator.pushNamed(context, AppRoutes.lectureSetup);
+            }
           }
         } catch (e) {
           if (mounted) {

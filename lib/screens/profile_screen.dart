@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? profileImage;
   bool isRecording = false;
   bool isUploading = false;
+  bool isLoading = false;
   String? audioPath;
   late AppStateProvider appState = Provider.of<AppStateProvider>(
     context,
@@ -45,6 +47,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _audioRecorder.dispose();
     super.dispose();
+  }
+
+  /// Converts a raw PlatformException from image_picker's camera into a
+  /// clear, actionable message. Camera permission denials in particular
+  /// surface as `PlatformException(camera_access_denied, ...)`, which
+  /// looks cryptic if shown to the user as-is.
+  String _describeCameraError(Object e) {
+    if (e is PlatformException) {
+      switch (e.code) {
+        case 'camera_access_denied':
+          return 'Camera access is turned off for this app. Please enable it in your device Settings to take a photo.';
+        case 'no_available_camera':
+          return 'No camera was found on this device.';
+        case 'already_active':
+          return 'The camera is already in use. Please try again.';
+        default:
+          return e.message ?? 'Could not access the camera. Please try again.';
+      }
+    }
+    return e.toString();
   }
 
   void _changePassword() {
@@ -353,6 +375,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Change the saved avatar photo.
+  ///
+  /// - Gallery pick → requires a fresh front-camera live shot to verify
+  ///   identity, since the file could be of anyone.
+  /// - Camera pick → the captured frame IS already a live shot, so no
+  ///   second verification capture is taken; the same frame is sent as
+  ///   both `photo` and `live_capture`.
+  ///
+  /// The picked photo is resized/compressed via [_processImage] BEFORE
+  /// upload, and it's that processed file — not the raw original — that
+  /// gets sent to the backend and shown locally on success.
   Future<void> _changeAvatarPhoto() async {
     try {
       // Step 1: Show source selection
@@ -390,38 +423,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
+      // User dismissed the dialog (tapped outside / back button) —
+      // `source` is null here, so bail out instead of force-unwrapping it.
       if (source == null) return;
 
-      // Step 2: Pick image
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: source,
-        maxWidth: 2048,
-        maxHeight: 2048,
-        imageQuality: 90,
-      );
+      XFile? image;
+      try {
+        image = await picker.pickImage(
+          source: source,
+          maxWidth: 1920,
+          maxHeight: 1080,
+          imageQuality: 85,
+        );
+      } on PlatformException catch (e) {
+        if (!mounted) return;
+        CustomErrorHandler.show(
+          context,
+          message: _describeCameraError(e),
+          type: ErrorType.fail,
+        );
+        return;
+      }
 
       if (image == null) return;
+
+      final pickedFile = File(image.path);
+
+      File liveShotFile;
+
+      if (source == ImageSource.camera) {
+        // Already a live capture — no second selfie needed.
+        liveShotFile = pickedFile;
+      } else {
+        // Gallery pick — require a fresh front-camera shot to verify
+        // the picked photo is really this person.
+        final cameraStatus = await Permission.camera.request();
+        if (!cameraStatus.isGranted) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Camera access is required to verify your identity.',
+            type: ErrorType.fail,
+          );
+          return;
+        }
+
+        if (!mounted) return;
+        CustomErrorHandler.show(
+          context,
+          message: 'Please look at the camera to verify your identity',
+          type: ErrorType.info,
+          duration: const Duration(seconds: 2),
+        );
+
+        final ImagePicker verifyPicker = ImagePicker();
+        XFile? liveShot;
+        try {
+          liveShot = await verifyPicker.pickImage(
+            source: ImageSource.camera,
+            preferredCameraDevice: CameraDevice.front,
+            maxWidth: 1280,
+            maxHeight: 720,
+            imageQuality: 85,
+          );
+        } on PlatformException catch (e) {
+          if (!mounted) return;
+          CustomErrorHandler.show(
+            context,
+            message: _describeCameraError(e),
+            type: ErrorType.fail,
+          );
+          return;
+        }
+
+        if (liveShot == null) {
+          CustomErrorHandler.show(
+            context,
+            message: 'Identity verification was cancelled.',
+            type: ErrorType.fail,
+          );
+          return;
+        }
+
+        liveShotFile = File(liveShot.path);
+      }
 
       // Step 3: Set loading state
       if (!mounted) return;
       setState(() {
         isUploading = true;
+        isLoading = true;
       });
 
       try {
-        // Step 4: Process image
-        final File processedImage = await _processImage(File(image.path));
+        // Step 4: Process image — resize/compress BEFORE upload, since
+        // this is what actually gets sent and kept.
+        final File processedImage = await _processImage(pickedFile);
 
         // Step 5: Get provider
         if (!mounted) return;
         final appState = Provider.of<AppStateProvider>(context, listen: false);
 
-        // Step 6: Upload
+        // Step 6: Upload the PROCESSED file, not the raw original.
         await AvatarService.uploadPhoto(
           appState: appState,
           photoFile: processedImage,
-          liveCaptureFile: processedImage // No live capture in this context
+          liveCaptureFile: liveShotFile,
         );
 
         // Step 7: Update UI on success
@@ -451,6 +558,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           setState(() {
             isUploading = false;
+            isLoading = false;
           });
         }
       }
@@ -459,6 +567,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (isUploading) {
         setState(() {
+          isLoading = false;
           isUploading = false;
         });
       }
@@ -538,7 +647,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             "${appState.userRole == 'teacher' ? 'Teacher' : 'Student'} Profile",
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
+      body:LoadingOverlay(isLoading: isLoading, child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppStyles.spacingL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,12 +675,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: CircleAvatar(
                       radius: 48,
-                      backgroundColor:Colors.transparent,
-                      child: Icon(
-                        Icons.person,
-                        size: 50,
-                        color:AppColors.primaryColor,
-                      ),
+                      backgroundColor: Colors.transparent,
+                      backgroundImage:
+                          profileImage != null ? FileImage(profileImage!) : null,
+                      child: profileImage == null
+                          ? Icon(
+                              Icons.person,
+                              size: 50,
+                              color: AppColors.primaryColor,
+                            )
+                          : null,
                     ),
                   ),
 
@@ -762,7 +875,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-      ),
+      ),)
     );
   }
 }

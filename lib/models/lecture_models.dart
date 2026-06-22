@@ -100,7 +100,6 @@ class LectureDetailResponse {
   final String title;
   final String courseCode;
   final String currentFileUrl;
-  final String currentFileName;
   final String scheduledDate;
   final String startTime;
   final String endTime;
@@ -114,7 +113,6 @@ class LectureDetailResponse {
     required this.title,
     required this.courseCode,
     required this.currentFileUrl,
-    required this.currentFileName,
     required this.scheduledDate,
     required this.startTime,
     required this.endTime,
@@ -128,7 +126,6 @@ class LectureDetailResponse {
       title: json['title'] ?? '',
       courseCode: json['course_code'] ?? '',
       currentFileUrl: json['current_file_url'] ?? '',
-      currentFileName: json['current_file_name'] ?? '',
       scheduledDate: json['scheduled_date'] ?? '',
       startTime: json['start_time'] ?? '',
       endTime: json['end_time'] ?? '',
@@ -143,7 +140,6 @@ class LectureDetailResponse {
       'title': title,
       'course_code': courseCode,
       'current_file_url': currentFileUrl,
-      'current_file_name': currentFileName,
       'scheduled_date': scheduledDate,
       'start_time': startTime,
       'end_time': endTime,

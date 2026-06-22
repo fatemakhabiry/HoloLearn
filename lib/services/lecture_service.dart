@@ -192,7 +192,10 @@ class LectureService {
           .timeout(ApiConfig.connectionTimeout);
 
       if (response.statusCode == 200) {
-        return LectureDetailResponse.fromJson(json.decode(response.body));
+        final decoded = json.decode(response.body);
+        LectureDetailResponse parsed = LectureDetailResponse.fromJson(decoded);
+
+        return parsed;
       } else if (response.statusCode == 404) {
         throw Exception('Lecture not found.');
       } else {
@@ -213,7 +216,12 @@ class LectureService {
     int? newScheduleId,
   }) async {
     final uri = Uri.parse(
-      ApiConfig.getUrl('/lecture/schedule/$oldScheduleId/edit'),
+      ApiConfig.getUrl(
+        ApiConfig.updateLectureEndpoint.replaceFirst(
+          '{schedule_id}',
+          oldScheduleId.toString(),
+        ),
+      ),
     );
 
     try {
@@ -829,8 +837,11 @@ class LectureService {
   ) async {
     final res = await _client
         .get(
-          Uri.parse(ApiConfig.getUrl(ApiConfig.qaHistoryPdfEndpoint)
-              .replaceAll('{lecture_id}', lectureId.toString())),
+          Uri.parse(
+            ApiConfig.getUrl(
+              ApiConfig.qaHistoryPdfEndpoint,
+            ).replaceAll('{lecture_id}', lectureId.toString()),
+          ),
           headers: {
             'Authorization': 'Bearer ${appState.accessToken}',
             'ngrok-skip-browser-warning': 'true',
@@ -840,7 +851,10 @@ class LectureService {
         .timeout(ApiConfig.connectionTimeout);
 
     if (res.statusCode == 404) {
-      throw const ApiException('Chat history not available...', statusCode: 404);
+      throw const ApiException(
+        'Chat history not available...',
+        statusCode: 404,
+      );
     }
     _checkStatus(res);
     return res.bodyBytes;
