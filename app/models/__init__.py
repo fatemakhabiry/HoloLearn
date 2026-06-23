@@ -12,3 +12,5 @@ from app.models.qa_session import QASession          # ← ADD
 from app.models.qa_message import QAMessage          # ← ADD
 from app.models.identity_verification import IdentityVerification
 from app.models.qa_export import QAExport
+# app/models/__init__.py
+from app.models.lecture_pipeline import LecturePipeline   # ← may be missing

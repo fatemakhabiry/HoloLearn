@@ -272,8 +272,8 @@ def get_my_scheduled_lectures(
                 lecture_title=lecture.title,
                 teacher_name=teacher_name,
                 date=schedule.date,
-                start_time=schedule.start_time,
-                end_time=schedule.end_time,
+                start_time=datetime.combine(schedule.date, schedule.start_time),
+                end_time=datetime.combine(schedule.date, schedule.end_time),
                 status=schedule.status
             )
         )

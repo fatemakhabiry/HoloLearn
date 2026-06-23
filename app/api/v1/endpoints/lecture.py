@@ -18,7 +18,7 @@ from app.models.teacher import Teacher
 from app.models.lecture_pipeline import LecturePipeline, PipelineStatus
 from app.models.generated_content import GeneratedContent, ContentType
 from app.models.agent_session import AgentSession
-from app.models.lecture_version import LectureVersion
+from app.models.lecture_version import LectureVersion, VersionStatus
 from app.models.resource import Resource
 from app.api.deps import get_current_user, get_current_teacher
 from app.schemas.schedule_schemas import (
@@ -64,7 +64,7 @@ async def create_lecture_draft(
         )
     
     # Validate file
-    ALLOWED_EXTENSIONS = {".pdf", ".pptx", ".txt"}
+    ALLOWED_EXTENSIONS = {".pdf", ".pptx",".ppt", ".txt"}
     file_ext = os.path.splitext(file.filename)[1].lower()
     
     if file_ext not in ALLOWED_EXTENSIONS:
@@ -254,6 +254,7 @@ async def confirm_and_publish_lecture(
 ):
     """
     Confirm and publish lecture by reserving a schedule slot.
+    Triggers RAG ingest deferred to 15 minutes before lecture start.
     """
     # Get lecture
     lecture = session.get(Lecture, lecture_id)
@@ -304,25 +305,38 @@ async def confirm_and_publish_lecture(
     session.refresh(lecture)
     session.refresh(schedule)
 
-    # ── Trigger RAG indexing ───────────────────────────────────────
-    # Priority:
-    #   1. extracted_txt_path — text already extracted by agent (best)
-    #   2. local_file_path    — original uploaded file (fallback)
-    # Generated lectures trigger from generation_worker.py instead
+    # ── Trigger RAG indexing — deferred to 15 min before lecture start ──
+    import logging
+    from datetime import timedelta
+    _logger = logging.getLogger(__name__)
+
+    print(f"\n[ConfirmPublish] ========== DEBUG START ==========")
+    print(f"[ConfirmPublish] lecture_id={lecture.lecture_id}")
+    print(f"[ConfirmPublish] lecture_type={lecture.lecture_type}")
+    print(f"[ConfirmPublish] extracted_txt_path={lecture.extracted_txt_path}")
+    print(f"[ConfirmPublish] local_file_path={lecture.local_file_path}")
+
+    file_to_index = None
+
     if lecture.lecture_type == LectureType.PREPARED:
-        import logging
-        _logger = logging.getLogger(__name__)
+        extracted_exists = (
+            Path(lecture.extracted_txt_path).exists()
+            if lecture.extracted_txt_path else False
+        )
+        local_exists = (
+            Path(lecture.local_file_path).exists()
+            if lecture.local_file_path else False
+        )
+        print(f"[ConfirmPublish] extracted_txt_path exists on disk={extracted_exists}")
+        print(f"[ConfirmPublish] local_file_path exists on disk={local_exists}")
 
-        # Determine which file to send to RAG
-        file_to_index = None
-
-        if lecture.extracted_txt_path and Path(lecture.extracted_txt_path).exists():
+        if lecture.extracted_txt_path and extracted_exists:
             file_to_index = lecture.extracted_txt_path
             _logger.info(
                 f"[RAG] Using extracted txt for lecture {lecture.lecture_id}: "
                 f"{file_to_index}"
             )
-        elif lecture.local_file_path and Path(lecture.local_file_path).exists():
+        elif lecture.local_file_path and local_exists:
             file_to_index = lecture.local_file_path
             _logger.warning(
                 f"[RAG] extracted_txt_path missing — "
@@ -334,17 +348,71 @@ async def confirm_and_publish_lecture(
                 f"but no file found to index — skipping RAG ingest"
             )
 
-        if file_to_index:
-            from arq import create_pool
-            from arq.connections import RedisSettings
-
-            redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
-            await redis.enqueue_job(
-                "run_rag_ingest",
-                lecture_id = lecture.lecture_id,
-                file_path  = file_to_index,
+    elif lecture.lecture_type == LectureType.GENERATED:
+        latest_version = session.exec(
+            select(LectureVersion)
+            .where(
+                LectureVersion.lecture_id == lecture.lecture_id,
+                LectureVersion.status     == VersionStatus.APPROVED,
             )
-            await redis.close()
+            .order_by(LectureVersion.version_number.desc())
+        ).first()
+
+        print(f"[ConfirmPublish] latest_version={latest_version}")
+        print(f"[ConfirmPublish] latest_version.txt_path={latest_version.txt_path if latest_version else 'NO VERSION'}")
+
+        if latest_version and latest_version.txt_path and Path(latest_version.txt_path).exists():
+            file_to_index = latest_version.txt_path
+            _logger.info(
+                f"[RAG] Using approved version txt for lecture {lecture.lecture_id}: "
+                f"{file_to_index}"
+            )
+        else:
+            _logger.warning(
+                f"[RAG] No approved LectureVersion.txt_path found for "
+                f"generated lecture {lecture.lecture_id} — skipping RAG ingest"
+            )
+
+    print(f"[ConfirmPublish] FINAL file_to_index={file_to_index}")
+
+    if file_to_index:
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        from zoneinfo import ZoneInfo
+
+        # Schedule times are stored as naive LOCAL Cairo time (admin enters
+        # them directly with no tz conversion — see schedule creation endpoint).
+        # Convert to UTC before comparing against datetime.utcnow().
+        CAIRO_TZ = ZoneInfo("Africa/Cairo")
+
+        lecture_start_naive = datetime.combine(schedule.date, schedule.start_time)
+        lecture_start_local = lecture_start_naive.replace(tzinfo=CAIRO_TZ)
+        lecture_start_utc   = lecture_start_local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+
+        trigger_at = lecture_start_utc - timedelta(minutes=3)
+        now        = datetime.utcnow()
+
+        defer_by = trigger_at - now
+        if defer_by.total_seconds() < 0:
+            defer_by = timedelta(seconds=0)   # already within window — ingest now
+
+        redis = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+        await redis.enqueue_job(
+            "run_rag_ingest",
+            lecture_id = lecture.lecture_id,
+            file_path  = file_to_index,
+            _defer_by  = defer_by,
+        )
+        await redis.close()
+
+        _logger.info(
+            f"[RAG] Ingest scheduled for lecture {lecture.lecture_id} "
+            f"at {trigger_at.isoformat()} UTC (defer={defer_by})"
+    )
+    else:
+        print(f"[ConfirmPublish] SKIPPED — file_to_index is None, no job enqueued")
+
+    print(f"[ConfirmPublish] ========== DEBUG END ==========\n")
     # ─────────────────────────────────────────────────────────────
 
     return ConfirmPublishResponse(
@@ -691,8 +759,20 @@ async def delete_lecture(
 # 7: Start Pipeline
 # (combines prepare-pipeline + trigger-pipeline)
 # ============================================
+#
+# CHANGED: this endpoint now enqueues run_tts (local TTS + transcript) via
+# ARQ instead of calling the GPU machine directly. run_tts itself decides
+# whether to chain into run_generation (GPU leg) based on
+# settings.GPU_PIPELINE_ENABLED — see tts_worker.py.
+#
+# This means: as long as Redis + the ARQ worker are running, this endpoint
+# works fully offline from the GPU machine. The old AI_SERVER_URL /
+# BACKEND_PUBLIC_URL / INTERNAL_API_TOKEN config checks and the inline
+# httpx call are gone from here — they now live inside generation_worker.py,
+# only reached if/when run_tts chains into run_generation.
 
 from pydantic import BaseModel
+from arq.connections import create_pool, RedisSettings
 
 _PIPELINE_DEFAULTS = dict(
     num_steps      = 20,
@@ -708,7 +788,7 @@ _PIPELINE_DEFAULTS = dict(
     "/{lecture_id}/start-pipeline",
     response_model=LecturePipelineTriggerResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Reads script → creates LecturePipeline → dispatches job to AI server",
+    summary="Reads script → creates LecturePipeline → enqueues run_tts",
 )
 async def start_pipeline(
     lecture_id: int,
@@ -723,14 +803,16 @@ async def start_pipeline(
       2. Read script from generated_content (must exist)
       3. Create / reset LecturePipeline record with fixed defaults
       4. Verify teacher onboarding_status = 'ready'
-      5. Dispatch job to AI server via HTTP
-      6. Set lecture + pipeline status → GENERATING
+      5. Enqueue run_tts (ARQ) — local TTS + transcript, chains into
+         run_generation (GPU leg) only if GPU_PIPELINE_ENABLED=true
+      6. Set lecture + pipeline status → QUEUED
 
     Prerequisites:
       - Agent session must be done (script saved in generated_content)
       - Teacher onboarding_status must be 'ready' (set by AI server)
 
-    Returns 202 immediately — video generation runs on AI server (~5–25 min).
+    Returns 202 immediately — TTS + (optionally) video generation runs
+    in the background via ARQ.
     """
 
     # ── 1. Lecture exists and belongs to this teacher ─────────────
@@ -773,8 +855,10 @@ async def start_pipeline(
         for field, value in _PIPELINE_DEFAULTS.items():
             setattr(pipeline, field, value)
 
-    pipeline.script_path = script.file_path
-    pipeline.status      = PipelineStatus.QUEUED
+    pipeline.script_path     = script.file_path
+    pipeline.status          = PipelineStatus.QUEUED
+    pipeline.audio_path      = None   # fresh start — don't reuse audio from a previous run
+    pipeline.transcript_path = None   # fresh start — old transcript shouldn't linger
     session.add(pipeline)
     session.commit()
     session.refresh(pipeline)
@@ -789,74 +873,134 @@ async def start_pipeline(
                    f"onboarding_status: '{current_onboarding}'. Must be 'ready'.",
         )
 
-    # ── 5. Config check ────────────────────────────────────────────
-    if not settings.AI_SERVER_URL:
-        raise HTTPException(status_code=503, detail="AI_SERVER_URL is not configured in .env.")
-    if not settings.BACKEND_PUBLIC_URL:
-        raise HTTPException(status_code=503, detail="BACKEND_PUBLIC_URL is not configured in .env.")
-    if not settings.INTERNAL_API_TOKEN:
-        raise HTTPException(status_code=503, detail="INTERNAL_API_TOKEN is not configured in .env.")
-
-    base  = settings.BACKEND_PUBLIC_URL.rstrip("/")
-    token = settings.INTERNAL_API_TOKEN
-
-    def _file_url(path: str) -> str:
-        return f"{base}/api/v1/internal/files?path={path}"
-
-    payload = {
-        "lecture_id":          lecture_id,
-        "script_download_url": _file_url(pipeline.script_path),
-        "image_download_url":  _file_url(teacher.preprocessed_image_path) if teacher.preprocessed_image_path else None,
-        "voice_download_url":  _file_url(teacher.voice_sample) if teacher.voice_sample else None,
-        "pipeline_params": {
-            "num_steps":      pipeline.num_steps,
-            "audio_cfg":      pipeline.audio_cfg,
-            "text_cfg":       pipeline.text_cfg,
-            "seed":           pipeline.seed,
-            "preset":         pipeline.preset,
-            "avatar_backend": pipeline.avatar_backend,
-        },
-        "callback_url": f"{base}/api/v1/internal/pipeline-done",
-        "token":        token,
-    }
-
-    # ── 6. Dispatch to AI server ───────────────────────────────────
+    # ── 5. Enqueue run_tts via ARQ ──────────────────────────────────
+    # NOTE: this uses arq.connections.create_pool directly as a minimal,
+    # explicit example. If your app already has a shared ARQ redis pool
+    # (e.g. set up on startup and exposed via a dependency or app.state),
+    # use that instead of creating a new pool per request — creating one
+    # per request works but is wasteful under real load.
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(
-                f"{settings.AI_SERVER_URL.rstrip('/')}/ai/generate",
-                json=payload,
-                headers={"Authorization": f"Bearer {token}"},
-            )
-        if response.status_code not in (200, 202):
-            raise HTTPException(
-                status_code=502,
-                detail=f"AI server rejected the job (HTTP {response.status_code}): {response.text[:300]}",
-            )
-    except httpx.ConnectError:
+        redis_pool = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+        await redis_pool.enqueue_job("run_tts", lecture_id)
+        await redis_pool.close()
+    except Exception as e:
         raise HTTPException(
-            status_code=502,
-            detail=f"Could not reach AI server at {settings.AI_SERVER_URL}. Is ngrok running?",
+            status_code=503,
+            detail=f"Could not enqueue generation job — is Redis running? ({e})",
         )
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="AI server did not respond within 15 seconds.")
-
-    # ── 7. Update status ───────────────────────────────────────────
-    lecture.status  = LectureStatus.GENERATING
-    pipeline.status = PipelineStatus.GENERATING
-    session.add(lecture)
-    session.add(pipeline)
-    session.commit()
 
     return LecturePipelineTriggerResponse(
         lecture_id=lecture_id,
-        status="generating",
-        message=f"Job dispatched to AI server. Poll GET /lecture/{lecture_id}/video for progress.",
+        status="queued",
+        message=f"TTS job queued. Poll GET /lecture/{lecture_id}/transcript once ready "
+                f"(video status depends on GPU_PIPELINE_ENABLED).",
     )
 
 
+
 # ============================================
-# 8: Stream Generated Video
+# 8: Retry Generation (GPU leg only)
+# ============================================
+#
+# Distinct from start-pipeline (which always wipes audio_path/transcript_path
+# and starts fully fresh from the script). This endpoint is for the case
+# where run_tts already succeeded — audio.wav + transcript.txt exist and
+# are stored on LecturePipeline — but run_generation failed downstream
+# (GPU unreachable, ngrok dropped, job timed out, etc).
+#
+# Re-enqueues run_generation directly with the stored audio_path. No TTS,
+# no Chatterbox, no re-synthesis — just resends the existing audio to the
+# GPU machine.
+
+from arq.connections import create_pool, RedisSettings
+
+
+@router.post(
+    "/{lecture_id}/retry-generation",
+    response_model=LecturePipelineTriggerResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Re-enqueues run_generation using the already-stored audio_path — no TTS re-run",
+)
+async def retry_generation(
+    lecture_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_teacher),
+):
+    """
+    Retries ONLY the avatar-generation (GPU) leg of the pipeline.
+
+    Requires:
+      - LecturePipeline record exists for this lecture
+      - pipeline.audio_path is set AND the file still exists on disk
+        (i.e. run_tts has already succeeded at least once)
+      - pipeline.status is not currently GENERATING (avoid double-dispatch)
+
+    Use this instead of start-pipeline when:
+      - run_tts succeeded (audio + transcript already produced)
+      - run_generation failed for a reason unrelated to the script/audio
+        itself (GPU machine was down, network drop, timeout, etc.)
+      - The script hasn't changed, so there's no need to re-run TTS
+
+    If the script HAS changed, use start-pipeline instead — it wipes
+    audio_path/transcript_path and runs the full chain fresh.
+    """
+
+    # ── 1. Lecture exists and belongs to this teacher ─────────────
+    lecture = session.get(Lecture, lecture_id)
+    if not lecture:
+        raise HTTPException(status_code=404, detail=f"Lecture {lecture_id} not found.")
+    if lecture.teacher_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="You can only retry generation for your own lectures.")
+
+    # ── 2. Pipeline must exist ──────────────────────────────────────
+    pipeline = session.get(LecturePipeline, lecture_id)
+    if not pipeline:
+        raise HTTPException(
+            status_code=404,
+            detail="No pipeline record found. Run start-pipeline first.",
+        )
+
+    if pipeline.status == PipelineStatus.GENERATING:
+        raise HTTPException(
+            status_code=409,
+            detail="Pipeline is already generating. Wait for it to finish or fail first.",
+        )
+
+    # ── 3. Audio must already exist — this endpoint does not run TTS ──
+    if not pipeline.audio_path:
+        raise HTTPException(
+            status_code=409,
+            detail="No audio_path on this pipeline — run_tts hasn't succeeded yet. "
+                   "Use start-pipeline instead.",
+        )
+
+    if not Path(pipeline.audio_path).exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"audio_path is set but the file is missing on disk: {pipeline.audio_path}. "
+                   "Use start-pipeline to regenerate it.",
+        )
+
+    # ── 4. Enqueue run_generation directly ──────────────────────────
+    try:
+        redis_pool = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+        await redis_pool.enqueue_job("run_generation", lecture_id, pipeline.audio_path)
+        await redis_pool.close()
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not enqueue run_generation — is Redis running? ({e})",
+        )
+
+    return LecturePipelineTriggerResponse(
+        lecture_id=lecture_id,
+        status="queued",
+        message=f"run_generation re-queued using existing audio at {pipeline.audio_path}. "
+                f"No TTS re-run — transcript is unaffected.",
+    )
+
+# ============================================
+# 9: Stream Generated Video
 # ============================================
 
 @router.get("/{lecture_id}/video")

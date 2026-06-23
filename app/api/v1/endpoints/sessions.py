@@ -218,44 +218,85 @@ async def _upload_to_drive(
 
 
 async def _extract_from_drive(drive_link: str) -> str:
-    """Download file from Drive and extract text via AI service extractor."""
-    if "drive.google.com/file/d/" not in drive_link:
-        print(f"[sessions] cannot parse Drive link: {drive_link}")
+    """
+    Download a file from Google Drive/Docs and extract text via the AI service.
+
+    Handles two distinct cases:
+      1. Native Google Slides/Docs/Sheets (docs.google.com/presentation|document|spreadsheets/d/{id})
+         → must use the /export endpoint to convert to a real binary format.
+      2. Uploaded binary file in Drive (drive.google.com/file/d/{id})
+         → uses the existing uc?export=download flow.
+
+    The previous version only recognized "drive.google.com/file/d/" and
+    silently returned "" for any other shape (e.g. docs.google.com/presentation/d/...),
+    which is what caused the 422 "Could not extract text from lecture file" error.
+    """
+    # ── Parse the file/doc ID — host- and path-agnostic ──────────────────────
+    match = re.search(r'/d/([a-zA-Z0-9_-]{15,})', drive_link)
+    if not match:
+        print(f"[sessions] cannot parse Drive/Docs link: {drive_link}")
         return ""
 
-    file_id      = drive_link.split("/file/d/")[1].split("/")[0]
-    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    file_id = match.group(1)
+
+    # ── Detect native Google doc types vs. uploaded binary file ─────────────
+    is_slides       = "presentation/d/" in drive_link
+    is_google_doc   = "/document/d/" in drive_link
+    is_google_sheet = "spreadsheets/d/" in drive_link
 
     try:
         async with httpx.AsyncClient(
             timeout=120.0,
             follow_redirects=True,
         ) as client:
+
+            if is_slides:
+                # Native Google Slides — convert via export endpoint to real pptx bytes
+                download_url = f"https://docs.google.com/presentation/d/{file_id}/export/pptx"
+                suffix = ".pptx"
+            elif is_google_doc:
+                download_url = f"https://docs.google.com/document/d/{file_id}/export?format=docx"
+                suffix = ".docx"
+            elif is_google_sheet:
+                download_url = f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=xlsx"
+                suffix = ".xlsx"
+            else:
+                # Uploaded binary file in Drive — original flow, unchanged
+                download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+                suffix = None  # determined later from content-type
+
             r = await client.get(download_url)
 
+            # Large-file virus-scan warning page (binary files only)
             if (
                 r.status_code == 200
                 and "text/html" in r.headers.get("content-type", "")
+                and not (is_slides or is_google_doc or is_google_sheet)
             ):
-                match = re.search(r'confirm=([0-9A-Za-z_\-]+)', r.text)
-                if match:
-                    confirm = match.group(1)
+                match_confirm = re.search(r'confirm=([0-9A-Za-z_\-]+)', r.text)
+                if match_confirm:
+                    confirm = match_confirm.group(1)
                     r = await client.get(
                         f"https://drive.google.com/uc"
                         f"?export=download&id={file_id}&confirm={confirm}"
                     )
 
             if r.status_code != 200:
-                print(f"[sessions] Drive download failed: {r.status_code}")
+                kind = "Slides/Docs export" if (is_slides or is_google_doc or is_google_sheet) else "Drive download"
+                print(f"[sessions] {kind} failed: {r.status_code}")
                 return ""
 
             content_type = r.headers.get("content-type", "application/pdf")
 
             if "text/html" in content_type:
-                print("[sessions] Drive returned HTML — check file permissions")
+                print(
+                    "[sessions] Got HTML instead of file — "
+                    "check sharing permissions (must be 'anyone with the link can view')"
+                )
                 return ""
 
-            suffix = _guess_extension(content_type)
+            if suffix is None:
+                suffix = _guess_extension(content_type)
 
             with tempfile.NamedTemporaryFile(
                 delete=False, suffix=suffix
@@ -269,7 +310,7 @@ async def _extract_from_drive(drive_link: str) -> str:
         return text
 
     except Exception as e:
-        print(f"[sessions] Drive extraction error: {e}")
+        print(f"[sessions] Drive/Docs extraction error: {e}")
         return ""
 
 
@@ -509,7 +550,7 @@ async def _sync_state_to_db(
 
 _ALLOWED_EXTENSIONS = {
     "pdf":      {".pdf"},
-    "pptx":     {".pptx"},
+    "pptx":     {".pptx", ".ppt"},
     "docx":     {".docx"},
     "document": {".docx", ".doc"},
     "video":    {".mp4", ".mov", ".avi", ".mkv"},
@@ -1080,24 +1121,10 @@ async def approve_lecture(
     db.add(agent_session)
     db.commit()
 
-    print(f"[Approve] version={version}")
-    print(f"[Approve] txt_path={version.txt_path if version else 'NO VERSION'}")
-
-    if version and version.txt_path and Path(version.txt_path).exists():
-        try:
-            arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
-            await arq_pool.enqueue_job(
-                "run_rag_ingest",
-                lecture_id=lecture.lecture_id,
-                file_path=version.txt_path,
-            )
-            await arq_pool.close()
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"[Approve] RAG ingest trigger failed for lecture "
-                f"{lecture.lecture_id}: {e}"
-            )
+    # NOTE: RAG ingest is no longer triggered here.
+    # It now triggers from confirm-and-publish, deferred to 15 min
+    # before the lecture's scheduled start time — using this
+    # APPROVED LectureVersion.txt_path.
 
     await resume_agent(agent_session.thread_id, status="approved")
 
@@ -1110,7 +1137,6 @@ async def approve_lecture(
         await _upload_to_drive(version.pdf_path, filename, lecture, db)
 
     return {"status": "approved", "session_id": session_id}
-
 
 @router.post("/{session_id}/reject")
 async def reject_lecture(

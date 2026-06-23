@@ -51,7 +51,7 @@ from app.api.v1.endpoints import (
     internal,
     qa,
     research,
-
+    transcript,
 )
 
 api_router = APIRouter()
@@ -74,3 +74,4 @@ api_router.include_router(
     tags=["research"],
 )
 
+api_router.include_router(transcript.router,     prefix="/lecture",     tags=["transcript"])

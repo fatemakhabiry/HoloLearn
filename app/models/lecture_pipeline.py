@@ -46,6 +46,21 @@ class LecturePipeline(SQLModel, table=True):
     output_video_path: Optional[str] = Field(default=None)  # abs path to avatar_*.mp4
     error_message:     Optional[str] = Field(default=None)  # last 2000 chars of stderr
 
+    # Written by run_tts job as soon as TTS finishes — independent of
+    # output_video_path, which is only set later once LongCAT completes.
+    # Presence of this field (not pipeline.status) is what tells the
+    # student app "transcript is ready", since TTS finishes well before
+    # avatar generation does.
+    transcript_path: Optional[str] = Field(default=None)    # abs path to transcript.txt
+
+    # Written by run_tts at the same time as transcript_path, BEFORE
+    # enqueueing run_generation. Without this persisted, audio_path only
+    # exists as an in-memory ARQ job argument — if run_generation fails
+    # (GPU unreachable, ngrok drop, timeout) there would be no way to find
+    # the already-generated audio again to retry sending it. This field is
+    # what makes that retry possible without re-running TTS.
+    audio_path: Optional[str] = Field(default=None)         # abs path to audio.wav
+
     # ── Timing ─────────────────────────────────────────────────────
     created_at:   datetime           = Field(default_factory=datetime.utcnow)
     started_at:   Optional[datetime] = Field(default=None)
@@ -60,7 +75,9 @@ class LecturePipelinePublic(SQLModel):
     lecture_id:        int
     status:            PipelineStatus
     script_path:       Optional[str]      = None
+    audio_path:        Optional[str]      = None
     output_video_path: Optional[str]      = None
+    transcript_path:   Optional[str]      = None
     error_message:     Optional[str]      = None
     avatar_backend:    str
     preset:            str
