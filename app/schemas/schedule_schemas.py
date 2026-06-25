@@ -13,8 +13,8 @@ class TimeSlot(BaseModel):
 
 class FullTimeSlot(BaseModel):
     """Represents a reserved time slot"""
-    start_time: time
-    end_time: time
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     date : date
     schedule_id: int
     teacher_name: str

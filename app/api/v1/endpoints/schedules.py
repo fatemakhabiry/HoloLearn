@@ -10,7 +10,8 @@ from app.models.lecture import Lecture
 from app.core.database import get_session
 from app.api.deps import (
     get_current_teacher,
-    get_current_user
+    get_current_user,
+    get_current_admin
 
 )
 
@@ -201,6 +202,7 @@ def get_date_availability(
     )
 
 
+
 @router.get("/my-scheduled-lectures", response_model=List[FullTimeSlot])
 def get_my_scheduled_lectures(
     current_user: User = Depends(get_current_teacher),
@@ -272,13 +274,105 @@ def get_my_scheduled_lectures(
                 lecture_title=lecture.title,
                 teacher_name=teacher_name,
                 date=schedule.date,
-                start_time=schedule.start_time,
-                end_time=schedule.end_time,
+                start_time=datetime.combine(schedule.date, schedule.start_time),
+                end_time=datetime.combine(schedule.date, schedule.end_time),
                 status=schedule.status
             )
         )
     
     return result
+
+
+# =============== Admin Delete Endpoints ===============
+
+@router.delete("/by-date/{target_date}", status_code=status.HTTP_200_OK)
+def delete_schedules_by_date(
+    target_date: date,
+    current_user: User = Depends(get_current_admin),  # ✅ admin guard
+    session: Session = Depends(get_session)
+):
+    """
+    Delete ALL schedule records on a specific date (Admin only)
+    """
+
+    # ✅ Block past dates
+    if target_date < date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete schedules in the past"
+        )
+
+    schedules = session.exec(
+        select(Schedule).where(Schedule.date == target_date)
+    ).all()
+
+    if not schedules:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No schedules found on {target_date}"
+        )
+
+    deleted_count = len(schedules)
+
+    for schedule in schedules:
+        session.delete(schedule)
+
+    session.commit()
+
+    return {
+        "message": f"Deleted all schedules on {target_date}",
+        "date": str(target_date),
+        "deleted_count": deleted_count
+    }
+
+
+@router.delete("/by-slot", status_code=status.HTTP_200_OK)
+def delete_schedule_by_slot(
+    target_date: date = Query(..., description="Date of the schedule"),
+    start_time: time = Query(..., description="Start time, e.g. 10:00:00"),
+    end_time: time = Query(..., description="End time, e.g. 11:30:00"),
+    current_user: User = Depends(get_current_admin),  # ✅ admin guard
+    session: Session = Depends(get_session)
+):
+    """
+    Delete a single schedule record matching date + start_time + end_time (Admin only)
+    """
+
+    # ✅ Block past dates
+    if target_date < date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete schedules in the past"
+        )
+
+    schedules = session.exec(
+        select(Schedule).where(
+            Schedule.date == target_date,
+            Schedule.start_time == start_time,
+            Schedule.end_time == end_time
+        )
+    ).all()
+
+    if not schedules:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No schedule found on {target_date} from {start_time} to {end_time}"
+        )
+
+    deleted_count = len(schedules)
+
+    for schedule in schedules:
+        session.delete(schedule)
+
+    session.commit()
+
+    return {
+        "message": "Schedule slot deleted successfully",
+        "date": str(target_date),
+        "start_time": str(start_time),
+        "end_time": str(end_time),
+        "deleted_count": deleted_count
+    }
 
 @router.patch("/{schedule_id}/cancel", response_model=CancelScheduleResponse)
 def cancel_schedule(
