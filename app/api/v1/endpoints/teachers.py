@@ -415,7 +415,8 @@ import logging
 import os
 import tempfile
 from datetime import datetime
-
+import io
+from PIL import Image, ImageOps
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File
 from sqlmodel import Session, select
@@ -439,6 +440,53 @@ from app.services.face_verification import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# Add to imports at the top of app/api/v1/endpoints/teachers.py:
+# import io
+# from PIL import Image, ImageOps
+
+
+# ──────────────────────────────────────────────────────────────────
+# Orientation fix — must run BEFORE _verify_photo_pair on both files
+# ──────────────────────────────────────────────────────────────────
+
+async def _normalize_image_orientation(upload: UploadFile) -> None:
+    """
+    Bakes EXIF orientation into the actual pixel data, then rewrites the
+    UploadFile's underlying buffer in place — so every later .read() /
+    .seek(0) call (ours in _verify_photo_pair, and save_teacher_file's)
+    sees the already-correctly-oriented image.
+
+    Phone cameras (especially front/selfie cameras) commonly save sideways
+    pixel data plus an EXIF "Orientation" tag telling viewers how to
+    rotate it for display. PIL, OpenCV, and therefore DeepFace and
+    preprocess_image.py all ignore that tag by default — they just read
+    the raw pixels. Without this, the saved photo (and the preprocessed
+    avatar source downstream on the AI server) ends up sideways.
+
+    Re-encoding through PIL here also strips the EXIF tag entirely —
+    the rotation is now physically baked into the pixels, so there's
+    nothing left for anything downstream to misinterpret.
+    """
+    raw = await upload.read()
+    img = Image.open(io.BytesIO(raw))
+
+    corrected = ImageOps.exif_transpose(img)  # no-op if there's no orientation tag
+    if corrected is None:
+        corrected = img
+
+    if corrected.mode in ("RGBA", "P"):
+        corrected = corrected.convert("RGB")
+
+    buf = io.BytesIO()
+    corrected.save(buf, format="JPEG", quality=92)
+    corrected_bytes = buf.getvalue()
+
+    await upload.seek(0)
+    upload.file.truncate()
+    upload.file.write(corrected_bytes)
+    await upload.seek(0)
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -526,6 +574,10 @@ async def verify_teacher_photo(
     if current_user.role != "teacher":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only teachers can verify photos")
 
+    # ── Fix rotation before anything reads/compares/saves these images ──
+    await _normalize_image_orientation(photo)
+    await _normalize_image_orientation(live_capture)
+
     result, _ = await _verify_photo_pair(photo, live_capture)
 
     statement = select(Teacher).where(Teacher.user_id == current_user.user_id)
@@ -585,6 +637,10 @@ async def upload_teacher_photo(
             detail="Only teachers can upload photos"
         )
 
+    # ── Fix rotation before anything reads/compares/saves these images ──
+    await _normalize_image_orientation(photo)
+    await _normalize_image_orientation(live_capture)
+
     # Get or create teacher record
     statement = select(Teacher).where(Teacher.user_id == current_user.user_id)
     teacher = session.exec(statement).first()
@@ -619,7 +675,9 @@ async def upload_teacher_photo(
         delete_teacher_file(teacher.photo)
 
     # Rewind: _verify_photo_pair already consumed photo.read() internally,
-    # and save_teacher_file needs to read it again from the start.
+    # and save_teacher_file needs to read it again from the start. This
+    # now reads the orientation-corrected bytes, not the original ones —
+    # _normalize_image_orientation already rewrote photo's buffer in place.
     await photo.seek(0)
     photo_path = await save_teacher_file(photo, current_user.user_id, "photo")
 
@@ -701,7 +759,8 @@ async def upload_teacher_voice(
     """
     Upload or update teacher's voice sample.
 
-    - **Allowed formats**: .wav only
+    - **Allowed formats**: .wav, .mp3, .m4a, .aac, .ogg, .flac
+      (automatically transcoded to mono 16-bit WAV on upload)
     - **Max size**: 10MB
     - **Access**: Only teachers
     """

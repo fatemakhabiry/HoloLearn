@@ -141,16 +141,17 @@ import io
 # Filenames are fixed (not UUID) so the pipeline always knows where to look.
 #
 #   uploads/instructors/12/raw.jpg        ← teacher photo (always JPEG)
-#   uploads/instructors/12/voice_ref.wav  ← teacher voice sample (always WAV)
+#   uploads/instructors/12/voice_ref.wav  ← teacher voice sample (always WAV,
+#                                            transcoded from whatever was uploaded)
 
 UPLOAD_DIR = Path("uploads")
 INSTRUCTOR_UPLOAD_DIR = UPLOAD_DIR / "instructors"
 
 # ── Allowed extensions ─────────────────────────────────────────────────────────
 # Photo: any common image format — converted to .jpg on save
-# Voice: wav only — pipeline expects voice_ref.wav directly
-ALLOWED_PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png"}
-ALLOWED_VOICE_EXTENSIONS = {".wav"}
+# Voice: several common formats — all transcoded to voice_ref.wav on save  # ← CHANGED
+ALLOWED_PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp", ".svg", ".heic"}
+ALLOWED_VOICE_EXTENSIONS = {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac"}  # ← CHANGED
 
 # ── Size limits ────────────────────────────────────────────────────────────────
 MAX_PHOTO_SIZE = 5 * 1024 * 1024   # 5 MB
@@ -176,6 +177,56 @@ def validate_file_size(file: UploadFile, max_size: int) -> bool:
     return file_size <= max_size
 
 
+# ── NEW: voice transcoding helper ──────────────────────────────────────────────
+def _transcode_voice_to_wav(content: bytes, source_ext: str, output_path: Path) -> None:
+    """
+    Transcode arbitrary audio bytes to 16-bit mono PCM WAV using pydub (ffmpeg).
+
+    Raises HTTPException with an actionable message instead of letting a raw
+    FileNotFoundError (ffmpeg missing) or CouldntDecodeError (bad file) bubble up.
+    """
+    try:
+        from pydub import AudioSegment
+        from pydub.exceptions import CouldntDecodeError
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server is missing the 'pydub' package. Run: pip install pydub"
+        )
+
+    fmt = source_ext.lstrip(".") or None  # '.mp3' -> 'mp3'
+
+    try:
+        audio = AudioSegment.from_file(io.BytesIO(content), format=fmt)
+    except CouldntDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Could not decode the uploaded {source_ext} file as audio. "
+                "The file may be corrupted or not a valid audio file."
+            )
+        )
+    except FileNotFoundError:
+        # pydub raises this when the ffmpeg binary itself isn't found on PATH
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "ffmpeg is not installed or not on PATH on the server. "
+                "Install it (e.g. 'winget install ffmpeg' on Windows) and restart the backend."
+            )
+        )
+
+    if len(audio) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded audio file is empty (0 duration)."
+        )
+
+    # Normalize: mono, 16-bit — Chatterbox resamples internally so we leave sample rate alone
+    audio = audio.set_channels(1).set_sample_width(2)
+    audio.export(str(output_path), format="wav")
+
+
 async def save_teacher_file(
     file: UploadFile,
     user_id: int,
@@ -186,6 +237,7 @@ async def save_teacher_file(
 
     Photo → saved as  uploads/instructors/{user_id}/raw.jpg  (always JPEG)
     Voice → saved as  uploads/instructors/{user_id}/voice_ref.wav
+            (any allowed format is transcoded to clean mono 16-bit WAV)        # ← CHANGED
 
     Fixed filenames mean:
       - The pipeline CLI always knows the exact path to pass.
@@ -195,9 +247,9 @@ async def save_teacher_file(
         Absolute path string to the saved file.
 
     Raises:
-        HTTPException 400  — wrong extension
+        HTTPException 400  — wrong extension, corrupt/empty audio
         HTTPException 413  — file too large
-        HTTPException 500  — disk write failure
+        HTTPException 500  — disk write failure, ffmpeg missing
     """
     # ── Choose rules based on file type ───────────────────────────
     if file_type == "photo":
@@ -249,10 +301,11 @@ async def save_teacher_file(
             image.save(str(file_path), format="JPEG", quality=95)
 
         else:  # voice
-            # Save WAV directly — no conversion needed.
+            # ← CHANGED: transcode whatever format was uploaded into a clean WAV,
+            # instead of writing raw bytes directly (which only worked for .wav).
             file_path = instructor_dir / "voice_ref.wav"
-            with open(file_path, "wb") as f:
-                f.write(content)
+            source_ext = Path(file.filename).suffix.lower()
+            _transcode_voice_to_wav(content, source_ext, file_path)
 
     except HTTPException:
         raise  # re-raise our own validation errors

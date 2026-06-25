@@ -551,7 +551,7 @@ async def _sync_state_to_db(
 
 _ALLOWED_EXTENSIONS = {
     "pdf":      {".pdf"},
-    "pptx":     {".pptx"},
+    "pptx":     {".pptx", ".ppt"},
     "docx":     {".docx"},
     "document": {".docx", ".doc"},
     "video":    {".mp4", ".mov", ".avi", ".mkv"},
@@ -1122,24 +1122,10 @@ async def approve_lecture(
     db.add(agent_session)
     db.commit()
 
-    print(f"[Approve] version={version}")
-    print(f"[Approve] txt_path={version.txt_path if version else 'NO VERSION'}")
-
-    if version and version.txt_path and Path(version.txt_path).exists():
-        try:
-            arq_pool = await create_pool(ArqRedisSettings.from_dsn(settings.REDIS_URL))
-            await arq_pool.enqueue_job(
-                "run_rag_ingest",
-                lecture_id=lecture.lecture_id,
-                file_path=version.txt_path,
-            )
-            await arq_pool.close()
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"[Approve] RAG ingest trigger failed for lecture "
-                f"{lecture.lecture_id}: {e}"
-            )
+    # NOTE: RAG ingest is no longer triggered here.
+    # It now triggers from confirm-and-publish, deferred to 15 min
+    # before the lecture's scheduled start time — using this
+    # APPROVED LectureVersion.txt_path.
 
     await resume_agent(agent_session.thread_id, status="approved")
 
@@ -1152,7 +1138,6 @@ async def approve_lecture(
         await _upload_to_drive(version.pdf_path, filename, lecture, db)
 
     return {"status": "approved", "session_id": session_id}
-
 
 @router.post("/{session_id}/reject")
 async def reject_lecture(
