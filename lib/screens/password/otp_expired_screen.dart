@@ -82,7 +82,7 @@ class OtpExpiredScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
-                      color:Theme.of(context).cardColor,
+                      color:context.cardColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                       boxShadow: AppStyles.cardShadow,
                     ),

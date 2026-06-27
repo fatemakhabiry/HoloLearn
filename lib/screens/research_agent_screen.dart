@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../constants/constants.dart';
 import '../models/research_models.dart';
@@ -69,19 +70,36 @@ class _ResearchAgentScreenState extends State<ResearchAgentScreen> {
       setState(() {
         _isSearching = false;
       });
-          CustomErrorHandler.show(
-          context,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          type: ErrorType.fail,
-        );
-        await Future.delayed(const Duration(seconds: 5));
+      CustomErrorHandler.show(
+        context,
+        message: e.toString().replaceFirst('Exception: ', ''),
+        type: ErrorType.fail,
+      );
+      await Future.delayed(const Duration(seconds: 5));
     }
   }
 
   Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      final uri = Uri.parse(url);
+
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        // Fallback: try in-app browser
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomErrorHandler.show(
+          context,
+          message: 'Could not open link.',
+          type: ErrorType.fail,
+        );
+      }
     }
   }
   // ── Widgets ───────────────────────────────────────────────────────────────
@@ -373,6 +391,14 @@ class _ResearchAgentScreenState extends State<ResearchAgentScreen> {
               padding: const EdgeInsets.only(bottom: AppStyles.spacingM),
               child: InkWell(
                 onTap: () => _launchUrl(link),
+                onLongPress: () {
+                  Clipboard.setData(ClipboardData(text: link));
+                  CustomErrorHandler.show(
+                    context,
+                    message: 'Link copied to clipboard',
+                    type: ErrorType.info,
+                  );
+                },
                 borderRadius: BorderRadius.circular(AppStyles.radiusM),
                 child: Container(
                   padding: const EdgeInsets.all(AppStyles.spacingM),

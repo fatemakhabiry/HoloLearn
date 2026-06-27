@@ -223,7 +223,7 @@ class _OtpVerficationScreenState extends State<OtpVerficationScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppStyles.spacingL),
                     decoration: BoxDecoration(
-                      color:Theme.of(context).scaffoldBackgroundColor,
+                      color:context.cardColor,
                       borderRadius: BorderRadius.circular(AppStyles.radiusXL),
                       boxShadow: AppStyles.cardShadow,
                     ),
